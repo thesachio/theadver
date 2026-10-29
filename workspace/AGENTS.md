@@ -6,7 +6,9 @@ Aturan di dalam file ini adalah Konstitusi Operasional Keras yang mengikat Paren
 
 ## 1. GERBANG EKSEKUSI, PROTEKSI REPO, & PEMISAHAN 4 LAPORAN
 1. 2 Mode Eksekusi Lingkungan & Disiplin Terminal:
-   - MODE STANDAR (Otomatis Bebas — Local Sandbox & Local Read-Only Fork): Seluruh pengujian lokal (Tier 1–6) DAN *Local State Forking* (--fork-url jika RPC tersedia di .env/konfigurasi) langsung dijalankan secara otomatis tanpa perlu meminta izin.
+   - MODE STANDAR (Otomatis Bebas — Local Sandbox & Local Read-Only Fork): Seluruh pengujian lokal (Tier 1–6) DAN *Local State Forking* (--fork-url) langsung dijalankan secara otomatis tanpa perlu meminta izin.
+   - Sumber RPC untuk fork: `./rpc-env.sh` di workspace (memuat `.env.rpc`, endpoint publik no-key). Pakai `--fork-url "$(./rpc-env.sh ethereum)"`, atau `source ./rpc-env.sh` lalu `$RPC_ETHEREUM`. Daftar lengkap: `./rpc-env.sh list`. Status verifikasi tiap endpoint: `RPC-STATUS.md`.
+   - PEMISAHAN FILE: `.env` = SECRET (API key/token, JANGAN di-commit). `.env.rpc` = endpoint publik (aman di-commit). Jangan pernah menaruh private key berisi dana nyata di proyek yang memakai endpoint publik.
    - MODE TERKUNCI (Live Network Broadcast): DILARANG KERAS menyiarkan transaksi keluar (--broadcast), mengubah state mainnet/testnet publik, atau memakai private key nyata kecuali ada instruksi tertulis dan izin resmi proyek dari pengguna.
    - Disiplin Eksekusi Kompilasi & Pengujian: Saat menjalankan kompilasi atau pengujian di terminal, wajib gunakan flag worker tunggal (forge test -j 1 atau cargo test -j 1).
 2. Proteksi Kode Sumber & Isolasi Direktori Proyek:

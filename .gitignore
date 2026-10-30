@@ -11,7 +11,10 @@ private-key*
 # --- Proyek audit target (data klien, tidak boleh masuk repo setup) ---
 workspace/projects/
 projects/
+audit/
 .audit/
+state/
+pending/
 
 # --- Artefak build ---
 out/

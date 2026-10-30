@@ -10,10 +10,15 @@ di sini, dan tidak ada secret.
 
 ```
 ├── SOUL.md                      Persona: Principal Whitehat Adversarial Researcher
+├── config.yaml                  Gate workflow (write_approval, delegation, cwd)
+├── scripts/
+│   └── lq101_watch.sh           Monitor deploy/patch, mode no-agent (nol token LLM)
 ├── workspace/
 │   ├── AGENTS.md                Konstitusi operasional (mengikat parent + subagent)
+│   ├── README.md                Ringkasan alur Fase 0–3
 │   ├── .env.rpc                 Endpoint RPC publik, no-key, read-only fork
 │   ├── RPC-STATUS.md            Hasil verifikasi tiap endpoint (dengan bukti)
+│   ├── .gitignore               Blokir secret + folder proyek/audit
 │   └── projects/                Tempat proyek target (kosong, di-.gitignore)
 └── skills/security/
     ├── sc-autopilot/            Orchestrator 4-tahap via delegate_task
@@ -22,13 +27,16 @@ di sini, dan tidak ada secret.
     └── sc-phase3-verify/        6-tier testing lab + 2 referensi
 ```
 
+Laporan audit hidup di `<proyek>/audit/` — folder terlihat, bukan folder tersembunyi.
+Isinya data klien dan **tidak pernah** masuk repo ini.
+
 ## Arsitektur
 
 | Fase | Skill | Keluaran |
 |---|---|---|
-| 0–1 | `sc-phase1-recon` | `.audit/00-project-map.md`, `01-threat-and-env.md`, `02-state-and-var-matrix.md`, `03-attack-surface-queue.md`, `06-raw-leads.md` |
-| 2 | `sc-phase2-hunt` | `.audit/06-raw-leads.md`, `07-rejected-hypotheses.md`, `.audit/notes/` |
-| 3 | `sc-phase3-verify` | `.audit/04-verified-findings.md`, `05-potential-candidates.md`, dll. |
+| 0–1 | `sc-phase1-recon` | `audit/00-project-map.md`, `01-threat-and-env.md`, `02-state-and-var-matrix.md`, `03-attack-surface-queue.md`, `06-raw-leads.md` |
+| 2 | `sc-phase2-hunt` | `audit/06-raw-leads.md`, `07-rejected-hypotheses.md`, `audit/notes/` |
+| 3 | `sc-phase3-verify` | `audit/04-verified-findings.md`, `05-potential-candidates.md`, dll. |
 | Semua | `sc-autopilot` | Orkestrasi Fase 1 → 2 → 3 tanpa intervensi |
 
 **Pemisahan 4 laporan adalah aturan keras** — temuan valid, kandidat potensial, jejak
@@ -71,6 +79,20 @@ delegation:
 
 `worktree_isolation` tidak diaktifkan. Tidak ada `.git` di level workspace saat agent
 berjalan — repo ini adalah salinan setup, bukan worktree kerja.
+
+## Monitor Otomatis
+
+`scripts/lq101_watch.sh` dipasang sebagai cronjob Hermes dengan `no_agent: true` —
+scheduler menjalankan skrip dan mengirim stdout apa adanya, **tanpa memanggil model**
+(`API calls: 0` pada verifikasi). Sifatnya watchdog: stdout kosong berarti tidak ada
+notifikasi sama sekali.
+
+Dua sinyal:
+
+| Sinyal | Arti |
+|---|---|
+| `fundingPoolFactory` / `poolDrawResolver` muncul di `prod.json`/`stag.json` | celah menjadi live → kirim follow-up PoC on-chain |
+| sha256 `PoolResolverBase.sol` berubah | kemungkinan sudah ditambal → klaim matrix tertutup |
 
 ## Peringatan
 

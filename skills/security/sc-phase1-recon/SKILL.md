@@ -12,10 +12,10 @@ metadata:
 # Phase 0 & 1: Threat-First Whitehat Adversarial Reconnaissance
 
 ## When to Use
-Gunakan skill ini setiap kali memulai proyek baru di /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/ (atau ketika .audit/00-project-map.md belum tersedia). Skill ini membangun model ancaman adversarial, memetakan variabel state beserta seluruh pembaca/penulisnya, memeriksa konfigurasi deployment, dan menyusun antrean permukaan serangan.
+Gunakan skill ini setiap kali memulai proyek baru di /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/ (atau ketika audit/00-project-map.md belum tersedia). Skill ini membangun model ancaman adversarial, memetakan variabel state beserta seluruh pembaca/penulisnya, memeriksa konfigurasi deployment, dan menyusun antrean permukaan serangan.
 
 ## Pitfalls (Larangan Keras di Fase 0 & 1)
-- DILARANG MEMBUAT `AGENTS.md` DI DALAM FOLDER PROYEK: Seluruh output wajib disimpan di /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/.audit/.
+- DILARANG MEMBUAT `AGENTS.md` DI DALAM FOLDER PROYEK: Seluruh output wajib disimpan di /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/audit/.
 - DILARANG MENGUBAH KODE SUMBER PROYEK: Folder src/, contracts/, programs/, dan sources/ bersifat 100% Read-Only.
 - DILARANG MENGANDALKAN NAMA FUNGSI: Kenali fungsi murni dari mutasi state (+=, -=, delete), pencetakan/penghancuran objek, aliran nilai, dan kata kunci bahasa.
 - DILARANG MEMBACA SELURUH REPOSITORI SEKALIGUS: Gunakan search_files (rg -n) dan baca deklarasi state/konfigurasi secara terarah.
@@ -24,8 +24,8 @@ Gunakan skill ini setiap kali memulai proyek baru di /home/ubuntu/.hermes/profil
 
 ---
 
-## Output Wajib Fase 0 & 1 di .audit/
-Pastikan folder /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/.audit/ dibuat terlebih dahulu, lalu hasilkan 5 file berikut:
+## Output Wajib Fase 0 & 1 di audit/
+Pastikan folder /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/audit/ dibuat terlebih dahulu, lalu hasilkan 5 file berikut:
 1. 00-project-map.md (Peta utama proyek, perintah test/fork lokal -j 1, dan Core Invariants).
 2. 01-threat-and-env.md (Klaim protokol, konfigurasi compiler/rantai, parameter deployment, dan Model Aktor Adversarial).
 3. 02-state-and-var-matrix.md (Kamus 5 kategori state + Matriks Lacak-Balik seluruh fungsi pembaca dan penulis variabel kritis).
@@ -63,7 +63,7 @@ Periksa file konfigurasi (foundry.toml, hardhat.config.*, Cargo.toml, Anchor.tom
    - Gunakan rg untuk mendeteksi penggunaan Proxy/Upgradeability, Multicall + payable, perilaku token non-standar (desimal 6/8, fee-on-transfer, hooks, blacklist), pembacaan Oracle (latestRoundData, slot0, TWAP, Pyth), dan tanda tangan/jembatan lintas rantai (ecrecover, permit, MerkleProof, relayer).
 
 ### Langkah 3: Penyusunan Model Ancaman & Aktor (Adversarial Threat Model)
-Tulis ke dalam .audit/01-threat-and-env.md:
+Tulis ke dalam audit/01-threat-and-env.md:
 1. Daftar Aset & Hak Klaim Target: Dana brankas/pool, *shares/LP*, agunan, pendapatan bunga/fee, objek Capability, atau ketersediaan sistem (DoS/freeze).
 2. Profil Kemampuan Aktor Tanpa Hak Istimewa (Attacker Capabilities):
    - *Permissionless User / Multi-Account Attacker* (bisa membuat banyak akun, memecah transaksi, menggunakan flash liquidity, dan merangkai PTB/batch call).
@@ -73,7 +73,7 @@ Tulis ke dalam .audit/01-threat-and-env.md:
 3. Core Invariants (Target Hukum yang Akan Diuji/Dipatahkan):
    - Rumuskan 5–8 hukum matematis dan state mutlak (misal: Total Klaim Shares <= Total Aset Riil, Debt hanya berkurang sebesar nilai pembayaran sah, Object Position wajib terikat pada Pool ID yang sama, Pesan gagal di TON wajib memulihkan state pengirim via bounce).
 
-### Langkah 4: Pemetaan Data-First & Matriks Lacak-Balik Variabel (.audit/02-state-and-var-matrix.md)
+### Langkah 4: Pemetaan Data-First & Matriks Lacak-Balik Variabel (audit/02-state-and-var-matrix.md)
 1. Baca deklarasi penyimpanan di kontrak/modul inti dan kelompokkan ke dalam 5 Kategori State:
    - (1) State Akuntansi & Saldo/Shares, (2) State Waktu & Indeks Akrual, (3) State Keamanan & Nonce/Replay, (4) State Otoritas & Capability, (5) State Pengunci Siklus & Status Asinkron.
 2. Matriks Pembaca & Penulis Variabel Kritis (Variable Read/Write Matrix):
@@ -83,8 +83,8 @@ Tulis ke dalam .audit/01-threat-and-env.md:
      * Seluruh fungsi yang MENULIS/MENGUBAH (+=, -=, =, delete)
      * Seluruh fungsi yang MEMBACA (untuk menghitung batas pinjaman, harga, atau syarat require)
      * Invarian terkait yang mengikat variabel tersebut.
-### Langkah 5: Penyusunan Antrean Permukaan Serangan (.audit/03-attack-surface-queue.md)
-Cari seluruh titik masuk (external, public, pub fn, public entry fun, recv_internal) beserta fungsi di pustaka matematika kustom (libraries//math/). Susun ke dalam .audit/03-attack-surface-queue.md dengan format setiap item mencakup:
+### Langkah 5: Penyusunan Antrean Permukaan Serangan (audit/03-attack-surface-queue.md)
+Cari seluruh titik masuk (external, public, pub fn, public entry fun, recv_internal) beserta fungsi di pustaka matematika kustom (libraries//math/). Susun ke dalam audit/03-attack-surface-queue.md dengan format setiap item mencakup:
 - ID & Lokasi: NamaFile:Baris
 - Peran Perilaku Mutasi: (Inflow/Penambah Hak +=, Outflow/Pengurang Hak -=, Transfer/Split/Merge, Akrual Waktu, Penerus Eksternal/Callback, atau Handler Bounce/Error).
 - Pasangan Siklus Hidup & Kandidat Urutan 3-Langkah: Sandingkan fungsi masuk dengan fungsi keluarnya, serta catat kandidat urutan Langkah A (Masuk) -> Langkah C (Transfer/Ubah Konfigurasi/Split) -> Langkah B (Keluar/Likuidasi).
@@ -98,13 +98,13 @@ Cari seluruh titik masuk (external, public, pub fn, public entry fun, recv_inter
 - Status Awal: [QUEUED]
 
 ### Langkah 6: Pembuatan Peta Utama (00-project-map.md) & Inisialisasi Raw Leads (06-raw-leads.md)
-1. Tulis ringkasan eksekutif (maksimal 90 baris) ke dalam .audit/00-project-map.md yang berisi: Identitas proyek, Paradigma Rantai, Perintah Kompilasi/Test dengan flag -j 1, Daftar Kontrak In-Scope, Daftar Core Invariants, dan Indeks File .audit/.
-2. Buat .audit/06-raw-leads.md untuk menampung indikasi anomali awal yang terlihat selama pemetaan (tanpa mengklaimnya sebagai temuan valid sebelum dibedah di Fase 2 dan diuji di Fase 3).
+1. Tulis ringkasan eksekutif (maksimal 90 baris) ke dalam audit/00-project-map.md yang berisi: Identitas proyek, Paradigma Rantai, Perintah Kompilasi/Test dengan flag -j 1, Daftar Kontrak In-Scope, Daftar Core Invariants, dan Indeks File audit/.
+2. Buat audit/06-raw-leads.md untuk menampung indikasi anomali awal yang terlihat selama pemetaan (tanpa mengklaimnya sebagai temuan valid sebelum dibedah di Fase 2 dan diuji di Fase 3).
 
 ---
 
 ## Verification
 Sebelum menyelesaikan tugas Fase 1, pastikan:
-1. Kelima file di .audit/ (00-project-map.md, 01-threat-and-env.md, 02-state-and-var-matrix.md, 03-attack-surface-queue.md, dan 06-raw-leads.md) telah tertulis lengkap.
+1. Kelima file di audit/ (00-project-map.md, 01-threat-and-env.md, 02-state-and-var-matrix.md, 03-attack-surface-queue.md, dan 06-raw-leads.md) telah tertulis lengkap.
 2. Tidak ada file AGENTS.md yang dibuat di dalam folder proyek dan kode sumber asli kontrak tidak berubah.
 3. Setiap item di 03-attack-surface-queue.md dikelompokkan berdasarkan mutasi state dan memiliki tag [LOAD: ref-...] yang valid.

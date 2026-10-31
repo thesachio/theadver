@@ -1,25 +1,23 @@
-# Checklist Universal: Interaksi Eksternal, Reentrancy, & Perilaku Token/Aset
+# Reference: Execution Control Handoff, Authorities, & External Entities
 
-Periksa setiap transfer aset, panggilan keluar, dan perubahan state terhadap 6 vektor berikut:
+> ATURAN REALITAS PRODUKSI (WAJIB DIBACA SEBELUM MENGGUNAKAN KAMUS INI!):
+> Jangan pernah menerapkan daftar periksa token di bawah ini secara membabi buta! Selalu cek Kasta Realitas Aset di audit/01-threat-and-env.md:
+> 1. LP Token / Share Token / Token Internal (Kasta 1): ADALAH ERC-20 STANDAR. DILARANG KERAS membuat hipotesis bahwa LP Token atau token internal memiliki *Fee-on-Transfer*, *Rebase*, *Callback*, atau berperilaku seperti USDT!
+> 2. Token Whitelist Produksi (Kasta 2): Hanya gunakan karakteristik token yang benar-benar diizinkan di produksi (catatan: USDT di produksi memiliki desimal 6, *blacklist*, dan tidak mengembalikan bool pada transfer, tetapi biaya transfernya 0 / BUKAN token *Fee-on-Transfer* aktif!).
+> 3. Token Permissionless (Kasta 3): Menyuntikkan token kustom/FoT hanya valid jika sanggup menguras dana dari pengguna/pool LAIN.
 
-1. **Cross-Function & Cross-Contract Reentrancy:**
-   - Jika fungsi ini melakukan panggilan eksternal (pengiriman native coin, transfer token dengan hook/callback, atau CPI/panggilan kontrak luar) SEBELUM seluruh mutasi state selesai:
-   - Meskipun fungsi ini memakai `nonReentrant`, periksa di **Radius 1 & 2**: apakah ada fungsi lain di kontrak ini atau di kontrak pasangan yang **TIDAK** memakai pengunci yang sama, namun membaca atau memodifikasi variabel state yang sedang belum sinkron tersebut?
+---
 
-2. **Read-Only Reentrancy (Manipulasi Fungsi View saat Callback):**
-   - Pada saat eksekusi keluar terjadi di tengah fungsi (misal ketika saldo aset sudah berubah tetapi jumlah `totalShares` belum diperbarui, atau sebaliknya), apakah ada fungsi pembaca harga/rasio (`getRate`, `getVirtualPrice`, `totalAssets`) yang dapat dibaca oleh kontrak terintegrasi dengan nilai yang sedang miring?
+## 1. Penyerahan Kontrol Eksekusi & Reentrancy Lintas Konteks
+- State-Before-Interaction (CEI Violation): Apakah ada pengiriman native coin, pemanggilan hook/callback (onERC721Received, onERC1155Received, flashloan callback), atau panggilan eksternal sebelum state saldo/status/utang diperbarui?
+- Cross-Function & Read-Only Reentrancy: Saat kontrol keluar ke pihak eksternal, apakah fungsi lain (atau kontrak eksternal yang membaca view function seperti harga share/LP) dapat dipanggil ketika total aset dan total pencatatan internal sedang tidak sinkron?
 
-3. **Selisih Saldo Masuk (Fee-on-Transfer / Deflationary / Rebasing Assets):**
-   - Apakah fungsi langsung menambahkan parameter input ke dalam pencatatan state (`state += amount`) setelah menarik token dari pengguna?
-   - Jika protokol tidak membatasi token secara ketat, token dengan potongan biaya transfer akan membuat catatan internal lebih besar daripada saldo riil di brankas kontrak. Wajib ukur selisih `balanceAfter - balanceBefore`.
-
-4. **Ketidaksesuaian Skala Desimal Aset (Decimals Mismatch):**
-   - Jangan pernah berasumsi semua aset berdesimal 18! (USDC/USDT/TRX = `6` desimal, WBTC/APT = `8` desimal, SOL/SUI = `9` desimal).
-   - Periksa setiap rumus yang menggabungkan dua aset berbeda atau mengalikan dengan konstanta tetap (`1e18`): apakah sudah dinormalisasi terhadap desimal masing-masing aset?
-
-5. **Penolakan Layanan via Pengiriman Paksa (Push-Payment / Blacklist DoS):**
-   - Jika fungsi mengirim dana secara langsung (*push*) ke alamat pengguna lama (misal saat pengembalian tawaran lelang, likuidasi, atau distribusi hasil dalam loop):
-   - Apa yang terjadi jika penerima adalah kontrak yang menolak pembayaran native coin, atau akun yang masuk daftar hitam (*blacklist* seperti pada USDC/USDT), atau akun yang telah ditutup? Jika satu pengiriman gagal menyebabkan seluruh fungsi `revert`, fitur kritis protokol akan macet permanen (DoS).
-
-6. **Perilaku Return Value Non-Standar & Side-Effect Callback:**
-   - Pada EVM, apakah transfer ERC-20 sudah menggunakan `SafeERC20` untuk menangani token yang tidak mengembalikan boolean? Apakah ada risiko callback dari ERC-777, ERC-721 (`safeTransferFrom`/`safeMint`), atau ERC-1155?
+## 2. Eskalasi Otoritas, Batch Execution, & Signature Replay
+- Self-Call Escalation (`msg.sender == address(this)`): Pada kontrak yang memiliki fitur multicall, executeBatch, atau router generik (seperti Smart Wallet / Account Abstraction), bisakah pengguna memasukkan target = address(this) untuk memanggil fungsi administratif internal yang dilindungi oleh onlySelf atau msg.sender == address(this)?
+- Kelemahan Validasi Signature & Session Key (EIP-712 / EIP-1271):
+  - Apakah *hash* pesan yang ditandatangani mengikat address(this), chainId, nonce yang langsung di-invalidasi, serta seluruh parameter kritis?
+  - Pada Smart Wallet (EIP-1271) atau Session Key, apakah tanda tangan/kunci sesi dapat di-*replay* di dompet lain yang dimiliki pengguna yang sama, atau melampaui batas kuota/fungsi yang diizinkan?
+## 3. Asimetri Aliran Aset (Hanya Jika Sesuai Kasta Realitas Aset!)
+- Sabotase Penolakan Penerimaan (Push-Payment DoS): Pada fungsi kritikal seperti likuidasi, lelang, pelunasan pinjaman NFT, atau pembagian hadiah berantai, apakah pengiriman dana/aset dilakukan secara *push* ke alamat pihak lawan yang bisa menolak penerimaan (melalui fallback revert atau akun yang masuk daftar *blacklist* USDC/USDT) sehingga memblokir seluruh transaksi?
+- Kebingungan Standar & Alamat Aset (Token Confusion): Pada protokol yang mendukung berbagai jenis aset (Native ETH, ERC-20, ERC-721, ERC-1155), bisakah pengguna memasukkan alamat kontrak dari tipe standar yang salah atau memasukkan amount vs tokenId secara tertukar?
+- Akuntansi Aktual vs Input Parameter (Khusus Kasta 2/3 yang Terbukti Mendukung FoT/Deflasi): Hanya jika protokol secara eksplisit mengizinkan token *Fee-on-Transfer* tanpa *whitelist* ketat dan berinteraksi dengan pool bersama, periksa apakah kontrak mencatat amount parameter input alih-alih selisih balanceOf sebelum dan sesudah transfer.

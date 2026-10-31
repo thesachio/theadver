@@ -1,7 +1,7 @@
 ---
 name: sc-autopilot
-description: Master Orchestrator Whitehat Adversarial Lintas-Rantai - Jalankan siklus penuh (Fase 1 Threat Recon -> Fase 2 3-Layer Adversarial Hunt -> Fase 3 6-Tier Testing Lab -> 4-File Separated Reporting) secara otonom via delegate_task
-version: 4.0.0
+description: Master Orchestrator Whitehat Adversarial Lintas-Rantai - Jalankan siklus penuh (Fase 1 Threat Recon -> Fase 2 3-Layer Adversarial Hunt -> Fase 3 8-Gate Reality Triage & Concrete PoC -> Fase 4 Report) secara otonom via delegate_task
+version: 4.4.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, adversarial, orchestrator, autopilot, delegation, multichain]
@@ -12,13 +12,14 @@ metadata:
 # Autonomous Whitehat Adversarial Audit Orchestrator (sc-autopilot)
 
 ## When to Use
-Gunakan skill ini saat pengguna meminta eksekusi audit whitehat adversarial menyeluruh dari awal hingga akhir tanpa intervensi manual (*Full Autopilot*), atau saat mengorkestrasi pembedahan antrean audit/03-attack-surface-queue.md dan pengujian 6-Tier secara otomatis.
+Gunakan skill ini saat pengguna meminta eksekusi audit whitehat adversarial menyeluruh dari awal hingga akhir tanpa intervensi manual (*Full Autopilot*), atau saat mengorkestrasi pembedahan antrean audit/03-attack-surface-queue.md dan pengujian PoC 8-Gerbang secara otomatis.
 
 ## Pitfalls & Hukum Mutlak Orchestrator
 - JAGA KONTEKS PARENT TETAP RINGAN: Jangan membedah seluruh kode atau menulis pengujian sendiri di proses utama. Gunakan delegate_task (max_concurrent_children: 1 secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
 - PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`: Karena Subagent melewati SOUL.md (skip_soul=True) dan mulai dari workspace/, setiap panggilan delegate_task WAJIB menyertakan: Path Absolut Proyek, Paradigma Rantai, Target Invarian, Path File audit/, instruksi skill_view, serta perintah agar Subagent mengembalikan ringkasan maksimal 12 baris saja.
-- JANGAN BERHENTI DI LAPIS 1 JIKA BELUM ADA TEMUAN: Jika eksplorasi Lapis 1 (Radius 0–2) menghasilkan 0 lead, Orchestrator WAJIB memicu Subagent untuk menjalankan Eksplorasi Lapis 2 & 3 (Variable-Centric, 3-Step Sequence, Guard-Bypass, & Math Library) serta Tier 2/3 Stateful Invariant & Symmetry Fuzzing di Fase 3!
-- JAGA PEMISAHAN 4 FILE LAPORAN: Pastikan hasil akhir terdistribusi secara akurat ke dalam 04-rejected-hypotheses.md, 05-raw-leads.md, 06-potential-candidates.md, dan 07-verified-findings.md.
+- JANGAN BERHENTI DI LAPIS 1 JIKA BELUM ADA TEMUAN: Jika eksplorasi Lapis 1 (Radius 0–2) menghasilkan 0 lead, Orchestrator WAJIB memicu Subagent untuk menjalankan Eksplorasi Lapis 2 & 3 (Variable-Centric, 3-Step Sequence, Guard-Bypass, & Math Library) serta pengujian PoC/fuzzing invarian di Fase 3.
+- JAGA PEMISAHAN 4 FILE LAPORAN: Pastikan hasil akhir terdistribusi secara akurat ke dalam 04-rejected-hypotheses.md, 05-raw-leads.md, 06-unproven-needs-review.md, dan 07-confirmed-findings.md.
+- HUKUM 8 GERBANG REALITAS (berlaku untuk Orchestrator, bukan hanya Subagent): Tidak ada satu pun temuan yang boleh disebut ke pengguna sebagai "valid" tanpa lolos 8 Gerbang Realitas Bounty di workspace/AGENTS.md §3 DAN PoC nyata. Orchestrator DILARANG melompati Tahap 4 walau semua Subagent menyatakan PASS.
 - DILARANG MEMANGGIL `skill_manage` ATAU `memory`.
 
 ---
@@ -45,18 +46,20 @@ Saat pengguna memicu eksekusi otonom pada /home/ubuntu/.hermes/profiles/adv/work
    - Periksa isi audit/05-raw-leads.md dan audit/04-rejected-hypotheses.md.
    - Tugaskan Subagent khusus untuk melakukan eksplorasi mendalam pada: (a) 3 variabel akuntansi/indeks paling kritis di 02-state-and-var-matrix.md pada jalur sampingan (transfer, claim, liquidate, migrate) dan urutan 3-langkah (A -> C -> B), serta (b) membedah ulang variabel pembentuk guard (require/assert!) di 04-rejected-hypotheses.md dan pustaka libraries//math/.
 
-### Tahap Orkestrasi 3: 6-Tier Advanced Testing Lab (sc-phase3-verify)
+### Tahap Orkestrasi 3: 8-Gate Reality Triage & Concrete PoC (sc-phase3-verify-and-poc)
 1. Verifikasi Seluruh Raw Leads (`05-raw-leads.md`):
    - Untuk setiap lead aktif di audit/05-raw-leads.md, panggil delegate_task untuk menugaskan Subagent Verifier:
-     * Goal: "Buktikan atau patahkan Lead [ID_Lead] menggunakan pengujian lokal/fork sesuai sc-phase3-verify."
-     * Context Wajib: Path Absolut Proyek, detail lead dari 05-raw-leads.md, dan instruksi: "Wajib panggil skill_view('sc-phase3-verify') beserta modul ref-test-* yang sesuai. Gunakan flag worker tunggal (-j 1), patuhi larangan kecurangan cheatcode, bersihkan file test jika gagal kompilasi, dan klasifikasikan hasilnya secara tegas ke 07-verified-findings.md (jika terbukti valid), 06-potential-candidates.md (jika logika kuat namun test terhalang/butuh pendalaman), atau 04-rejected-hypotheses.md (jika gugur). Kembalikan maksimal 12 baris."
-2. Eksekusi Active Stateful Invariant & Symmetry Fuzzing (Tier 2 & Tier 3):
-   - Tugaskan 1 Subagent khusus Fase 3 untuk menulis dan menjalankan Tier 2 (Handler Stateful Invariant Fuzzing + Ghost Variables) atau Tier 3 (Round-Trip Deposit/Redeem & Differential Math Test) terhadap Core Invariants utama dari 00-project-map.md. Jika fuzzer menemukan pelanggaran invarian baru, catat bukti lengkapnya ke audit/07-verified-findings.md.
-### Tahap Orkestrasi 4: Laporan Eksekutif Terstruktur ke Pengguna
-Baca hasil akhir di audit/07-verified-findings.md, audit/06-potential-candidates.md, dan audit/04-rejected-hypotheses.md, lalu sajikan laporan akhir kepada pengguna yang membedakan secara jelas:
-1. Temuan Valid Terverifikasi (`07-verified-findings.md`)
-2. Kandidat Potensial Kuat untuk Eksplorasi Lanjut (`06-potential-candidates.md`)
-3. Ringkasan Hipotesis yang Ditolak beserta Guard Penjaganya (`04-rejected-hypotheses.md`)
+     * Goal: "Buktikan atau patahkan Lead [ID_Lead] dengan triage 8 Gerbang Realitas lalu PoC lokal/fork sesuai sc-phase3-verify-and-poc."
+     * Context Wajib: Path Absolut Proyek, detail lead dari 05-raw-leads.md, dan instruksi: "Wajib panggil skill_view('sc-phase3-verify-and-poc'). Jalankan triage 8 Gerbang Realitas SEBELUM menulis PoC, gunakan kontrak asli (larangan fantasy mock), hanya vm.prank(attacker) tanpa vm.store/vm.etch, pakai worker tunggal (-j 1), dan klasifikasikan tegas ke 07-confirmed-findings.md (lolos 8 Gerbang + PoC PASS), 06-unproven-needs-review.md (lolos 8 Gerbang namun tooling terhalang), atau 04-rejected-hypotheses.md (gagal gerbang/guard). Kembalikan maksimal 12 baris."
+2. Fuzzing Invarian Stateful & Simetri (hanya setelah lead lolos 8 Gerbang):
+   - Tugaskan 1 Subagent khusus Fase 3 untuk menjalankan Handler Stateful Invariant Fuzzing (dengan Ghost Variables) atau Differential/Round-Trip Math Test terhadap Core Invariants utama dari 00-project-map.md. Jika fuzzer menemukan pelanggaran invarian baru, catat bukti lengkapnya ke audit/07-confirmed-findings.md.
+### Tahap Orkestrasi 4: Quality Gate Final & Laporan Eksekutif (sc-phase4-report)
+1. WAJIB jalankan quality gate sebelum melapor: panggil delegate_task dengan instruksi "Wajib panggil skill_view('sc-phase4-report'). Jalankan audit kualitas terakhir: CABUT setiap temuan di audit/07-confirmed-findings.md yang bergantung pada fantasy mock, totalSupply == 0 pada pool live, parameter admin ekstrem, debu 1 wei tanpa amplifikasi, atau cheatcode, lalu pindahkan ke audit/04-rejected-hypotheses.md. Rapikan format baku 04 s/d 07 dan kembalikan maksimal 12 baris."
+2. Jika gate mencabut temuan: laporkan jumlah yang dicabut beserta alasannya. DILARANG menyembunyikan pencabutan.
+3. Baca hasil akhir di audit/07-confirmed-findings.md, audit/06-unproven-needs-review.md, dan audit/04-rejected-hypotheses.md, lalu sajikan laporan akhir kepada pengguna yang membedakan secara jelas:
+1. Temuan Terkonfirmasi — lolos 8 Gerbang + PoC PASS (`07-confirmed-findings.md`)
+2. Belum Terbukti / Perlu Tinjauan Manual (`06-unproven-needs-review.md`)
+3. Hipotesis Ditolak beserta Gerbang/Guard Penjaganya (`04-rejected-hypotheses.md`)
 
 ---
 

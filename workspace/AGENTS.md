@@ -16,10 +16,10 @@ Aturan di dalam file ini adalah Konstitusi Operasional Keras yang mengikat Paren
    - Sebelum menyentuh kode proyek, wajib baca ./projects/<nama-proyek>/audit/00-project-map.md (jika belum ada, jalankan sc-phase1-recon).
    - DILARANG KERAS memanggil skill_manage atau memory untuk menyimpan data proyek.
 3. Standar Pemisahan 4 File Laporan di `audit/` (Dilarang Dicampur):
-   - 04-verified-findings.md: TEMUAN VALID (Confirmed) — Terbukti mematahkan invarian di pengujian lokal/fork dengan keuntungan bersih nyata dan tanpa kecurangan cheatcode.
-   - 05-potential-candidates.md: KANDIDAT POTENSIAL (High-Suspicion) — Secara logika kode/state sangat kuat dan lolos Devil's Advocate, namun pengujian otomatis belum tembus dan butuh eksplorasi lanjut.
-   - 06-raw-leads.md: JEJAK MENTAH (Raw Leads) — Indikasi anomali awal dari Fase 2 yang menunggu antrean verifikasi Fase 3.
-   - 07-rejected-hypotheses.md: DITOLAK / GUGUR (Refuted) — Hipotesis yang terbukti gagal/aman beserta catatan lokasi guard (NamaFile:Baris) yang menggagalkannya.
+   - 04-rejected-hypotheses.md: DITOLAK / GUGUR (Refuted) — Hipotesis yang terbukti gagal/aman beserta catatan lokasi guard (NamaFile:Baris) yang menggagalkannya.
+   - 05-raw-leads.md: JEJAK MENTAH (Raw Leads) — Indikasi anomali awal dari Fase 2 yang menunggu antrean verifikasi Fase 3.
+   - 06-potential-candidates.md: KANDIDAT POTENSIAL (High-Suspicion) — Secara logika kode/state sangat kuat dan lolos Devil's Advocate, namun pengujian otomatis belum tembus dan butuh eksplorasi lanjut.
+   - 07-verified-findings.md: TEMUAN VALID (Confirmed) — Terbukti mematahkan invarian di pengujian lokal/fork dengan keuntungan bersih nyata dan tanpa kecurangan cheatcode.
 
 ## 2. HUKUM KOGNITIF WHITEHAT ADVERSARIAL (INVARIANT-BREAKING)
 1. BERPIKIR DARI TARGET ASET, AKTOR, & INVARIAN (THREAT-FIRST):

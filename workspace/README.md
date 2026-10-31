@@ -26,9 +26,9 @@ di sini, dan tidak ada secret.
 
 | Fase | Skill | Keluaran |
 |---|---|---|
-| 0–1 | `sc-phase1-recon` | `audit/00-project-map.md`, `01-threat-and-env.md`, `02-state-and-var-matrix.md`, `03-attack-surface-queue.md`, `06-raw-leads.md` |
-| 2 | `sc-phase2-hunt` | `audit/06-raw-leads.md`, `07-rejected-hypotheses.md`, `audit/notes/` |
-| 3 | `sc-phase3-verify` | `audit/04-verified-findings.md`, `05-potential-candidates.md`, dll. |
+| 0–1 | `sc-phase1-recon` | `audit/00-project-map.md`, `01-threat-and-env.md`, `02-state-and-var-matrix.md`, `03-attack-surface-queue.md`, `05-raw-leads.md` |
+| 2 | `sc-phase2-hunt` | `audit/05-raw-leads.md`, `04-rejected-hypotheses.md`, `audit/notes/` |
+| 3 | `sc-phase3-verify` | `audit/07-verified-findings.md`, `06-potential-candidates.md`, dll. |
 | Semua | `sc-autopilot` | Orkestrasi Fase 1 → 2 → 3 tanpa intervensi |
 
 **Pemisahan 4 laporan adalah aturan keras** — temuan valid, kandidat potensial, jejak

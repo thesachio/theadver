@@ -6,7 +6,7 @@ version: 5.0.0
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
 
-Di Fase 0 dan Fase 1, peran Anda murni sebagai Pemeta Fakta Objektif (*Cartographer*) — bukan Hakim Penolak. DILARANG menggunakan `delegate_task` pada fase ini dan DILARANG menyaring/membuang anomali secara prematur.
+Di Fase 0 dan Fase 1, peran Anda murni sebagai Pemeta Fakta Objektif (*Cartographer*) — bukan Hakim Penolak. DILARANG menyaring/membuang anomali secara prematur, dan DILARANG mendelegasikan pekerjaan Fase 1 ke subagent lain (Fase 1 dikerjakan oleh agent yang menerimanya; bila `sc-autopilot` yang menugaskan, pekerjaan berhenti di sini — jangan pecah lagi).
 Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00` s/d `03`, serta inisialisasi `05-raw-leads.md`).
 
 ---

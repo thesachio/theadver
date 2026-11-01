@@ -33,7 +33,7 @@ Periksa setiap pembacaan harga, perhitungan bunga, dan penyitaan agunan terhadap
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-03] 2-Wallet Self-Liquidation & Bad-Debt Socialization Arbitrage
+### [POV-03] Multi-Identity Self-Liquidation & Bad-Debt Socialization Arbitrage
 
 - **Kondisi Prasyarat (State Condition):**
   Protokol memiliki mekanisme penalti, likuidasi, slashing, atau sosialisasi utang macet (*bad debt*) ketika nilai kewajiban sebuah akun melampaui nilai jaminannya.
@@ -42,15 +42,15 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
   Saat akun jatuh ke kondisi rugi/insolven (`debt > collateral`), fungsi likuidasi tetap memberikan bonus likuidator penuh dari kolam umum, atau menghapus sisa utang (*bad debt*) tanpa menyita seluruh jaminan yang tersisa di sub-akun lain, atau mengizinkan peminjam meminjam/menarik agunan tepat di batas harga yang dimanipulasi sesaat.
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
-  1. **[Siapkan State]** Penyerang mendanai dua dompet independen: Attacker_A (Kambing Hitam) dan Attacker_B (Pemburu Bonus / Posisi Lawan).
-  2. **[Pemicu Asimetri]** Attacker_A membuka posisi maksimum pada batas risiko ekstrem hingga menyisakan utang macet atau memicu syarat likuidasi.
-  3. **[Ekstraksi Nilai]** Dalam transaksi yang sama, Attacker_B mengeksekusi likuidasi/klaim terhadap Attacker_A untuk mengantongi bonus likuidasi atau menyedot cadangan asuransi protokol yang nilainya lebih besar daripada modal Attacker_A yang sengaja dikorbankan.
+  1. **[Siapkan State]** Penyerang menyiapkan **dua identitas/akun/objek/kapabilitas yang ia kendalikan** — identitas pertama sebagai Kambing Hitam (posisi yang akan gagal bayar), identitas kedua sebagai Pemburu Bonus / Posisi Lawan. Tidak harus dua EOA: bisa dua akun pada pool yang sama, dua posisi, dua objek, atau dua capability.
+  2. **[Pemicu Asimetri]** Identitas pertama membuka posisi maksimum pada batas risiko ekstrem hingga menyisakan utang macet atau memicu syarat likuidasi.
+  3. **[Ekstraksi Nilai]** Identitas kedua mengeksekusi likuidasi/klaim terhadap identitas pertama — secara atomik atau dalam jendela eksekusi yang sama — untuk mengantongi bonus likuidasi atau menyedot cadangan asuransi protokol yang nilainya lebih besar daripada modal yang sengaja dikorbankan.
 
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
-  Auditor selalu mengasumsikan Borrower (peminjam) dan Liquidator (pelikuidasi) adalah dua pihak yang saling bermusuhan, sehingga auditor tidak pernah menghitung bahwa jika Borrower dan Liquidator adalah orang yang sama, kerugian di kantong kiri bisa menghasilkan keuntungan lebih besar di kantong kanan atas beban kolam protokol.
+  Auditor selalu mengasumsikan Borrower (peminjam) dan Liquidator (pelikuidasi) adalah dua pihak yang saling bermusuhan, sehingga auditor tidak pernah menghitung bahwa jika keduanya dikendalikan satu penyerang, kerugian di satu identitas bisa menghasilkan keuntungan lebih besar di identitas lain atas beban kolam protokol.
 
 - **Batas Realitas (Kapan Pola Ini GUGUR):**
-  Gugur jika `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` pada setiap kondisi batas (sehingga `Profit_Attacker_B` selalu lebih kecil dari `Kerugian_Attacker_A` — *Negative-EV*).
+  Gugur jika `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` pada setiap kondisi batas (sehingga keuntungan identitas kedua selalu lebih kecil dari kerugian identitas pertama — *Negative-EV*).
 
 ---
 

@@ -36,6 +36,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 - **Kacamata Attacker (Gejala di Kode):**
   Di tengah fungsi (sebelum baris terakhir selesai), terjadi penyerahan kontrol eksternal (pengiriman native coin/ETH, `safeTransferFrom` ERC-721/ERC-1155, hook token whitelist, atau panggilan ke kontrak eksternal) ketika variabel pertama sudah diperbarui tetapi variabel pasangannya belum diperbarui.
+  *Prinsip umumnya berlaku untuk **setiap penyerahan kontrol di tengah pembaruan dua variabel berpasangan** — bukan hanya callback EVM: termasuk CPI di tengah instruksi Solana, atau pengiriman pesan sebelum kunci state diperbarui di TON.*
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
   1. **[Siapkan State]** Penyerang membuka posisi di Kontrak A dan menyiapkan posisi terungkit di Kontrak B (atau fungsi lain yang tidak berbagi kunci `nonReentrant` yang sama).
@@ -56,8 +57,11 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
   Kontrak mengisolasi panggilan eksternal ke alamat pengguna, penerima, atau kontrak pihak ketiga menggunakan blok `try/catch` atau panggilan level rendah `.call()` tanpa `require(success)` agar kegagalan sub-panggilan tidak membatalkan transaksi utama.
 
 - **Kacamata Attacker (Gejala di Kode):**
-  1. Cabang sukses (`try` / `if (success)`) dan cabang gagal (`catch` / `else`) memutasi state secara tidak simetris (misal: cabang gagal melewati pemotongan penalti, membatalkan penyitaan kewajiban, atau memberikan jalur keluar tanpa beban).
-  2. Panggilan `.call()` ke alamat yang dapat dikendalikan pemanggil menyalin nilai balik ke variabel `bytes memory` atau menangkap `catch (bytes memory reason)` tanpa membatasi ukuran returndata di level assembly.
+  1. **Divergensi state antar-cabang (prinsip universal):** Cabang sukses (`try` / `if (success)`) dan cabang gagal (`catch` / `else`) memutasi state secara tidak simetris (misal: cabang gagal melewati pemotongan penalti, membatalkan penyitaan kewajiban, atau memberikan jalur keluar tanpa beban). Ini berlaku untuk **setiap isolasi sub-eksekusi** — termasuk penanganan fallback/error, *partial settlement* lintas modul, atau lanjutan eksekusi setelah panggilan antar-komponen gagal.
+  2. **Returnbombing (manifestasi khusus EVM):** Panggilan `.call()` ke alamat yang dapat dikendalikan pemanggil menyalin nilai balik ke variabel `bytes memory` atau menangkap `catch (bytes memory reason)` tanpa membatasi ukuran returndata di level assembly, sehingga biaya ekspansi memori dibebankan ke pemanggil.
+
+- **Padanan non-EVM:**
+  **Solana** — CPI yang gagal lalu dilanjutkan tanpa menggulung state, atau hasil `Result` yang diabaikan · **Move** — `abort`/error yang ditangkap lalu jalur sukses tetap diambil · **TON** — eksekusi lanjutan setelah pesan gagal terkirim, atau penanganan `ok:false` yang tidak membalik state.
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
   1. **[Siapkan State]** Penyerang mengatur kontrak miliknya sebagai alamat target/penerima callback atau mengatur takaran gas transaksi induk secara presisi (aturan 63/64 EIP-150).

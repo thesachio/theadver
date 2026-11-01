@@ -121,7 +121,7 @@ Gunakan untuk membongkar kesalahan pembulatan (*rounding direction*) atau *custo
 
 ---
 
-## 4. TIER 4: Ephemeral Local Read-Only Fork & Stress Simulation
+## 4. TIER 4: Ephemeral Local Fork & Stress Simulation
 Jika URL RPC tersedia di .env atau foundry.toml:
 - Gunakan vm.createSelectFork(vm.envString("RPC_URL")) di dalam setUp().
 - Uji integrasi nyata dengan token seperti USDC (6 desimal), USDT, atau Oracle Chainlink/Uniswap V3 Pool tanpa pernah mengirim transaksi keluar.

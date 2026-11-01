@@ -5,6 +5,6 @@ Mekanisme **nyata** dan terbukti, tetapi tidak layak masuk `09` karena batas tol
 kerugian kecil terbatas, griefing non-finansial), atau severity diturunkan dari klaim awal (#10).
 
 Wajib memuat: `ID`, `VERDICT: VALID_NOT_ELIGIBLE`, `LOW_CLASS` yang berlaku, `TANGGA_BUKTI`,
-dan dampak kuantitatif dari log PoC.
+`DEPLOYMENT_MATCH`, `Mode Uji`, dan dampak kuantitatif dari log PoC.
 
 ---

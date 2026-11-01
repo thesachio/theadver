@@ -1,7 +1,9 @@
 # 06 — Refuted / Invalid
 
 Temuan yang **gugur mutlak** per `verify/VERDICT.md`. Setiap entri wajib memuat:
-`ID`, `VERDICT`, `Pernyataan yang dilanggar (#1-#10)`, `File:Baris`, dan `BUKTI`.
+`ID`, `VERDICT`, `Pernyataan yang dilanggar (#1-#10)`, `File:Baris`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `Mode Uji`, dan `BUKTI`.
+
+(`TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` wajib ada meski vonisnya gugur — tanpa keduanya, vonis dianggap belum sah dan entri harus dikembalikan ke penulisnya, bukan dipercaya.)
 
 Kelas yang sah di wadah ini: `REJECTED_POC_FAILS`, `REJECTED_FANTASY_MOCK`, `REJECTED_CHEATCODE`,
 `REJECTED_GENESIS_MIRAGE`, `REJECTED_PRIVILEGED_FANTASY`, `REJECTED_NON_LIVE_INIT`,

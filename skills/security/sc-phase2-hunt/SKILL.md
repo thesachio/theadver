@@ -1,55 +1,68 @@
 ---
 name: sc-phase2-hunt
-description: Phase 2 — Two-Stage Domain-Agnostic Hunting (First-Principles + Analogical & Attacker POV Reference) with Pure Code-Guard Separation.
+description: Phase 2 — Counter-Auditor Adversarial Hunting (5 Non-Standard Lenses + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
 version: 5.0.0
 ---
 
-# Phase 2: Two-Stage Domain-Agnostic Adversarial Hunting
+# Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
 
-Tujuan Fase 2 adalah menemukan celah logika dan anomali mutasi state secara kreatif tanpa terjebak *Checklist Tunnel Vision* dan tanpa melakukan penghakiman kelayakan ekonomi secara prematur.
+Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. Jangan membaca kode secara pasif dari baris atas ke bawah seperti auditor biasa; gunakan 5 Metode Counter-Auditor di bawah ini tanpa melakukan penghakiman kelayakan ekonomi secara prematur.
 
 ---
 
 ## Aturan Orkestrasi Subagent (delegate_task)
 Jika dijalankan melalui delegasi, berikan paket tugas berisi:
-1. Daftar 1 Kelompok Fungsi Siklus Hidup (2-4 fungsi) dari audit/03-attack-surface-queue.md beserta tag [LOAD: ...].
-2. Instruksi wajib membaca audit/00-project-map.md, audit/01-threat-and-env.md (terutama 3 Kasta Realitas Aset & Siklus Hidup Produksi), dan audit/02-state-and-var-matrix.md.
-3. Instruksi menjalankan Tahap A (Bedah First-Principles) terlebih dahulu, dilanjutkan Tahap B (Analogi Referensi & Katalog Attacker POV), lalu Tahap C (Pemisahan `04-code-guarded.md` vs `05-raw-leads.md`).
+1. Daftar 1 Kelompok Fungsi Siklus Hidup (2–4 fungsi) dari audit/03-attack-surface-queue.md beserta tag [LOAD: ...].
+2. Instruksi wajib membaca audit/00-project-map.md, audit/01-threat-and-env.md (3 Kasta Aset & Jejak *Patch-Scar*), dan audit/02-state-and-var-matrix.md.
+3. Instruksi menjalankan Tahap A (5 Metode Counter-Auditor First-Principles) -> Tahap B (Analogi & Katalog Attacker POV) -> Tahap C (Pemisahan Murni `04-code-guarded.md` vs `05-raw-leads.md`).
 
 ---
 
-## TAHAP A: Bedah Murni First-Principles (WAJIB Sebelum Membaca Referensi!)
+## TAHAP A: 5 Metode Pencarian "Counter-Auditor" (WAJIB Sebelum Membaca Referensi!)
 
-### A1. Pelacakan Mundur (*Backward Sink-to-Source Tracing*)
-Mulailah dari Titik Kritis di Bawah (*The Sink*) (baris pengiriman aset/NFT, perubahan hak/owner, penghapusan utang/kewajiban, atau perubahan status), lalu lacak mundur ke atas (*backward*) setiap variabel penentunya: *"Bagaimana memaksimalkan hasil di Sink sambil meminimalkan pengorbanan di Source menggunakan input yang diizinkan pada Kasta Aset di 01-threat-and-env.md?"*
+Jangan memeriksa fungsi secara terisolasi. Terapkan kelima lensa berlawanan-arah berikut dan tulis perhitungannya di audit/notes/:
 
-### A2. Simulasi Tabel 4 Kondisi Konkret
-Masukkan 4 kondisi konkret ini ke dalam rumus/logika fungsi dan hitung di audit/notes/:
-1. Kondisi Batas Likuiditas: Uji dengan jumlah kecil/besar yang realistis (jangan mengasumsikan totalSupply == 0 jika 00-project-map.md menyatakan pool sudah *live* / memiliki *dead shares*, kecuali ada mekanisme mengurasnya ke nol terlebih dahulu).
-2. Kondisi Batas Bawah & Pembulatan (*Boundary / Rounding*): Input bernilai 0, 1 wei, atau batas_minimum - 1 (apakah biaya/utang/penalti terpotong jadi 0 karena pembulatan, atau memicu desinkronisasi akuntansi?).
-3. Kondisi Waktu & Blok Sama ($\Delta t = 0$): Fungsi dipanggil berulang kali di blok yang sama atau tepat pada batas *deadline*.
-4. Kondisi Entitas & Diri Sendiri: Bagaimana jika sender == recipient, target == address(this) (self-call dalam batch), atau tokenId / tipe aset dimanipulasi dalam batas *whitelist*?
+### Metode 1 — Backward Sink-to-Source Tracing (Kebalikan Arah Baca Auditor)
+Auditor membaca dari baris pertama fungsi (require) ke bawah sehingga mudah terhipnotis bahwa fungsi sudah aman. Anda WAJIB membaca dari bawah ke atas:
+1. Cari Titik Kritis di Bawah (*The Sink*): baris pengiriman token/koin/NFT, pencetakan hak/share, penghapusan utang/kewajiban, atau penyitaan jaminan.
+2. Lacak mundur ke atas (*backward*) setiap variabel pembentuk jumlah di *Sink* tersebut: *"Bagaimana cara memperbesar angka yang keluar di Sink sambil memperkecil pengorbanan di Source menggunakan input yang diizinkan pada 3 Kasta Aset di 01-threat-and-env.md?"*
 
-### A3. Eksplorasi 3 Lapis Mutasi State (Bebas Domain)
-1. Lapis 1 (Radius 0-2 & Pasangan Siklus Hidup): Bandingkan mutasi state di fungsi Masuk/Buat vs fungsi Keluar/Batal/Transfer/Sita dari audit/02-state-and-var-matrix.md. Cari field struct/mapping yang lupa di-reset atau urutan operasi yang terbalik.
-2. Lapis 2 (Permutasi 3-Langkah & 5 Primitif Universal): Uji urutan Aksi_A -> Transfer/SelfCall -> Aksi_B atau Partial_Action -> Cancel -> Claim terhadap: (1) Kuantisasi Proporsi, (2) Transisi Paksa & Sabotase DoS, (3) Replay Otoritas/Signature, (4) Penyerahan Kontrol Eksekusi, dan (5) Lompatan Mesin Status.
-3. Lapis 3 (Interogasi Guard-Bypass): Untuk setiap require/if (...) revert, cari apakah variabel di dalam penjaga tersebut dapat dimanipulasi oleh fungsi publik lain tanpa hak Admin.
+### Metode 2 — State-Transition Differential Analysis (Expected vs. Actual Delta)
+Untuk setiap aksi atau pasangan aksi di kelompok fungsi ini, bandingkan perubahan state yang seharusnya terjadi secara ekonomi vs yang benar-benar tertulis di kode:
+- Catat di audit/notes/ dengan kerangka:
+  State Awal -> Aksi -> Delta Ekspektasi (Hak vs Kewajiban) vs Delta Aktual di Kode -> Selisih Variabel yang Tidak Sinkron.
+- Periksa apakah ada variabel global yang berubah tanpa memperbarui variabel user (atau sebaliknya), indeks akrual yang terlambat disinkronkan satu langkah, atau operasi batal/klaim sebagian yang lupa me-reset salah satu field struct.
+
+### Metode 3 — Irrational 2-Wallet Sybil & Zero-Time Loop (Aksi "Tidak Masuk Akal" bagi Pengguna Normal)
+Auditor menguji alur pengguna waras. Anda WAJIB menguji perilaku "tidak rasional" menggunakan 2 Dompet Milik 1 Penyerang (`Attacker_A` dan `Attacker_B`) dalam 1 transaksi atomik ($\Delta t = 0$):
+1. **Self-Transfer & Ping-Pong Loop:** Apa yang terjadi jika Attacker_A mentransfer/mendelegasikan hak ke dirinya sendiri (from == to) atau memantulkannya Attacker_A -> Attacker_B -> Attacker_A berulang kali di blok yang sama?
+2. **Self-Liquidation / Self-Penalty Arbitrage:** Apa yang terjadi jika Attacker_A sengaja membuat posisinya terkena likuidasi/slashing/lelang/bad-debt, sementara Attacker_B bertindak sebagai likuidator/penawar yang memanen bonus atau mengalihkan kerugian (*bad debt socialization*) ke kolam publik?
+3. **Zero / 1-Wei Boundary & Dust Amplification:** Masukkan nilai 0, 1 wei, atau batas_minimum - 1 untuk menguji apakah biaya/penalti terpotong jadi 0 karena pembulatan dan dapat di-loop dalam satu transaksi batch/multicall.
+
+### Metode 4 — Patch-Scar, Periphery, & View-vs-Write Asymmetry (Menyerang Titik Lelah Auditor)
+1. **Bedah *Patch-Scar* (Bekas Tambalan):** Jika fungsi utama memiliki `if`/`require` khusus yang terlihat seperti tambalan audit (lihat 01-threat-and-env.md), periksa apakah jalur sampingan (transfer, migrate, emergencyWithdraw, batch, onERC721Received) yang menyentuh variabel yang sama lupa dipasang tambalan tersebut.
+2. **Desinkronisasi Rumus `View` vs `Write`:** Bandingkan baris demi baris rumus di fungsi view/preview dengan fungsi tulis pasangannya di 02-state-and-var-matrix.md (misal: perbedaan arah pembulatan `mulDivDown` vs `mulDivUp`, atau biaya yang dihitung di preview tetapi tidak dipotong di fungsi eksekusi).
+
+### Metode 5 — Guard-Inversion (Membalik Guard Kode Menjadi Target Manipulasi)
+Setiap kali menemukan `require(Kondisi_X >= Kondisi_Y)` atau `if (...) revert`:
+- Jangan langsung berhenti! Tanyakan: *"Variabel apa yang menyusun Kondisi_X dan Kondisi_Y? Berdasarkan 02-state-and-var-matrix.md, bisakah fungsi publik lain (atau flashloan/donasi/callback) mengubah nilai X atau Y sesaat sebelum baris require ini dieksekusi?"*
+- *(Pada Putaran 2, gunakan metode ini secara khusus untuk membongkar seluruh daftar guard yang terkumpul di audit/04-code-guarded.md).*
 
 ---
 
-## TAHAP B: Pengayaan Analogi Mekanis & Attacker POV dari references/
+## TAHAP B: Pengayaan Analogi Mekanis & Katalog Attacker POV ([POV-XX])
 Panggil skill_view("sc-phase2-hunt", "<nama-file-ref>") sesuai tag [LOAD: ...]:
-1. Terjemahkan istilah DeFi di dalam referensi sebagai Pola Mekanis Abstrak lintas domain.
-2. Cocokkan kondisi fungsi target dengan Katalog Generalized Attacker POV (`[POV-XX]`) di bagian bawah file referensi tersebut untuk melihat bagaimana rangkaian peristiwa eksploitasi nyata bekerja pada kondisi state serupa.
-   - **Fallback wajib:** bila file referensi **belum** memuat katalog `[POV-XX]`, JANGAN mengarang nomor POV. Turunkan ke analogi mekanis bebas (poin 1) dan catat di `audit/notes/` bahwa katalog POV untuk file tersebut belum tersedia. *(Katalog POV ditambahkan bertahap — ketiadaannya bukan cacat, jangan "diperbaiki" dengan entri karangan.)*
+1. Terjemahkan konsep di dalam referensi sebagai Pola Mekanis Abstrak lintas domain.
+2. Periksa bagian `## Katalog Generalized Attacker POV & Auditor Blindspots` di bawah file referensi tersebut. Cocokkan apakah gejala kode dan *Auditor Blindspot* pada item [POV-XX] hadir pada fungsi yang sedang Anda bedah.
+   - **Fallback wajib:** bila file referensi **belum** memuat bagian katalog `[POV-XX]`, JANGAN mengarang nomor POV. Turunkan ke analogi mekanis bebas (butir 1) dan catat di `audit/notes/` bahwa katalog POV untuk file tersebut belum tersedia. *(Katalog POV ditambahkan bertahap — ketiadaannya bukan cacat, jangan "diperbaiki" dengan entri karangan.)*
 
 ---
 
 ## TAHAP C: Pemisahan Murni (04-code-guarded.md vs 05-raw-leads.md)
-Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang anomali hanya karena terlihat kecil atau belum jelas keuntungannya (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasinya di simulasi Fase 3):
-1. Dua Larangan Fakta Dasar Kode: Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang bisa memanggil fungsi onlyOwner secara langsung.
-2. Jika Anomali Tidak Dihentikan oleh Guard Kode (atau Guard Bisa Ditembus):
-   Tulis langsung ke `audit/05-raw-leads.md` lengkap dengan File:Kontrak:Fungsi (Baris), Prasyarat, Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining).
-3. Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode (`require` / `if (...) revert` / `assert!`):
-   Tulis langsung ke `audit/04-code-guarded.md` lengkap dengan lokasi File:Baris guard dan nama variabel pembentuk guard tersebut (sebagai umpan *Guard-Bypass* untuk Subagent Putaran 2).
+Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasinya di simulasi Fase 3):
+1. **Dua Larangan Fakta Dasar Kode:** Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang bisa memanggil fungsi onlyOwner secara langsung.
+2. **Jika Ditemukan Anomali yang Tidak Dihentikan Guard** (atau Guard Bisa Ditembus via Metode 5):
+   Tulis langsung ke `audit/05-raw-leads.md` lengkap dengan: Metode Pencarian (1-5 / POV-XX), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining).
+3. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode** (`require` / `if (...) revert` / `assert!`):
+   Tulis langsung ke `audit/04-code-guarded.md` lengkap dengan lokasi File:Baris guard, ekspresi matematika guard-nya, dan variabel pembentuknya (sebagai umpan *Guard-Inversion* Putaran 2).
 4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi [HUNTED].

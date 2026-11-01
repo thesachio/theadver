@@ -54,4 +54,19 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-02], [POV-03], dst. di BAWAH baris ini, urut menaik -->
+### [POV-04] Inverse-Function Rounding Asymmetry & Multi-Hop Truncation (mint/withdraw vs deposit/redeem)
+
+- **Asumsi Auditor Standar:** "Vault sudah aman dari *rounding exploit* karena `convertToShares` menggunakan `Rounding.Down` dan `convertToAssets` menggunakan `Rounding.Up`, serta `totalSupply == 0` sudah diproteksi dengan *virtual shares/dead shares*."
+
+- **Realita Penyerang (Counter-Auditor):** Meskipun fungsi searah (`deposit` dan `redeem`) membulatkan ke arah yang benar, fungsi kebalikannya (`mint(shares)` atau `withdraw(assets)`) atau konversi multi-tahap (`asset -> wrappedAsset -> basePoint -> share`) sering kali melakukan pembagian integer antara (*intermediate division*) yang membulatkan ke bawah sebelum pembulatan akhir. Jika `mint(1)` atau `withdraw(x)` melewati 2 kali pembagian beruntun, pemangkasan di langkah pertama dapat mengecilkan penyebut atau pengali di langkah kedua.
+
+- **Target Pencarian di Kode** (Kombinasi `Metode 4` & `Metode 7`):
+  1. Sandingkan rumus di dalam `deposit(x)` vs `mint(y)` dan `withdraw(x)` vs `redeem(y)`. Cari apakah keduanya memanggil fungsi internal yang sama dengan flag `Rounding` berbeda, atau menulis ulang rumus sendiri.
+  2. Cari rantai konversi 2 langkah atau lebih: misalnya `shares = (assets * feeBps / 10000) * totalSupply / totalAssets`. Periksa apakah bagian `(assets * feeBps / 10000)` dapat menghasilkan 0 untuk nilai `assets > 0` sementara pokok `assets` tetap dipindahkan.
+
+- **Uji Cepat Langkah 0 (Fase 3):**
+  - Substitusi matematis langsung dengan angka batas: `totalAssets = 10000e18 + 1`, `totalSupply = 10000e18`, `fee = 30 bps`. Hitung apakah `withdraw(a) + withdraw(b)` memotong share lebih sedikit daripada `withdraw(a + b)`. Jika tidak ada selisih $\ge 1\text{ wei}$ yang menguntungkan pengguna setelah dikurangi biaya transaksi/loop, langsung gugurkan.
+
+---
+
+<!-- Sisipkan [POV-05], [POV-06], dst. di BAWAH baris ini, urut menaik -->

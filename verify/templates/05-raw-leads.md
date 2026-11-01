@@ -7,12 +7,15 @@ atau diuji amplifikasinya di Fase 3.
 Setiap lead (format `LEAD-XXX` atau `L-XX-N`) wajib memuat:
 
 - `ID` — mis. `L-V5-1`
-- `Metode Pencarian` — `Metode 1` .. `Metode 5`, dan/atau `[POV-XX]` dari `references/ref-attacker-pov.md`.
+- `Metode Pencarian` — `Metode 1` .. `Metode 10`, dan/atau `[POV-XX]` dari `references/ref-attacker-pov.md`.
   Tanpa kolom ini, Fase 3 tidak bisa memilih uji termurah (lihat Langkah 0 Fase 3).
 - `File:Kontrak:Fungsi (Baris)` — presisi sampai baris
 - `Delta State` — `Expected vs Actual` (kerangka Metode 2): state sebelum, aksi, delta yang seharusnya,
   delta yang benar-benar tertulis di kode
-- `Urutan Eksploitasi` — langkah penyerang, sertakan jumlah dompet yang dipakai (`Metode 3` = 2 dompet, 1 tx)
+- `Urutan Eksploitasi` — langkah penyerang, sertakan jumlah dompet/input khusus yang dipakai:
+  `Metode 3` = 2 dompet 1 tx; `Metode 6` = array kembar `[A, A]` / overwrite; `Metode 7` = N panggilan kecil
+  vs 1 besar; `Metode 8` = bypass langsung ke kontrak hilir; `Metode 9` = tahan di state pending lalu panggil
+  jalur samping
 - `Potensi Rantai Serangan (Chaining)` — fungsi/lead lain yang bisa disambung
 - `Status` — `[OPEN]` selama belum diadili Fase 3; setelah Fase 3/4 ganti dengan
   `[STATUS -> 09]`, `[STATUS -> 08]`, `[STATUS -> 07]`, atau `[STATUS -> 06]`

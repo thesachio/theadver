@@ -49,6 +49,45 @@ Lead tanpa entri strike berarti belum diuji sama sekali — bukan berarti bersih
 
 ---
 
+## Langkah 0c: Anti-Menyerah #1 — Tangga Self-Healing Tooling (Syarat Mutlak Sebelum `TOOL_BLOCKED`)
+
+Label `TOOL_BLOCKED` **DILARANG** dipakai untuk masalah kompilasi dependency, remapping, versi compiler, atau kegagalan test runner repo target. Kondisi itu bukan batas ekplorasi — itu pekerjaan yang belum dikerjakan.
+
+Jika build/test bawaan repo bermasalah, agen **WAJIB** menaiki tangga eskalasi mandiri berikut secara berurutan, dan mencatat hasil tiap anak tangga di `audit/notes/`:
+
+### Usaha 1 — Perbaikan Konfigurasi Lokal Sementara
+Sesuaikan flag eksekusi sebelum menyimpulkan apa pun:
+- Compiler/optimizer: `--via-ir`, `--optimize`, `--optimize-runs`, `--evm-version`.
+- Remappings: lewat command line atau `foundry.toml` **terisolasi di folder test**, jangan mengubah konfigurasi repo target.
+- Dependency: instal paket yang kurang bila environment mengizinkan.
+- Non-EVM: `cargo-build-sbf` (bukan `cargo build --release`), `anchor build`, `anchor test --skip-local-validator`.
+- Versi toolchain: bila repo mengunci versi tertentu, pakai `rust-toolchain.toml` / `foundry.toml` terpisah, bukan menimpa milik repo.
+
+### Usaha 2 — Standalone Minimal Harness / Interface-Only Test
+Jika _seluruh_ repo gagal dikompilasi karena satu sub-modul rusak, **JANGAN menyerah**. Buat **1 file test mandiri** yang:
+- hanya mendeklarasikan `interface` kontrak target (signature fungsi yang diserang saja), **atau**
+- hanya mengimpor 1–2 berkas kontrak relevan tanpa seluruh pohon dependency,
+
+lalu tembak langsung alamat kontraknya di Local Fork, atau deploy kontrak tunggal tersebut di sandbox terisolasi. Untuk non-EVM: harness program tunggal + akun uji, tanpa workspace penuh.
+
+Pola ini sudah terbukti: kendala workspace bisa dilewati dengan interface-only + fork call, dan hasilnya tetap sah selama `Mode Uji: FORK` dan tanpa cheatcode.
+
+### Usaha 3 — Fallback RPC & Off-Chain State Read
+Jika satu URL RPC gagal / rate-limited / membatasi `eth_getLogs`:
+- baca seluruh variabel di `./rpc-env.sh` dan `.env.rpc`, cek `RPC-STATUS.md`,
+- gunakan endpoint publik alternatif yang sah untuk rantai tersebut,
+- untuk rentang log besar, pakai chunking + binary search alih-alih menyerah,
+- bila data memang off-chain, lakukan rekonstruksi dari event on-chain lebih dulu sebelum menyatakan butuh repo privat.
+
+### Hukum Besi `TOOL_BLOCKED`
+Sebuah lead **HANYA sah** masuk `07` dengan label `TOOL_BLOCKED` jika **ketiga** usaha di atas sudah dijalankan **dan log terminal kegagalannya dilampirkan di dalam entri `07`** (perintah yang dijalankan + pesan error apa adanya).
+
+> Mengklaim "masalah kompilasi dependency" tanpa mencoba *Standalone Interface / Minimal Harness* adalah **pelanggaran konstitusi**. Entri `07` tanpa lampiran log ketiga usaha ditolak dan lead dikembalikan ke antrean.
+
+**Bukan `TOOL_BLOCKED`** (jangan salah label): hipotesis yang sudah diuji dan ditolak alam → `06` `REJECTED_POC_FAILS`; alat yang belum terpasang tetapi bisa dipasang → tetap di antrean, bukan `07`.
+
+---
+
 ## Langkah 1: Saringan Fakta Keras Pra-PoC (Hemat Token — WAJIB Sebelum Menulis Kode PoC!)
 
 ### Langkah 1a: Triage BATCH Seluruh Lead (Anti-FIFO, sebelum PoC apa pun)
@@ -122,7 +161,7 @@ Panggil skill_view pada modul referensi pengujian sesuai rantai di 00-project-ma
 `09-confirmed-findings.md` mengklaim bukti terhadap state PRODUKSI nyata. Karena itu:
 1. **Simulasi Local Fork WAJIB** bila chain target memiliki RPC publik: Jalankan simulasi transaksi PoC dengan menyalin state blok produksi (`forge test -j 1 --fork-url <RPC> --fork-block-number <N>`, gunakan `./rpc-env.sh`, tanpa `--broadcast`).
 2. Di dalam fork tersebut, attacker bebas mengeksekusi transaksi serangan penuh terhadap kontrak target, namun hanya boleh didanai lewat `deal` pada dompet attacker **SENDIRI** atau lewat flashloan nyata. DILARANG mengubah storage protokol dengan `vm.store` atau `vm.etch`.
-3. Jika RPC chain target tidak tersedia atau kontrak belum dapat dijangkau fork, temuan DILARANG masuk `09` — simpan ke `audit/07-needs-next-step.md` dengan label `NEXT_MAINNET` atau `TOOL_BLOCKED`.
+3. Jika RPC chain target tidak tersedia atau kontrak belum dapat dijangkau fork, temuan DILARANG masuk `09` — simpan ke `audit/07-needs-next-step.md` dengan label `NEXT_MAINNET` atau `TOOL_BLOCKED` **setelah menaiki seluruh Tangga Self-Healing (Langkah 0c)** dan melampirkan log ketiga usaha.
 4. Jika simulasi fork berjalan namun transaksi eksploitasi revert terhadap state nyata = gugur ke `audit/06-refuted-invalid.md`.
 5. Setiap entri di `09` dan `07` WAJIB mencantumkan baris `Mode Uji: FORK (chain, block, RPC)` atau `Mode Uji: LOKAL (alasan fork belum dilakukan)`.
 6. **Identitas deployment (rujuk `verify/VERDICT.md` Langkah 0):** sebelum entri masuk `09`, pastikan kode yang diserang = kode yang berjalan (source terverifikasi explorer / `sha256` sama). Jika berbeda, entri wajib ditandai `HEAD-only` dan hanya boleh berada di `07`.
@@ -136,7 +175,7 @@ Panggil skill_view pada modul referensi pengujian sesuai rantai di 00-project-ma
    Tulis ke `audit/07-needs-next-step.md` dengan salah satu label disposisi:
    - `Disposition: NEXT_EXPLORE` -> simulasi sederhana belum tembus, butuh metode lanjut (Stateful Invariant Fuzzing Tier 2, Symbolic Proving Halmos Tier 5, atau multi-step chaining).
    - `Disposition: NEXT_MAINNET` -> simulasi lokal PASS, tetapi butuh verifikasi parameter/storage/proxy di mainnet atau penyesuaian blok fork.
-   - `Disposition: TOOL_BLOCKED` -> terhalang ketiadaan RPC publik, masalah kompilasi dependency, atau keterbatasan harness lokal.
+   - `Disposition: TOOL_BLOCKED` -> **HANYA setelah Tangga Self-Healing Langkah 0c ditempuh penuh** (Usaha 1: flag/remapping/toolchain; Usaha 2: standalone interface-only / minimal harness; Usaha 3: fallback RPC & rekonstruksi off-chain) **dengan log terminal kegagalan ketiganya dilampirkan di entri `07`**. Tanpa lampiran, label ini tidak sah.
 3. **Gagal di Langkah 0/1 ATAU Simulasi PoC Gagal (`revert`) di State Nyata:**
    Tulis ke `audit/06-refuted-invalid.md` beserta alasan teknisnya (sertakan `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` sesuai template `06`), dan hapus file test sementara yang gagal agar folder test/ tetap bersih.
 4. **2-Strike Circuit Breaker:** bila percobaan PoC gagal 2 kali berturut-turut pada lead yang sama, butir 3 berlaku **otomatis** dengan label `REJECTED_POC_FAILS` — lead tidak boleh masuk `07` dan tidak boleh diiterasi ke-3. `07` hanya sah untuk lead yang **belum** mencapai 2 strike.

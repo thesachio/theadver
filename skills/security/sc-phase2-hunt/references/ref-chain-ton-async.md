@@ -30,7 +30,7 @@ Gunakan daftar periksa ini saat mengaudit smart contract di jaringan TON. **INGA
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-10] Asynchronous Bounce Payload Truncation (224-Bit Limit) & In-Flight Re-Entry
+### [POV-TON-01] Async Message Interleaving & Bounce Payload Truncation
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak pada arsitektur aktor asinkron (TON) mengubah state lokal terlebih dahulu lalu mengirim pesan keluar ke kontrak lain, dan mengandalkan handler pesan pantulan (*bounced message*) untuk memulihkan (*rollback*) state jika kontrak tujuan gagal.
@@ -38,7 +38,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 - **Kacamata Attacker (Gejala di Kode):**
   1. Pesan keluar menaruh data penting untuk pemulihan (jumlah nilai, ID posisi, atau alamat pemilik) **setelah bit ke-224** dari body pesan utama atau di dalam referensi *child cell* (`ref`), padahal jaringan memotong pesan bounced hanya menyisakan 224 bit data pertama tanpa `ref`.
   2. Selama pesan pertama masih dalam perjalanan (*in-flight*) menunggu balasan, status akun/posisi pengirim tidak dikunci (*pending lock*), sehingga pengguna dapat mengirim pesan kedua yang memodifikasi state yang sama.
-  *Prinsip umumnya: (1) adalah **padanan asinkron dari pemangkasan data di langkah antara** ([POV-09] / Metode 7) — payload hilang sebelum rollback sempat berjalan; (2) adalah **padanan asinkron dari status menggantung** (Metode 9) — state tidak terkunci selama siklus belum selesai.*
+  *Prinsip umumnya: (1) adalah **padanan asinkron dari pemangkasan data di langkah antara** ([POV-MOVE-01] / Metode 7) — payload hilang sebelum rollback sempat berjalan; (2) adalah **padanan asinkron dari status menggantung** (Metode 9) — state tidak terkunci selama siklus belum selesai.*
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
   1. **[Siapkan State]** Penyerang menyiapkan state awal pada kontrak asal dan mengatur kondisi (atau takaran `msg_value` gas) agar pesan gagal di kontrak tujuan, atau menyiapkan pesan kedua saat pesan pertama masih *in-flight*.

@@ -33,7 +33,7 @@ Gunakan daftar periksa ini saat mengaudit program Rust di ekosistem Solana:
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-08] Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization
+### [POV-SOL-01] Cross-CPI Stale AccountInfo & Duplicate Writable Alias
 
 - **Kondisi Prasyarat (State Condition):**
   Instruksi program menerima $\ge 2$ akun yang dapat dimutasi (`mut` atau lewat `ctx.remaining_accounts`) dengan tipe serupa, ATAU melakukan *Cross-Program Invocation* (CPI) di tengah fungsi lalu kembali membaca field dari struct akun di memori lokal.
@@ -56,4 +56,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-09], [POV-10], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-MOVE-01], [POV-TON-01], dst. di BAWAH baris ini, urut menaik -->

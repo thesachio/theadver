@@ -33,7 +33,7 @@ Periksa setiap pembacaan harga, perhitungan bunga, dan penyitaan agunan terhadap
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-03] Multi-Identity Self-Liquidation & Bad-Debt Socialization Arbitrage
+### [POV-DEFI-01] Multi-Identity Self-Liquidation & Bad-Debt Socialization
 
 - **Kondisi Prasyarat (State Condition):**
   Protokol memiliki mekanisme penalti, likuidasi, slashing, atau sosialisasi utang macet (*bad debt*) ketika nilai kewajiban sebuah akun melampaui nilai jaminannya.
@@ -54,7 +54,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-### [POV-06] Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam)
+### [POV-DEFI-02] Valuation Source vs Execution Sink Mismatch
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak menggunakan Sumber A (seperti Oracle eksternal atau rata-rata harga waktu/TWAP) untuk memvalidasi kesehatan posisi atau nilai aset, tetapi mengeksekusi penukaran aset, pelepasan jaminan, atau penyeimbangan portofolio secara langsung di Sumber B (kolam likuiditas spot atau pasar internal).
@@ -75,4 +75,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-07], [POV-08], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-EVM-01], [POV-SOL-01], dst. di BAWAH baris ini, urut menaik -->

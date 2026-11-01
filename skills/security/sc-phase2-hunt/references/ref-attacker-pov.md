@@ -21,33 +21,35 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 
 | Nomor | Judul | Lokasi Entri | Rujukan Domain |
 |---|---|---|---|
-| `[POV-01]` | Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi 2-Aktor | `ref-math-and-vaults.md` | indeks akrual, share, mutasi 2-aktor |
-| `[POV-02]` | Cross-Contract / Read-Only State Desync Saat Callback di Tengah Operasi | `ref-calls-tokens-reentrancy.md` | CEI, `nonReentrant` lokal, mid-tx state |
-| `[POV-03]` | Multi-Identity Self-Liquidation & Bad-Debt Socialization Arbitrage | `ref-defi-oracles-liquidation.md` | bonus likuidasi, bad debt, asuransi |
-| `[POV-04]` | Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation | `ref-math-and-vaults.md` | exact-in vs exact-out, intermediate division |
-| `[POV-05]` | Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing | `ref-calls-tokens-reentrancy.md` | try/catch fallback, selective revert, returnbomb |
-| `[POV-06]` | Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam) | `ref-defi-oracles-liquidation.md` | oracle vs spot venue, forced swap/rebalance |
-| `[POV-07]` | Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse | `ref-chain-evm-tron.md` | msg.value loop/multicall, transient storage leak |
-| `[POV-08]` | Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization | `ref-chain-solana.md` | duplicate account key, missing `.reload()` |
-| `[POV-09]` | PTB Cross-Object Receipt/Position Spoofing & Custom Bit-Shift Mask Overflow | `ref-chain-sui-move.md` | `object::id` binding, hot potato, `<<` overflow |
-| `[POV-10]` | Asynchronous Bounce Payload Truncation (224-Bit Limit) & In-Flight Re-Entry | `ref-chain-ton-async.md` | 224-bit bounce limit, in-flight lock |
+| `[POV-MATH-01]` | Desinkronisasi Indeks Akrual pada Transfer/Mutasi Pokok | `ref-math-and-vaults.md` | indeks akrual, share, transfer pokok |
+| `[POV-MATH-02]` | Inverse-Function Rounding & Multi-Hop Fee Truncation | `ref-math-and-vaults.md` | rounding arah balik, fee truncation |
+| `[POV-CALL-01]` | State Desynchronization pada Penyerahan Kontrol | `ref-calls-tokens-reentrancy.md` | control handoff, mid-tx state |
+| `[POV-CALL-02]` | Subcall Success/Failure State Divergence | `ref-calls-tokens-reentrancy.md` | try/catch cabang, returnbomb |
+| `[POV-DEFI-01]` | Multi-Identity Self-Liquidation & Bad-Debt Socialization | `ref-defi-oracles-liquidation.md` | bonus likuidasi, bad debt, asuransi |
+| `[POV-DEFI-02]` | Valuation Source vs Execution Sink Mismatch | `ref-defi-oracles-liquidation.md` | oracle vs spot venue, slippage |
+| `[POV-EVM-01]` | Multicall Context Reuse & Residual Authority Exploitation | `ref-chain-evm-tron.md` | msg.value loop/multicall, transient slot |
+| `[POV-SOL-01]` | Cross-CPI Stale AccountInfo & Duplicate Writable Alias | `ref-chain-solana.md` | duplicate account key, .reload() |
+| `[POV-MOVE-01]` | Programmable Transaction Block (PTB) Capability & Object Splitting | `ref-chain-sui-move.md` | object::id binding, hot potato, << |
+| `[POV-TON-01]` | Async Message Interleaving & Bounce Payload Truncation | `ref-chain-ton-async.md` | 224-bit bounce, in-flight lock |
 
 ---
 
 ## Peta Cepat per Tag `[LOAD: ...]`
 
-- `[LOAD: ref-math-and-vaults.md]` -> `[POV-01]`, `[POV-04]`
-- `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-02]`, `[POV-05]`
-- `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`, `[POV-06]`
-- `[LOAD: ref-chain-evm-tron.md]` -> `[POV-07]`
-- `[LOAD: ref-chain-solana.md]` -> `[POV-08]`
-- `[LOAD: ref-chain-sui-move.md]` -> `[POV-09]`
-- `[LOAD: ref-chain-ton-async.md]` -> `[POV-10]`
+- `[LOAD: ref-math-and-vaults.md]` -> `[POV-MATH-01]`, `[POV-MATH-02]`
+- `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-CALL-01]`, `[POV-CALL-02]`
+- `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-DEFI-01]`, `[POV-DEFI-02]`
+- `[LOAD: ref-chain-evm-tron.md]` -> `[POV-EVM-01]`
+- `[LOAD: ref-chain-solana.md]` -> `[POV-SOL-01]`
+- `[LOAD: ref-chain-sui-move.md]` -> `[POV-MOVE-01]`
+- `[LOAD: ref-chain-ton-async.md]` -> `[POV-TON-01]`
 
 ---
 
 ## Catatan Penomoran
 
-Penomoran mengikuti urutan pencatatan, **bukan** urutan file. `[POV-01]` tercatat lebih dulu (indeks akrual)
-sehingga menempati nomor 1, meski entri berikutnya yang masuk adalah pola reentrancy. Jangan menomori ulang
-entri lama saat menambah entri baru — cukup lanjutkan dari nomor terakhir di tabel.
+ID bersifat **per-domain**: awalan menandai berkas tempat entri tinggal
+(`MATH`, `CALL`, `DEFI`, `EVM`, `SOL`, `MOVE`, `TON`) dan nomor urut lokal
+di dalam berkas itu. Menambah entri baru cukup melanjutkan nomor pada domain
+yang sama (mis. `[POV-MATH-03]`), tanpa menomori ulang entri lama dan tanpa
+menyentuh domain lain.

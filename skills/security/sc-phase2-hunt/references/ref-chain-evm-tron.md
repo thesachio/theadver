@@ -34,7 +34,7 @@ Gunakan daftar periksa ini saat mengaudit kontrak Solidity/Vyper di jaringan EVM
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-07] Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse
+### [POV-EVM-01] Multicall Context Reuse & Residual Authority Exploitation
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak menyediakan mekanisme eksekusi jamak dalam satu transaksi (pewarisan Multicall berbasis `delegatecall`, loop batch internal, atau pemakaian *Transient Storage* `TSTORE`/`TLOAD`) DAN memiliki fungsi yang membaca `msg.value` atau flag otorisasi sementara.
@@ -56,4 +56,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-08], [POV-09], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-SOL-01], [POV-MOVE-01], dst. di BAWAH baris ini, urut menaik -->

@@ -31,7 +31,7 @@ Gunakan daftar periksa ini saat mengaudit modul Move di Sui atau Aptos:
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-09] PTB Cross-Object Receipt/Position Spoofing & Custom Bit-Shift Mask Overflow
+### [POV-MOVE-01] Programmable Transaction Block (PTB) Capability & Object Splitting
 
 - **Kondisi Prasyarat (State Condition):**
   Modul Move menerima lebih dari satu objek mandiri (misal objek wadah utama `&mut Container<T>` bersama objek bukti `&mut Position` / struct *Hot Potato* `Receipt<T>`), ATAU menggunakan operasi geser bit kiri (`<<`) dalam perhitungan matematika kustom (`u128`/`u256`).
@@ -39,7 +39,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 - **Kacamata Attacker (Gejala di Kode):**
   1. Fungsi memverifikasi kesamaan tipe generik `<T>`, tetapi lupa memeriksa ikatan ID objek induk (`assert!(receipt.container_id == object::id(container))`), atau menyediakan fungsi publik alternatif yang dapat menghancurkan *Hot Potato* dengan syarat lebih ringan.
   2. Fungsi matematika kustom melakukan `value << shift` di mana pemeriksaan batas mask overflow meleset 1 bit (tidak menangkap bit tinggi yang terbuang, karena operasi `<<` di Move tidak otomatis *abort* saat bit signifikan tergeser keluar).
-  *Prinsip umumnya: (1) adalah **padanan Move dari aliasing referensi** ([POV-08] / Metode 6) — tipe sama tidak menjamin objek sama; (2) adalah **padanan Move dari pemangkasan di langkah antara** ([POV-04] / Metode 7) — bit tinggi hilang sebelum validasi akhir.*
+  *Prinsip umumnya: (1) adalah **padanan Move dari aliasing referensi** ([POV-SOL-01] / Metode 6) — tipe sama tidak menjamin objek sama; (2) adalah **padanan Move dari pemangkasan di langkah antara** ([POV-MATH-02] / Metode 7) — bit tinggi hilang sebelum validasi akhir.*
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
   1. **[Siapkan State]** Dalam satu *Programmable Transaction Block* (PTB), penyerang membuat atau mengakses `Container_Palsu<T>` dengan rasio ekstrem (atau menyiapkan angka input tepat di batas bit-mask).
@@ -54,4 +54,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-10], [POV-11], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-TON-01], [POV-11], dst. di BAWAH baris ini, urut menaik -->

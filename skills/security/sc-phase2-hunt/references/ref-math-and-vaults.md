@@ -33,7 +33,7 @@ Periksa setiap operasi aritmatika dan pencetakan/pembakaran hak (*shares/LP*) te
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-01] Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi 2-Aktor
+### [POV-MATH-01] Desinkronisasi Indeks Akrual pada Transfer/Mutasi Pokok
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak melacak pertumbuhan hak/bunga/kewajiban menggunakan indeks global (`globalIndex`) dan titik catat per akun (`userIndex[u]`), serta memiliki fungsi pemindahan saldo/posisi antar-akun (pemindahan, delegasi, migrasi, atau penggabungan posisi) di luar fungsi masuk/keluar tunggal.
@@ -54,7 +54,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-### [POV-04] Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation
+### [POV-MATH-02] Inverse-Function Rounding & Multi-Hop Fee Truncation
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak menyediakan pasangan fungsi konversi dua arah — yaitu fungsi Berbasis Input Eksak (*Exact-Input*, pemanggil menentukan jumlah yang diserahkan, kontrak menghitung hasil) dan fungsi Berbasis Target Output Eksak (*Exact-Output*, pemanggil menentukan jumlah hasil yang diminta, kontrak menghitung balik beban biayanya) — atau melakukan konversi proporsi melewati $\ge 2$ tahap pembagian integer beruntun.
@@ -75,4 +75,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-05], [POV-06], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-CALL-02], [POV-DEFI-02], dst. di BAWAH baris ini, urut menaik -->

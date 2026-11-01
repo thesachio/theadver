@@ -29,7 +29,7 @@
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-02] Cross-Contract / Read-Only State Desync Saat Callback di Tengah Operasi
+### [POV-CALL-01] State Desynchronization pada Penyerahan Kontrol
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak utama memiliki modifier `nonReentrant` lokal, namun menghitung nilai/kesehatan posisi menggunakan lebih dari satu variabel state (misal: `totalAssets` dan `totalSupply`, atau `collateral` dan `debt`) atau membagi state dengan kontrak pasangan (Adapter/Strategy/Router/Oracle View).
@@ -51,7 +51,7 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-### [POV-05] Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing
+### [POV-CALL-02] Subcall Success/Failure State Divergence
 
 - **Kondisi Prasyarat (State Condition):**
   Kontrak mengisolasi panggilan eksternal ke alamat pengguna, penerima, atau kontrak pihak ketiga menggunakan blok `try/catch` atau panggilan level rendah `.call()` tanpa `require(success)` agar kegagalan sub-panggilan tidak membatalkan transaksi utama.
@@ -76,4 +76,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-06], [POV-07], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-DEFI-02], [POV-EVM-01], dst. di BAWAH baris ini, urut menaik -->

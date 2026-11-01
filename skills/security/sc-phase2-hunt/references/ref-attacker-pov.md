@@ -27,6 +27,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 | `[POV-04]` | Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation | `ref-math-and-vaults.md` | exact-in vs exact-out, intermediate division |
 | `[POV-05]` | Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing | `ref-calls-tokens-reentrancy.md` | try/catch fallback, selective revert, returnbomb |
 | `[POV-06]` | Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam) | `ref-defi-oracles-liquidation.md` | oracle vs spot venue, forced swap/rebalance |
+| `[POV-07]` | Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse | `ref-chain-evm-tron.md` | msg.value per-tx, TSTORE bocor, batch reuse |
 
 ---
 
@@ -35,7 +36,8 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 - `[LOAD: ref-math-and-vaults.md]` -> `[POV-01]`, `[POV-04]`
 - `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-02]`, `[POV-05]`
 - `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`, `[POV-06]`
-- `[LOAD: ref-chain-*]` -> *(belum ada entri)*
+- `[LOAD: ref-chain-evm-tron.md]` -> `[POV-07]`
+- `[LOAD: ref-chain-solana.md]` / `ref-chain-sui-move.md` / `ref-chain-ton-async.md` -> *(belum ada entri)*
 
 ---
 

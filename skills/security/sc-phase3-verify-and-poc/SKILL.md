@@ -88,6 +88,46 @@ Sebuah lead **HANYA sah** masuk `07` dengan label `TOOL_BLOCKED` jika **ketiga**
 
 ---
 
+## Langkah 0d: Anti-Menyerah #2 — Hukum "Kerjakan Sekarang" (Anti-Procrastination `NEXT_MAINNET` & `NEXT_EXPLORE`)
+
+`NEXT_MAINNET` dan `NEXT_EXPLORE` adalah **tempat parkir untuk hal yang mustahil dilakukan sekarang** — bukan untuk hal yang belum dikerjakan. Keduanya DILARANG dipakai selama pekerjaan itu **bisa diselesaikan pada sesi ini juga**.
+
+### 1. Larangan `NEXT_MAINNET` Malas
+**DILARANG** menulis `Disposition: NEXT_MAINNET` dengan alasan *"butuh cek parameter/storage/proxy di mainnet"* bila RPC rantai tersebut **tersedia**. RPC publik bukan hambatan — gunakan langsung:
+```bash
+cast call <addr> "<sig>" --rpc-url <RPC>
+cast storage <addr> <slot> --rpc-url <RPC>
+cast implementation <proxy> --rpc-url <RPC>      # EIP-1967
+cast admin <proxy> --rpc-url <RPC>
+curl -s <RPC> -d '{"jsonrpc":"2.0",...}'
+```
+Lalu **tuntaskan vonis pada sesi yang sama**: ke `09` bila terbukti dan eligible, atau `06` bila terbantah. Membaca state live adalah pekerjaan menit, bukan pekerjaan minggu.
+
+**`NEXT_MAINNET` hanya sah bila:** kontrak belum di-deploy sama sekali, atau rantai target benar-benar tidak punya akses RPC/explorer publik (dan Usaha 3 Langkah 0c sudah gagal dengan log).
+
+### 2. Larangan `NEXT_EXPLORE` Malas
+**DILARANG** menulis `Disposition: NEXT_EXPLORE` dengan alasan *"butuh multi-step chaining"*, *"butuh Stateful Fuzzing"*, atau *"butuh Halmos"* bila yang sudah dicoba baru **satu skenario sederhana**. Agen **WAJIB langsung menulis dan menjalankan** pada sesi yang sama:
+- **Multi-step chaining** — rangkai ≥2 aksi/lead dalam satu transaksi atau satu blok.
+- **Differential Test (Tier 3)** — bandingkan jalur A vs jalur B yang seharusnya setara.
+- **Handler Fuzzing (Tier 2)** — invariant handler + `foundry.fuzz.runs` yang wajar.
+- **Symbolic proving (Tier 5)** bila invariant bersifat aritmetis (`halmos --function check_*`).
+
+`NEXT_EXPLORE` **hanya sah** bila tes di atas sudah **dijalankan** (lampirkan perintah + keluarannya) dan mencapai **timeout komputasi tanpa konklusi** — bukan karena belum dicoba.
+
+### 3. Hukum Besi untuk Kedua Label
+Setiap entri `07` berlabel `NEXT_MAINNET` atau `NEXT_EXPLORE` **WAJIB** memuat **bukti percobaan** berupa blok:
+```
+PERCOBAAN:
+  <perintah yang dijalankan>
+  <keluaran / error / statistik fuzz / waktu timeout>
+HASIL: masih terbuka karena <sebab yang tidak bisa diselesaikan sekarang>
+```
+Entri tanpa blok `PERCOBAAN` **ditolak** dan lead dikembalikan ke antrean untuk dikerjakan.
+
+> Beda tegas: **`NEXT_EXPLORE` bukan `07` versi sopan dari `06`.** Bila setelah fuzzing/chaining hasilnya tetap negatif, lead pindah ke `06` `REJECTED_POC_FAILS` — bukan dibiarkan menggantung di `07`.
+
+---
+
 ## Langkah 1: Saringan Fakta Keras Pra-PoC (Hemat Token — WAJIB Sebelum Menulis Kode PoC!)
 
 ### Langkah 1a: Triage BATCH Seluruh Lead (Anti-FIFO, sebelum PoC apa pun)
@@ -172,9 +212,9 @@ Panggil skill_view pada modul referensi pengujian sesuai rantai di 00-project-ma
 1. **Simulasi Fork PASS + Membuktikan Dampak Nyata:**
    Tulis ke `audit/09-confirmed-findings.md` lengkap dengan kode PoC utuh, baris `Mode Uji: FORK (...)`, perhitungan dampak/profit, dan log terminal (untuk selanjutnya diadili oleh Hakim `VERDICT.md` di Fase 4).
 2. **Secara Logika Kode Kuat namun Belum Selesai Dibuktikan:**
-   Tulis ke `audit/07-needs-next-step.md` dengan salah satu label disposisi:
-   - `Disposition: NEXT_EXPLORE` -> simulasi sederhana belum tembus, butuh metode lanjut (Stateful Invariant Fuzzing Tier 2, Symbolic Proving Halmos Tier 5, atau multi-step chaining).
-   - `Disposition: NEXT_MAINNET` -> simulasi lokal PASS, tetapi butuh verifikasi parameter/storage/proxy di mainnet atau penyesuaian blok fork.
+   Tulis ke `audit/07-needs-next-step.md` dengan salah satu label disposisi berikut — **masing-masing tunduk pada Langkah 0c dan 0d**:
+   - `Disposition: NEXT_EXPLORE` -> **hanya sah bila Tier 2/3/5 sudah dijalankan** (multi-step chaining, differential, handler fuzzing, halmos) dan mencapai timeout komputasi tanpa konklusi. Wajib lampirkan blok `PERCOBAAN: <perintah> + <keluaran>`. Alasan "butuh multi-step chaining" tanpa percobaan = pelanggaran.
+   - `Disposition: NEXT_MAINNET` -> **hanya sah bila** kontrak belum di-deploy atau rantai benar-benar tanpa RPC/explorer publik (Usaha 3 Langkah 0c gagal dengan log). Bila RPC tersedia, DILARANG parkir di sini — jalankan `cast call`/`cast storage`/`cast implementation` saat itu juga dan tuntaskan ke `09` atau `06`.
    - `Disposition: TOOL_BLOCKED` -> **HANYA setelah Tangga Self-Healing Langkah 0c ditempuh penuh** (Usaha 1: flag/remapping/toolchain; Usaha 2: standalone interface-only / minimal harness; Usaha 3: fallback RPC & rekonstruksi off-chain) **dengan log terminal kegagalan ketiganya dilampirkan di entri `07`**. Tanpa lampiran, label ini tidak sah.
 3. **Gagal di Langkah 0/1 ATAU Simulasi PoC Gagal (`revert`) di State Nyata:**
    Tulis ke `audit/06-refuted-invalid.md` beserta alasan teknisnya (sertakan `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` sesuai template `06`), dan hapus file test sementara yang gagal agar folder test/ tetap bersih.

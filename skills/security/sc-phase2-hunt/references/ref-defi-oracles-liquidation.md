@@ -54,4 +54,25 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-04], [POV-05], dst. di BAWAH baris ini, urut menaik -->
+### [POV-06] Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam)
+
+- **Kondisi Prasyarat (State Condition):**
+  Kontrak menggunakan Sumber A (seperti Oracle eksternal atau rata-rata harga waktu/TWAP) untuk memvalidasi kesehatan posisi atau nilai aset, tetapi mengeksekusi penukaran aset, pelepasan jaminan, atau penyeimbangan portofolio secara langsung di Sumber B (kolam likuiditas spot atau pasar internal).
+
+- **Kacamata Attacker (Gejala di Kode):**
+  Fungsi yang memicu eksekusi ke Sumber B dapat dipanggil oleh publik (atau dipicu secara tidak langsung oleh pengguna), sedangkan batas penerimaan minimumnya (*minimum output / slippage guard*) bernilai 0, diambil dari parameter pemanggil, atau dihitung dari cadangan spot Sumber B saat transaksi berlangsung (bukan diturunkan secara ketat dari harga acuan Sumber A).
+
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang menyiapkan modal atau *flashloan* pada pasangan aset di kolam likuiditas Sumber B.
+  2. **[Pemicu Asimetri]** Dalam satu transaksi atomik, penyerang memindahkan rasio likuiditas di Sumber B secara ekstrem (sementara harga di Sumber A tetap statis), lalu memanggil fungsi protokol yang mengeksekusi transaksi ke Sumber B.
+  3. **[Ekstraksi Nilai]** Kontrak protokol mengeksekusi penukaran/pelepasan aset pada harga Sumber B yang sedang terdistorsi, lalu penyerang memulihkan posisi Sumber B untuk mengekstrak selisih nilai dari protokol.
+
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor berhenti memeriksa risiko manipulasi harga begitu melihat kontrak membaca harga acuan dari Oracle yang tahan manipulasi satu blok (Sumber A), tanpa memeriksa ke mana eksekusi riil dikirim (Sumber B) dan bagaimana batas *slippage* pada eksekusi tersebut dihitung.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika fungsi pemicu dikunci hanya untuk operator tepercaya melalui jalur transaksi privat, ATAU jika batas hasil minimum pada Sumber B dihitung langsung dari harga Sumber A dengan deviasi maksimum yang lebih kecil daripada dua kali biaya pertukaran (*2x swap fee*) di Sumber B.
+
+---
+
+<!-- Sisipkan [POV-07], [POV-08], dst. di BAWAH baris ini, urut menaik -->

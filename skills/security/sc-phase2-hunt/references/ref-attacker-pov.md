@@ -26,6 +26,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 | `[POV-03]` | 2-Wallet Self-Liquidation & Bad-Debt Socialization Arbitrage | `ref-defi-oracles-liquidation.md` | bonus likuidasi, bad debt, asuransi |
 | `[POV-04]` | Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation | `ref-math-and-vaults.md` | exact-output, fee truncation, split-vs-bulk |
 | `[POV-05]` | Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing | `ref-calls-tokens-reentrancy.md` | try/catch asimetris, EIP-150 63/64, returndata |
+| `[POV-06]` | Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam) | `ref-defi-oracles-liquidation.md` | TWAP vs spot, minOut, 2x swap fee |
 
 ---
 
@@ -33,7 +34,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 
 - `[LOAD: ref-math-and-vaults.md]` -> `[POV-01]`, `[POV-04]`
 - `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-02]`, `[POV-05]`
-- `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`
+- `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`, `[POV-06]`
 - `[LOAD: ref-chain-*]` -> *(belum ada entri)*
 
 ---

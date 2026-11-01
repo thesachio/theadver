@@ -135,27 +135,36 @@ Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi 
 
 ---
 
-## Langkah 6: Gerbang Cakupan PEMETAAN (COVERAGE-MAP GATE) - WAJIB sebelum menutup Fase 1
+## Langkah 6: Gerbang Cakupan PEMETAAN ANTREAN (QUEUE MAPPING GATE) — WAJIB sebelum menutup Fase 1
 
-**Fase 1 hanya memetakan, belum menguji.** Karena itu gerbang keluar Fase 1 **tidak** menguji `LEAD_GENERATED`/`ATTESTED_CLEAN` (status itu baru lahir di Fase 2) - yang diuji adalah apakah setiap berkas `[MUST-AUDIT]` sudah **masuk ke sebuah Unit Alur `S-n`**.
+**Fase 1 hanya memetakan, belum berburu.** Karena itu gerbang keluar Fase 1 **tidak menguji hasil Fase 2** (`LEAD_GENERATED`/`ATTESTED_CLEAN` belum ada saat Fase 1 ditutup). Yang diuji: apakah berkas `[MUST-AUDIT]` dari `00b-file-inventory.md` sudah **terpetakan masuk ke Unit Alur `S-n`** di `03-attack-surface-queue.md`.
 
-Status yang dipakai di Fase 1: `BELUM` (belum masuk unit) -> `TERPETAKAN_DI_UNIT` (sudah tercakup antrean). `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN` adalah status Fase 2.
+Status yang sah di Fase 1: `BELUM` (belum masuk unit) -> `TERPETAKAN_DI_UNIT` (sudah tercakup antrean) atau `DEFERRED` (sengaja ditunda dengan alasan tertulis). `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN` adalah status Fase 2 dan **tidak dipakai** sebagai ambang di sini.
 
 Hitung dan tulis ke bagian akhir `05-raw-leads.md`:
 
 | Metrik | Rumus | Ambang LULUS |
 |---|---|---|
-| **Ketercakupan antrean** | berkas `[MUST-AUDIT]` berstatus `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` | **>= 100%** |
+| **Ketercakupan antrean** | berkas `[MUST-AUDIT]` berstatus `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` | **>= 80%** |
+| **Non-DEFERRED penuh** | (`TERPETAKAN_DI_UNIT` + `DEFERRED` ber-alasan) ÷ total `[MUST-AUDIT]` | **= 100%** (tidak ada `BELUM`) |
 | Cakupan domain | domain `D1..Dn` dengan >=1 berkas `TERPETAKAN_DI_UNIT` ÷ total domain ber-`[MUST-AUDIT]` | **100%** |
 | Berkas raksasa | berkas `[MUST-AUDIT]` terbesar per domain | **wajib `TERPETAKAN_DI_UNIT`** |
 | Ukuran antrean | jumlah Unit Alur Eksekusi | **<= 40** |
 | Integritas agregasi | berkas di antrean unik | **0 hilang, 0 ganda** vs `00b` |
 
-> **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis - agar modul yang memang aman tidak dipaksa melahirkan lead palsu.
+> **Dua angka, dua fungsi.** `>= 80%` adalah ambang *minimum kelayakan* pemetaan; `= 100% non-DEFERRED` memastikan tidak ada berkas yang hilang tanpa jejak — berkas yang belum masuk unit **wajib** berstatus `DEFERRED` beserta alasan, bukan dibiarkan `BELUM`.
+
+> **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **keterpetakan per berkas**, bukan banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu.
 
 Bila **salah satu** ambang gagal: Fase 1 **DITOLAK**, kembali ke Langkah 0/4 dan perluas enumerasi atau clustering. DILARANG melanjutkan ke Fase 2 dengan gerbang gagal.
 
-**Gerbang jejak (>= 80% `LEAD_GENERATED`/`ATTESTED_CLEAN` per domain)** adalah milik **Fase 2** (`sc-phase2-hunt` §3 Gate Keluar) dan diperiksa ulang oleh **Fase 4** (`sc-phase4-report` Langkah 0a). Jangan tertukar: Fase 1 menguji **pemetaan**, Fase 2 menguji **jejak**, Fase 4 menguji **keduanya sebelum melapor**.
+**Pembagian tanggung jawab gerbang — jangan tertukar:**
+
+| Fase | Gerbang | Yang diuji | Ambang |
+|---|---|---|---|
+| **1** (Langkah 6) | Queue Mapping Gate | berkas `[MUST-AUDIT]` masuk Unit `S-n` | >= 80% terpetakan, 100% non-DEFERRED, domain 100%, unit <= 40 |
+| **2** (Gate Keluar) | Trace Gate | berkas per domain berstatus `LEAD_GENERATED` / `ATTESTED_CLEAN` | >= 80% **per domain** |
+| **4** (Langkah 0a) | Dual Gate | keduanya diperiksa ulang | (1) + (2) |
 
 **Catatan pengukuran:** pengukur cakupan (`00b-file-inventory.md`) WAJIB dieksklusi dari populasi yang diukur. Tanpa eksklusi, setiap berkas "disebut" oleh inventarisnya sendiri dan cakupan selalu tampak 100%.
 

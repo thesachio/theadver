@@ -111,7 +111,17 @@ Setiap kali satu panggilan `delegate_task` selesai (baik **1 Unit `S-n`** di Tah
 
 ### Tahap Orkestrasi 1: Threat-First Recon (sc-phase1-recon)
 0. **Pre-flight:** bila `audit/STATE.md` belum ada, buat lebih dulu (lihat Langkah −1), lalu set `PHASE: 1`.
-1. Periksa apakah audit/00-project-map.md s/d audit/03-attack-surface-queue.md sudah ada.
+1. Periksa apakah `audit/00b-file-inventory.md` **DAN** `audit/00-project-map.md` s/d `audit/03-attack-surface-queue.md` sudah ada.
+   - **Semua ada** -> lanjutkan ke butir 2 (jangan menimpa hasil yang sudah valid).
+   - **Ada yang hilang** -> jalankan butir 2. Bila yang hilang hanya sebagian (mis. `00b` tidak ada tetapi `00–03` ada), **tetap jalankan dari Langkah 0**: inventaris adalah fondasi seluruh gerbang cakupan, dan tanpanya Fase 1 tidak sah.
+
+   **Proyek lama dengan audit/ sebelumnya (rebuild bersih).** Untuk proyek yang sudah pernah diaudit dengan antrean lama (terutama yang lahir sebelum Langkah 0 ada — mis. proyek 312 berkas yang audit-nya berbasis sampling), **DILARANG melanjutkan di atas folder lama**. Langkah wajib sebelum memulai ulang:
+   ```bash
+   mv audit audit_old_biased      # arsipkan, JANGAN dihapus
+   ```
+   Setelah itu Autopilot benar-benar mulai dari `STATE.md` dan `00b-file-inventory.md` yang bersih. Alasan: antrean lama, penomoran `S-n` lama, dan status cakupan lama akan **bertabrakan** dengan gate baru (Flow-Cluster <=40, Queue Mapping Gate, Trace Gate) dan menghasilkan hitungan palsu.
+
+   **Larangan penghapusan permanen:** DILARANG `rm -rf audit`. Arsipkan dengan `mv` beserta tanggal, mis. `mv audit audit_old_$(date +%Y%m%d)`, agar bukti audit lama tetap bisa dirujuk saat menulis retraksi.
 2. Jika BELUM ADA: Panggil delegate_task untuk menugaskan Subagent Recon:
    - Goal: "Jalankan prosedur lengkap sc-phase1-recon pada proyek <nama-proyek>: Langkah 0 (inventaris `00b-file-inventory.md`, klasifikasi PERILAKU bukan ambang baris), lalu Langkah 1–6 (termasuk Flow-Cluster <=40 Unit dan Coverage Gate >=80% per domain) untuk menghasilkan 00-project-map.md, 01-threat-and-env.md, 02-state-and-var-matrix.md, 03-attack-surface-queue.md, dan menginisialisasi 05-raw-leads.md."
    - Context Wajib: Path Absolut Proyek, path `audit/STATE.md`, dan instruksi: "Wajib panggil skill_view('sc-phase1-recon') dan baca `audit/STATE.md` lebih dulu. Petakan 3 Kasta Realitas Aset, siklus hidup produksi, Patch-Scar, dan View-vs-Write matrix. DILARANG mengubah kode sumber. Laporkan data yang harus ditulis ke STATE.md. Kembalikan ringkasan maksimal 12 baris."

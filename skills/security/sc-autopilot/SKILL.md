@@ -18,7 +18,7 @@ Gunakan skill ini saat pengguna meminta eksekusi audit whitehat adversarial meny
 - JAGA KONTEKS PARENT TETAP RINGAN: Gunakan delegate_task (max_concurrent_children: 1 secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
 - PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`: Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File audit/00 s/d 09, instruksi skill_view, serta perintah agar Subagent mengembalikan ringkasan maksimal 12 baris saja.
 - JAGA PEMISAHAN 6 FILE HASIL (`04` s/d `09` — 1 File = 1 Domain Murni):
-  * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang terhalang `require`/`assert!` (umpan Putaran 2 *Guard-Bypass*).
+  * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang terhalang `require`/`assert!` (umpan Putaran 2 *Guard-Inversion* / Metode 5).
   * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3.
   * `06-refuted-invalid.md` -> Murni hipotesis gugur permanen (gagal *Pre-PoC Fact Gate*, gagal simulasi PoC, atau melanggar **Pernyataan Ketat Mutlak #1–#6** beserta sub-kasus ketat #7a/#8a/#9a/#10a di `VERDICT.md`).
   * `07-needs-next-step.md` -> Murni kandidat *unproven* (`NEXT_EXPLORE` / `NEXT_MAINNET` / `TOOL_BLOCKED`), termasuk klaim `HEAD-only` (gagal Pernyataan #2).
@@ -46,9 +46,9 @@ Saat pengguna memicu eksekusi otonom pada /home/ubuntu/.hermes/profiles/adv/work
    - Panggil delegate_task satu per satu untuk setiap unit antrean:
      * Goal: "Bedah unit antrean [NamaTarget] menggunakan prosedur Tahap A -> Tahap B -> Tahap C di sc-phase2-hunt."
      * Context Wajib: Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants dari 00-project-map.md, path ke 01-threat-and-env.md & 02-state-and-var-matrix.md, serta instruksi: "Wajib panggil skill_view('sc-phase2-hunt') dan panggil skill_view pada modul references/ sesuai tag [LOAD: ...]. Tulis lead terbuka ke audit/05-raw-leads.md, tulis hipotesis yang terhalang guard kode murni ke audit/04-code-guarded.md, dan kembalikan ringkasan maksimal 12 baris."
-2. **Putaran 2 (Deep-Dive Variable-Centric, 3-Step Permutation, & Guard-Bypass):**
+2. **Putaran 2 (Deep-Dive Variable-Centric, 3-Step Permutation, & Guard-Inversion / Metode 5):**
    - Periksa isi audit/05-raw-leads.md dan audit/04-code-guarded.md.
-   - Tugaskan Subagent khusus untuk: (a) merangkai *attack chain* (urutan 3-langkah A -> C -> B) pada variabel kritis di 02-state-and-var-matrix.md dan lead kecil di 05-raw-leads.md, serta (b) mencari celah *Guard-Bypass* terhadap daftar guard di 04-code-guarded.md.
+   - Tugaskan Subagent khusus untuk: (a) merangkai *attack chain* (urutan 3-langkah A -> C -> B) pada variabel kritis di 02-state-and-var-matrix.md dan lead kecil di 05-raw-leads.md, serta (b) membongkar daftar guard di 04-code-guarded.md memakai **Metode 5 Guard-Inversion** dari `sc-phase2-hunt`: untuk setiap guard, tanyakan variabel apa yang menyusun kedua sisi perbandingan dan apakah fungsi publik lain (flashloan/donasi/callback) dapat menggeser nilainya sesaat sebelum guard dieksekusi.
 
 ### Tahap Orkestrasi 3: Pre-PoC Fact Gate & Local Fork Simulation (sc-phase3-verify-and-poc)
 1. **Simulasi & Pembuktian Seluruh Raw Leads (`05-raw-leads.md`):**

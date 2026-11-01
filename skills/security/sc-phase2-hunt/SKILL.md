@@ -42,16 +42,36 @@ Untuk setiap aksi atau pasangan aksi (Masuk/Buat vs Keluar/Batal/Transfer/Sita d
   State Awal -> Aksi -> Delta Ekspektasi (Hak vs Kewajiban) vs Delta Aktual di Kode -> Selisih Variabel yang Tidak Sinkron.
 - Periksa apakah ada variabel global yang berubah tanpa memperbarui variabel user (atau sebaliknya), indeks akrual yang terlambat disinkronkan satu langkah, atau operasi batal/klaim sebagian yang lupa me-reset salah satu field struct.
 
-### Metode 3 — Irrational 2-Wallet Sybil & Zero-Time Loop (Aksi "Tidak Masuk Akal" bagi Pengguna Normal)
-Auditor menguji alur pengguna waras. Anda WAJIB menguji perilaku "tidak rasional" menggunakan 2 Dompet Milik 1 Penyerang (`Attacker_A` dan `Attacker_B`) dalam 1 transaksi atomik ($\Delta t = 0$):
-1. **Self-Transfer & Ping-Pong Loop:** Apa yang terjadi jika Attacker_A mentransfer/mendelegasikan hak ke dirinya sendiri (from == to) atau memantulkannya Attacker_A -> Attacker_B -> Attacker_A berulang kali di blok yang sama?
-2. **Self-Liquidation / Self-Penalty Arbitrage:** Apa yang terjadi jika Attacker_A sengaja membuat posisinya terkena likuidasi/slashing/lelang/bad-debt, sementara Attacker_B bertindak sebagai likuidator/penawar yang memanen bonus atau mengalihkan kerugian (*bad debt socialization*) ke kolam publik?
-3. **Zero / 1-Wei Boundary & Dust Amplification:** Masukkan nilai 0, 1 wei, atau batas_minimum - 1 untuk menguji apakah biaya/penalti terpotong jadi 0 karena pembulatan dan dapat di-loop dalam satu transaksi batch/multicall.
+### Metode 3 — Irrational Multi-Identity Sybil & Zero-Time Loop (Aksi "Tidak Masuk Akal" bagi Pengguna Normal)
 
-### Metode 6 — Memory-vs-Storage Cache Overwrite & Duplicate-Array Aliasing (`[A, A]`)
-Auditor membaca variabel memori (`Struct memory s = map[user]`) seolah-olah selalu sinkron dengan storage, dan menguji parameter array dengan elemen unik (`[1, 2, 3]`):
-1. **Stale Memory Cache Overwrite:** Cari fungsi yang menyalin struct/saldo ke variabel lokal (`memory` di EVM, atau akun sebelum `.reload()` pasca-CPI di Solana), lalu di tengah fungsi memanggil sub-fungsi/callback/transfer yang memodifikasi storage yang sama, dan di akhir fungsi menulis balik `map[user] = s` — sehingga mutasi di tengah jalan terhapus oleh cache memori basi.
-2. **Duplicate-Array Input (`[ID_1, ID_1]`):** Pada setiap fungsi yang menerima array (`ids[]`, `pools[]`, `orders[]`, `recipients[]`, `remaining_accounts`), uji input elemen kembar `[A, A]`. Periksa apakah validasi atau pembacaan saldo dilakukan sebelum pengurangan state di dalam loop, sehingga elemen yang sama diproses/diklaim dua kali.
+**Prinsip:** Auditor menguji alur pengguna waras. Anda WAJIB menguji perilaku "tidak rasional" yang hanya mungkin bila **dua atau lebih identitas/akun/objek/kapabilitas yang dikendalikan satu penyerang** berinteraksi secara atomik atau dalam jendela eksekusi yang sama ($\Delta t = 0$). Kerugian di satu identitas boleh terjadi asal keuntungan di identitas lain lebih besar — penyerang tidak peduli "kantong" mana yang rugi.
+
+**Contoh EVM:** dua EOA milik penyerang (`Attacker_A`, `Attacker_B`) dalam 1 transaksi.
+
+**Padanan non-EVM:** **Solana** — dua signer, atau satu signer + account alias/duplicate account · **Move** — dua capability atau dua object milik satu owner · **TON** — dua actor, atau dua jalur message dari actor yang sama.
+
+**Langkah uji:**
+1. **Self-Transfer & Ping-Pong Loop:** Apa yang terjadi jika identitas pertama memindahkan/mendelegasikan hak ke dirinya sendiri (`from == to`) atau memantulkannya A -> B -> A berulang kali dalam jendela eksekusi yang sama?
+2. **Self-Liquidation / Self-Penalty Arbitrage:** Apa yang terjadi jika identitas pertama sengaja membuat posisinya terkena likuidasi/slashing/lelang/bad-debt, sementara identitas kedua bertindak sebagai likuidator/penawar yang memanen bonus atau mengalihkan kerugian (*bad debt socialization*) ke kolam publik?
+3. **Zero / Boundary & Dust Amplification:** Masukkan nilai 0, 1 unit terkecil, atau `batas_minimum - 1` untuk menguji apakah biaya/penalti terpotong jadi 0 karena pembulatan dan dapat di-loop dalam satu batch/multicall.
+
+### Metode 6 — Stale Local-Snapshot Write-Back & Duplicate-Reference Aliasing (`[A, A]`)
+
+**Prinsip A — Snapshot basi ditulis balik:** Sebuah salinan state dibuat lokal, lalu di tengah eksekusi terjadi interaksi eksternal (callback/panggilan ke modul lain) yang mengubah state persisten yang sama, dan di akhir salinan lokal ditulis kembali — sehingga perubahan terbaru terhapus senyap. Yang dicari bukan nama tipe atau kata kunci bahasanya, melainkan **urutan baca-lokal -> mutasi-persisten -> tulis-balik**.
+
+**Contoh EVM:** `Struct memory s = map[user]` -> panggil callback yang mengubah `map[user]` -> `map[user] = s`.
+
+**Padanan non-EVM:** **Solana** — account data dibaca sebelum CPI, ditulis balik tanpa `.reload()` · **Move** — objek di-*unpack*, dipakai lintas call, lalu di-*pack* ulang dengan nilai lama · **TON** — `c4`/`c5` dibaca sebelum mengirim pesan, lalu disimpan setelahnya.
+
+**Prinsip B — Referensi kembar diproses dua kali:** Satu referensi yang sama muncul lebih dari sekali dalam satu input dan diproses berulang, karena validasi/pembacaan saldo terjadi sebelum mutasi di dalam loop.
+
+**Contoh EVM:** `claim([1, 1])`; dedup biasanya `ids[i] < ids[i+1]` atau bitmap.
+
+**Padanan non-EVM:** duplicate account, repeated `remaining_accounts`, duplicate recipient, resource/object reference kembar.
+
+**Langkah uji:**
+1. Cari fungsi yang menyalin struktur/saldo ke variabel lokal, memanggil keluar, lalu menulis balik ke state persisten di akhir.
+2. Pada setiap fungsi ber-parameter daftar, uji input dengan elemen kembar `[A, A]`. Periksa apakah ada deduplikasi sebelum mutasi.
 
 ### Metode 7 — Metamorphic Split-vs-Bulk Asymmetry ($f(a + b) \neq f(a) + f(b)$)
 Auditor menguji rumus dengan 1 angka tunggal. Anda WAJIB menguji apakah rumus bersifat non-linear ketika input dipecah atau digabung dalam 1 transaksi:
@@ -71,20 +91,44 @@ Setiap kali menemukan `require(Kondisi_X >= Kondisi_Y)` atau `if (...) revert`:
 - Jangan langsung berhenti! Tanyakan: *"Variabel apa yang menyusun Kondisi_X dan Kondisi_Y? Berdasarkan 02-state-and-var-matrix.md, bisakah fungsi publik lain (atau flashloan/donasi/callback) mengubah nilai X atau Y sesaat sebelum baris require ini dieksekusi?"*
 - *(Pada Putaran 2, gunakan metode ini secara khusus untuk membongkar seluruh daftar guard yang terkumpul di audit/04-code-guarded.md).*
 
-### Metode 8 — Caller-Callee Assumption Seam & Direct Pool Bypass (Celah Lempar Tanggung Jawab)
-Auditor memeriksa Kontrak_A (Router/Gateway/Manager) dan Kontrak_B (Pool/Vault/Strategy/Engine) secara terpisah dan menganggap keduanya aman:
-1. **Unvalidated Seam:** Periksa titik panggilan Kontrak_A -> Kontrak_B. Apakah Kontrak_A meneruskan parameter (`receiver`, `from`, `onBehalfOf`, `token`, `data`) tanpa validasi karena mengira Kontrak_B akan memvalidasinya, sementara Kontrak_B percaya buta karena panggilan datang dari Kontrak_A?
-2. **Direct Downstream Bypass:** Jika validasi keamanan (slippage, whitelist, fee, access check) ditaruh di Router/Periphery, periksa apakah penyerang dapat memanggil fungsi publik di kontrak inti (Pool/Vault/Strategy) secara langsung tanpa melewati Router.
+### Metode 8 — Caller-Callee Assumption Seam & Direct Downstream Bypass (Celah Lempar Tanggung Jawab)
+
+**Prinsip:** Dua lapisan komponen (hulu dan hilir) masing-masing menganggap lapisan lain sudah memvalidasi. Yang menentukan bukan nama modifier, melainkan dua pertanyaan: **(a) apakah jalur hilir benar-benar membatasi caller yang sah, dan (b) apakah jalur hilir mengulang seluruh validasi kritis** — atau hanya mempercayai bahwa pemanggil hulu sudah melakukannya.
+
+**Contoh EVM:** hulu `Router/Gateway/Manager`, hilir `Pool/Vault/Strategy`; pembatasan lazim `onlyRouter` / `onlyManager`.
+
+**Padanan non-EVM:** **Solana** — CPI dari program lain vs instruksi yang dipanggil langsung tanpa signer · **Move** — fungsi yang menuntut capability (`RouterCap`) vs `public entry` bebas · **TON** — pesan dari kontrak resmi vs pesan eksternal.
+
+**Langkah uji:**
+1. **Unvalidated Seam:** Pada titik panggilan hulu -> hilir, apakah hulu meneruskan parameter (`receiver`, `from`, `onBehalfOf`, `token`, `data`) tanpa validasi karena mengira hilir akan memvalidasinya — sementara hilir percaya buta karena panggilan datang dari hulu?
+2. **Direct Downstream Bypass:** Jika validasi keamanan (slippage, whitelist, fee, access check) hanya ada di hulu, periksa apakah penyerang dapat memanggil fungsi publik hilir secara langsung tanpa melewati hulu.
 
 ### Metode 9 — Half-Baked / Suspended Lifecycle State (Menyerang Saat Status "Menggantung")
 Auditor menguji siklus hidup yang selesai tuntas (Request -> Finalize). Anda WAJIB menguji siklus yang sengaja dihentikan di tengah jalan:
 - Mulai Langkah 1 dari proses multi-tahap (misal: `requestWithdraw`, `initiateCooldown`, `createOrder`, `startAuction`, `propose`, atau kirim pesan async tahap pertama).
 - JANGAN jalankan langkah penyelesaiannya. Saat akun/objek masih berada dalam status *"Pending / Menggantung"* tersebut, panggil fungsi jalur lain (transfer, delegate, borrow, liquidate, emergencyWithdraw, atau cancel berulang) untuk memeriksa apakah saldo/jaminan yang sedang menggantung belum dikunci sehingga bisa dipakai dua kali (*double-spend*).
 
-### Metode 10 — Live On-Chain Residue, Router Allowance, & Upgrade Storage Drift
-Auditor menguji pada *sandbox* kosong (`setUp()` bersih), sedangkan kontrak di produksi memiliki residu state nyata:
-1. **Unspent Allowance & Stranded Balance Arbitrage:** Periksa apakah kontrak Router/Helper/Migrator/Adapter memiliki fungsi panggilan eksternal terbuka (`call`, `transferFrom`, `sweep`, `swap` dengan parameter alamat bebas) yang dapat disalahgunakan untuk menarik saldo token yang mengendap di kontrak atau menyedot allowance pengguna aktif di mainnet.
-2. **Proxy Upgrade & Uninitialized Re-Config Drift:** Jika kontrak menggunakan Proxy/Upgradeable, periksa apakah ada variabel state baru pada versi implementasi saat ini yang berasumsi sudah terisi di konstruktor, padahal pada state proxy produksi nilainya masih 0 (atau berbenturan dengan nilai lama dari versi sebelumnya).
+### Metode 10 — Live Residual State, Delegated Authority, & Post-Upgrade Drift
+
+**Prinsip:** Auditor menguji pada *sandbox* bersih, sedangkan sistem di produksi membawa **state sisa yang nyata**: otorisasi tertunda yang belum terpakai, saldo/objek aset yang tertinggal, dan konfigurasi usang setelah peningkatan/migrasi. Tiga hal ini tidak muncul di `setUp()` yang kosong — harus dibaca dari state live lebih dulu.
+
+**Contoh EVM:** `allowance`/`approve` yang belum terpakai · saldo token mengendap di Router/Helper/Migrator · slot proxy EIP-1967 dan variabel implementasi baru yang masih 0.
+
+**Padanan non-EVM:** **Solana** — delegated authority/capability pada token account, saldo mengendap di PDA, data akun lama setelah program upgrade · **Move** — capability tertunda, object aset tertinggal, field baru yang belum terisi setelah migrasi · **TON** — saldo tersisa di kontrak perantara, konfigurasi actor yang tidak sinkron setelah upgrade.
+
+**Tabel padanan istilah:**
+
+| Istilah EVM | Konsep umum |
+|---|---|
+| `allowance` / `approve` | otorisasi tertunda yang belum terpakai |
+| `cast call` / `eth_getStorageAt` | pembacaan state live sebelum menulis PoC |
+| saldo mengendap di kontrak | *residual balance* / *asset object* tertinggal |
+| slot proxy EIP-1967 | *storage slot* / *object field* / *account data* / *actor state* |
+| konfigurasi usang pasca-upgrade | *stale configuration* setelah migrasi |
+
+**Langkah uji:**
+1. **Delegated Authority & Residual Balance:** Apakah komponen perantara (Router/Helper/Migrator/Adapter) memiliki panggilan eksternal terbuka (`call`, `transferFrom`, `sweep`, `swap` dengan parameter alamat bebas) yang dapat menarik saldo tertinggal atau menyedot otorisasi pengguna aktif?
+2. **Post-Upgrade Drift:** Setelah peningkatan/migrasi, apakah ada variabel/field baru yang berasumsi sudah terisi saat inisialisasi padahal pada state produksi masih 0 — atau berbenturan dengan nilai lama dari versi sebelumnya?
 
 ---
 

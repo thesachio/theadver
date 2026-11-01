@@ -23,6 +23,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 |---|---|---|---|
 | `[POV-01]` | Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi Pihak Ketiga | `ref-math-and-vaults.md` | indeks akrual, share, `updateReward` |
 | `[POV-02]` | Cross-Contract / Read-Only State Desync Saat Callback di Tengah Operasi | `ref-calls-tokens-reentrancy.md` | CEI, `nonReentrant` lokal, mid-tx state |
+| `[POV-03]` | 2-Wallet Self-Liquidation & Bad-Debt Socialization Arbitrage | `ref-defi-oracles-liquidation.md` | bonus likuidasi, bad debt, asuransi |
 
 ---
 
@@ -30,7 +31,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 
 - `[LOAD: ref-math-and-vaults.md]` -> `[POV-01]`
 - `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-02]`
-- `[LOAD: ref-defi-oracles-liquidation.md]` -> *(belum ada entri)*
+- `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`
 - `[LOAD: ref-chain-*]` -> *(belum ada entri)*
 
 ---

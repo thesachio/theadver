@@ -11,6 +11,16 @@ Tujuan Fase 3 adalah menguji setiap hipotesis di audit/05-raw-leads.md dengan me
 ---
 
 ## Langkah 1: Saringan Fakta Keras Pra-PoC (Hemat Token — WAJIB Sebelum Menulis Kode PoC!)
+
+**Langkah 0 — Routing berdasarkan Metode Pencarian (wajib, sebelum 4 saringan).**
+Baca kolom `Metode Pencarian` dan `Delta State` pada lead di `audit/05-raw-leads.md`. Kolom itu bukan hiasan: ia menentukan uji termurah yang harus dijalankan lebih dulu, sehingga Anda tidak menulis PoC penuh untuk lead yang bisa digugurkan dengan satu perhitungan.
+- `[POV-03]` (self-liquidation / bad debt): hitung dulu pertidaksamaan `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` memakai angka parameter live. Jika ruas kiri menang di semua kondisi batas -> lead **Negative-EV**, langsung ke `06` tanpa menulis PoC.
+- `[POV-01]` (desinkronisasi indeks akrual): cek apakah fungsi pemindah menyinkronkan indeks untuk **from DAN to** sebelum saldo berubah. Jika ya -> `06` (Batas Realitas katalog terpenuhi).
+- `[POV-02]` (state desync saat callback): cek apakah benar ada kontrak/fungsi lain yang membaca rasio mid-tx. Jika tidak ada pembaca eksternal -> tidak ada korban -> `06`.
+- `[Metode 3]` (irrational 2-wallet): PoC WAJIB memakai dua dompet milik penyerang dalam satu transaksi; PoC satu-dompet tidak membuktikan apa pun.
+- `[Metode 5]` (guard-inversion): guard sudah dianalisis di Putaran 2. Jika tidak ada fungsi publik yang bisa menggeser variabel pembentuk guard -> `06`.
+Jika kolom `Metode Pencarian` tidak ada pada sebuah lead, catat di `audit/notes/` dan minta Fase 2 melengkapinya — jangan menebak metode.
+
 Sebelum menghabiskan token menulis kode simulasi tes untuk sebuah Lead di audit/05-raw-leads.md, periksa 4 Kemustahilan Fakta Dasar berikut (rujuk audit/00-project-map.md dan audit/01-threat-and-env.md). Jika jawaban dari SALAH SATU pertanyaan ini adalah YA, jangan tulis PoC — langsung buang ke `audit/06-refuted-invalid.md`:
 
 1. Halusinasi Token/Kontrak (Langgar Kasta Aset): Apakah Lead ini mengasumsikan Token Kasta 1 (LP Token, Share/Receipt Token, WETH, Token Internal) memiliki *Fee-on-Transfer*, *Rebase*, *Callback*, atau gagal mengembalikan bool ala USDT? Atau menganggap USDT mainnet memotong pajak transfer (fee > 0)? Atau menyuntikkan kontrak palsu ke parameter yang dikunci oleh *Factory/Whitelist*?

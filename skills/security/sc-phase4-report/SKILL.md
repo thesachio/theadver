@@ -12,13 +12,15 @@ Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan st
 
 ## Langkah 1: Eksekusi Vonis Akhir dengan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md
 1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
-2. **Adili Setiap Kandidat** di `audit/09-confirmed-findings.md` dan `audit/05-raw-leads.md`:
+2. **Jalankan Langkah 0 VERDICT.md lebih dulu — Rekonsiliasi Identitas Deployment (wajib, sebelum menilai apa pun):**
+   Cocokkan kode yang dikutip dengan sumber terverifikasi explorer / `sha256`. Klaim yang hanya berlaku di HEAD — bukan di deployment produksi — wajib ditandai `HEAD-only` dan **maksimal berada di `07`**, tidak boleh diadili sebagai temuan.
+3. **Adili Setiap Kandidat** di `audit/09-confirmed-findings.md` dan `audit/05-raw-leads.md`:
    Uji setiap kandidat terhadap 10 Pernyataan Wajib di VERDICT.md:
    - **Lolos Seluruh 10 Pernyataan (`VALID_ELIGIBLE`):** Terbukti lewat simulasi PoC pada fork state produksi (`Mode Uji: FORK`), tanpa *Fantasy Mock*/Cheatcode, dan membuktikan bahaya finansial nyata (pencurian dana, insolvensi, pembekuan aset permanen, atau sabotase repay/liquidate) -> Disahkan tetap di `audit/09-confirmed-findings.md`.
    - **Berada Dalam Batasan Toleransi / Low (`VALID_NOT_ELIGIBLE` — Pernyataan #7b, #8b, #10b):** Simulasi PoC jalan secara mekanis tanpa curang, tetapi dampaknya tergolong *"Annoying but not financially dangerous"* (`LOW_NUISANCE`: *DoS with no fund loss*, *minor capped economic damage*, *nuisance griefing* — #10b), merupakan *admin-only bug* tanpa jalur eksploitasi eksternal (#8b), atau fitur belum *live* (#7b) -> **WAJIB CABUT dari 09** dan pindahkan ke `audit/08-valid-not-eligible.md`!
    - **Berada Dalam Batasan Eksplorasi / Kendala RPC (`NEEDS_NEXT_STEP` — Pernyataan #9b):** Logika kode kuat namun butuh metode eksplorasi lanjut (`NEXT_EXPLORE`), butuh cek state mainnet (`NEXT_MAINNET`), belum diuji di fork karena kendala RPC/tooling (`TOOL_BLOCKED`), atau klaim masih `HEAD-only` (gagal #2) -> **WAJIB CABUT dari 09** dan pindahkan ke `audit/07-needs-next-step.md`!
    - **Melanggar Pernyataan Ketat Mutlak (`REJECTED_*` — Pernyataan #1–#6 beserta sub-kasus ketat #7a, #8a, #9a, #10a):** Memakai *Fantasy Mock* (#1), klaim produksi tanpa bukti kesetiaan deployment (#2), mengasumsikan `totalSupply == 0` pada pool *live* (#3), tidak ada korban rasional (#4), *Negative-EV* (#5), perilaku by-design / baris kode meleset (#6), menyerang `initialize()` terkunci (#7a), *privileged fantasy* (#8a), cheatcode / PoC gagal di state nyata (#9a), atau debu tanpa amplifikasi (#10a) -> **WAJIB CABUT dari 09** dan buang ke `audit/06-refuted-invalid.md`!
-3. **Setiap vonis wajib memakai Format Keluaran `VERDICT.md`** (`ID`, `VERDICT`, `TARGET_FILE`, `ALASAN`, `BUKTI`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `BIAYA-BACA`). Verdict tanpa `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` dianggap belum sah.
+4. **Setiap vonis wajib memakai Format Keluaran `VERDICT.md`** (`ID`, `VERDICT`, `TARGET_FILE`, `ALASAN`, `BUKTI`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `BIAYA-BACA`). Verdict tanpa `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` dianggap belum sah.
 
 ---
 

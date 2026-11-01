@@ -50,4 +50,26 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-03], [POV-04], dst. di BAWAH baris ini, urut menaik -->
+### [POV-05] Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing
+
+- **Kondisi Prasyarat (State Condition):**
+  Kontrak mengisolasi panggilan eksternal ke alamat pengguna, penerima, atau kontrak pihak ketiga menggunakan blok `try/catch` atau panggilan level rendah `.call()` tanpa `require(success)` agar kegagalan sub-panggilan tidak membatalkan transaksi utama.
+
+- **Kacamata Attacker (Gejala di Kode):**
+  1. Cabang sukses (`try` / `if (success)`) dan cabang gagal (`catch` / `else`) memutasi state secara tidak simetris (misal: cabang gagal melewati pemotongan penalti, membatalkan penyitaan kewajiban, atau memberikan jalur keluar tanpa beban).
+  2. Panggilan `.call()` ke alamat yang dapat dikendalikan pemanggil menyalin nilai balik ke variabel `bytes memory` atau menangkap `catch (bytes memory reason)` tanpa membatasi ukuran returndata di level assembly.
+
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang mengatur kontrak miliknya sebagai alamat target/penerima callback atau mengatur takaran gas transaksi induk secara presisi (aturan 63/64 EIP-150).
+  2. **[Pemicu Asimetri]** Untuk eksploitasi divergensi state, penyerang sengaja membuat sub-panggilan gagal (*revert* di penerima atau kehabisan gas di sub-konteks) agar eksekusi masuk ke cabang `catch`/`!success`. Untuk *Returnbombing*, kontrak penyerang mengembalikan payload memori raksasa pada returndata.
+  3. **[Ekstraksi Nilai]** Transaksi induk tetap berhasil dengan state menguntungkan dari cabang gagal, atau seluruh gas pemanggil terkuras habis oleh biaya ekspansi memori kuadratik sebelum blok `catch` dapat menyelamatkan transaksi (DoS permanen pada fungsi likuidasi/penyelesaian).
+
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor menganggap keberadaan `try/catch` atau pembatasan `.call{gas: X}()` sudah otomatis menjamin keamanan dari kegagalan pihak ketiga, sehingga tidak membandingkan selisih akuntansi antara cabang sukses vs gagal dan lupa bahwa biaya penyalinan returndata ke memori dibebankan ke kontrak pemanggil.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika target panggilan adalah kontrak internal/tetap yang *immutable* dan tidak meneruskan eksekusi ke alamat pengguna, serta mutasi state pada cabang sukses maupun gagal tetap mempertahankan invarian akuntansi yang setara.
+
+---
+
+<!-- Sisipkan [POV-06], [POV-07], dst. di BAWAH baris ini, urut menaik -->

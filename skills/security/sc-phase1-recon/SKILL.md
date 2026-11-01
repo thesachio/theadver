@@ -1,13 +1,57 @@
 ---
 name: sc-phase1-recon
 description: Phase 0 & 1 — Domain-Agnostic Recon, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
-version: 5.0.0
+version: 6.0.0
 ---
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
 
 Di Fase 0 dan Fase 1, peran Anda murni sebagai Pemeta Fakta Objektif (*Cartographer*) — bukan Hakim Penolak. DILARANG menyaring/membuang anomali secara prematur, dan DILARANG mendelegasikan pekerjaan Fase 1 ke subagent lain (Fase 1 dikerjakan oleh agent yang menerimanya; bila `sc-autopilot` yang menugaskan, pekerjaan berhenti di sini — jangan pecah lagi).
-Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00` s/d `03`, serta inisialisasi `05-raw-leads.md`).
+Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00`, `00b`, `01` s/d `03`, serta inisialisasi `05-raw-leads.md`).
+
+---
+
+## Langkah 0: Enumerasi Fisik & Partisi Domain (WAJIB SEBELUM LANGKAH 1)
+
+**Gerbang keras:** DILARANG memilih sampel, merumuskan hipotesis, atau menulis `03-attack-surface-queue.md` sebelum seluruh peta fisik repositori tertulis di `audit/00b-file-inventory.md`. Jika berkas itu belum ada, pekerjaan Fase 1 berhenti di sini.
+
+### 1. Hitung Populasi Penuh
+Jalankan enumerasi seluruh berkas kontrak di dalam scope. Abaikan `test/`, `mock/`, `script/`. Untuk setiap berkas ukur:
+- **LOC** efektif (baris bukan kosong/komentar)
+- **Jumlah fungsi eksternal/publik yang mengubah state**
+- **Path relatif** terhadap akar repo
+
+Wajib mencetak TOTAL populasi di kepala berkas: `N berkas | M LOC | K fungsi state-changing`. Angka ini menjadi pembanding tetap untuk seluruh fase berikutnya.
+
+**Deduplikasi wajib:** salinan terverifikasi (`verified-deployed/`, `spoke-verified/`, `v5-verified/`) yang SHA-256-nya identik dengan berkas kanonik **dihitung sekali**. Tanpa dedup, populasi membengkak puluhan persen dengan kode yang sama.
+
+### 2. Kelompokkan ke Domain Arsitektur
+Pecah hasil enumerasi ke dalam domain/modul. Penamaan mengikuti arsitektur proyek; contoh generik:
+- `D1: Hub-Pool` — kolam pusat, akuntansi lintas-rantai
+- `D2: Spoke-Pools` — kolam per-rantai, penyimpanan dana
+- `D3: Chain-Adapters` — adapter rantai, jembatan pesan
+- `D4: Periphery-Mintburn` — mint/burn, OFT, CCTP
+- `D5: Periphery-Counterfactual` — deposit counterfactual
+- `D6: SVM/Solana` — program Solana
+- `D7: TRON` — kontrak TRON
+- `D8: Periphery-Umum` — pintu masuk pengguna, multicall, handler
+- `Dn: …` — domain tambahan sesuai proyek
+
+### 3. Klasifikasi Status Cakupan per Berkas
+Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DILARANG memakai ambang baris kaku** (mis. ">200 LOC") sebagai penentu: router/adapter tipis 60 baris yang merutekan dana sama kritisnya dengan kontrak 900 baris.
+- `[MUST-AUDIT]` — **salah satu** terpenuhi: mengubah state, memegang/merutekan dana, memvalidasi pesan lintas-rantai, mengeksekusi alur (router/adapter/executor/handler), atau melakukan panggilan eksternal/CPI. **Penentunya perilaku, bukan ukuran.**
+- `[STATELESS/INTERFACE]` — murni tipe data, konstanta, `interface`/`IDL` tanpa isi, atau berkas deklarasi. Wajib diverifikasi silang bila dipanggil oleh `[MUST-AUDIT]`: berkas tanpa state yang menjadi hitungan dana (`Math`, `FixedPoint`, `SafeCast`) tetap masuk cakupan uji tidak langsung.
+
+**LOC hanya penanda prioritas relatif, bukan gerbang.** Tidak ada berkas yang lolos dari audit karena kecil.
+
+### 4. Aturan Anti-Bias Pintu Masuk
+**DILARANG** menyusun antrean hanya dari satu folder/domain. Setiap domain `D1..Dn` yang memiliki berkas `[MUST-AUDIT]` **WAJIB** terwakili.
+
+**DILARANG memakai kuota "minimal N lead per domain".** Kuota lead memicu pembuatan lead sampah pada modul yang memang aman (hukum Goodhart). Penggantinya adalah kewajiban jejak di Fase 2: >= 80% berkas `[MUST-AUDIT]` per domain harus berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN` — modul aman dipenuhi dengan *Negative Attestation* jujur, bukan lead palsu.
+
+**DILARANG pendalaman dini:** DILARANG membelanjakan lebih dari 1 putaran penuh Fase 2 pada satu berkas sebelum setiap domain `D1..Dn` memiliki minimal satu jejak (lead atau atestasi).
+
+**Berkas `[MUST-AUDIT]` terbesar per domain wajib dibuka.** Status setiap berkas dicatat: `BELUM` / `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN`.
 
 ---
 
@@ -16,6 +60,7 @@ Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00` s/d 
    - Identifikasi ekosistem proyek: Paradigma A (Atomic EVM/Tron/Solana), Paradigma B (Object/Move Sui/Aptos), atau Paradigma C (Async Actor TON).
    - Uji kompilasi/tes awal dengan worker tunggal: FOUNDRY_JOBS=1 (forge test -j 1), CARGO_BUILD_JOBS=1, atau RAYON_NUM_THREADS=1.
    - Periksa ketersediaan konfigurasi RPC di ./rpc-env.sh / .env.rpc untuk kebutuhan simulasi *Local Fork* di Fase 3.
+   - **Build lintas-arsitektur:** untuk program non-EVM (Solana SBF/eBPF), build lokal yang sah HANYA lewat `cargo-build-sbf`. `cargo build --release` menghasilkan shared object host (aarch64/x86_64) yang **tidak sebanding** dengan bytecode on-chain. Wajib cek `file` pada kedua binari sebelum membandingkan ukuran.
 2. **Pemetaan Fakta Siklus Hidup Produksi** (Data Faktual untuk Fase 3 & 4):
    - Periksa skrip deploy/, script/, migrations/, dan konstruktor/factory.
    - Catat secara faktual: (a) apakah fungsi `initialize()` sudah dieksekusi secara atomik saat deployment, (b) apakah kontrak mencetak *dead shares* awal atau sudah memiliki TVL *live* di produksi (sehingga `totalSupply == 0` sudah terlewati), dan (c) mana kontrak yang Aktif In-Scope, mana yang masih Pre-Live / Paused, serta mana yang *mock/deprecated*.
@@ -50,17 +95,61 @@ Gunakan search_files (rg -n) untuk memetakan seluruh variabel state/storage (map
 ---
 
 ## Langkah 4: Primitive-Based Attack Surface Queue -> `audit/03-attack-surface-queue.md`
-Susun seluruh fungsi yang mengubah state ke dalam Unit Eksekusi Siklus Hidup (2–4 fungsi yang menyentuh variabel yang sama per kelompok):
-1. **Urutan Prioritas:**
-   - `[P1-CRITICAL]` & `[P2-HIGH]`: Fungsi unprivileged (termasuk pintu samping migrate, batch, callback, dan area *Patch-Scar*) yang memindahkan nilai, menghitung proporsi/akrual, atau memicu transisi paksa.
-   - `[P3-ADMIN-OR-PERIPHERY]`: Fungsi operasional khusus Admin/Keeper (dicatat untuk pemeriksaan *admin-only bug* atau jalur eskalasi).
-2. **Penempelan Tag Referensi `[LOAD: ...]` Wajib per Kelompok:**
-   - `[LOAD: ref-math-and-vaults.md]` -> Fungsi dengan operasi bagi/kali proporsi, share, pembulatan, biaya, atau akrual indeks waktu.
-   - `[LOAD: ref-calls-tokens-reentrancy.md]` -> Fungsi dengan panggilan eksternal, transfer token/NFT, callback, eksekusi batch/self-call, atau verifikasi signature.
-   - `[LOAD: ref-defi-oracles-liquidation.md]` -> Fungsi dengan pembacaan harga/oracle, swap, pinjaman, atau transisi paksa (likuidasi, lelang, penyitaan, slashing).
-   - Tambahkan tepat 1 tag rantai: `[LOAD: ref-chain-evm-tron.md]`, `[LOAD: ref-chain-solana.md]`, `[LOAD: ref-chain-sui-move.md]`, atau `[LOAD: ref-chain-ton-async.md]`.
+Susun seluruh fungsi yang mengubah state ke dalam Unit Alur Eksekusi.
+
+### 4a. Flow-Cluster: Batas 40 Unit (WAJIB)
+**DILARANG** membuat 1 Unit per 1 berkas jika hasilnya antrean meledak di atas **40 unit**. Antrean 183 unit identik dengan 183 berkas bukan audit — itu daftar berkas yang tidak akan pernah tuntas dieksekusi (bottleneck Fase 2/3).
+
+Gabungkan berkas yang berada dalam **satu alur transaksi** di domain yang sama menjadi **satu Unit Alur Eksekusi `S-n`**. Contoh pola alur: `Router + Pool + Handler + Adapter`, atau `Periphery -> SpokePool -> Executor -> Adapter`, atau `program + CPI partner` (non-EVM).
+
+**Format wajib setiap unit:**
+```
+## [S-n] <Nama Alur> — <Domain>
+- Berkas tercakup: <daftar path [MUST-AUDIT] lengkap>
+- LOC total: <n> | Fungsi state-changing: <n>
+- Titik masuk unprivileged: <fungsi>
+- [LOAD: ref-…md, ref-chain-…md]
+- Status: BELUM / DIBACA / LEAD_GENERATED / ATTESTED_CLEAN
+```
+
+**Aturan agregasi:**
+1. Setiap berkas `[MUST-AUDIT]` **wajib** muncul di **tepat satu** unit — tidak boleh hilang, tidak boleh ganda. Verifikasi jumlah berkas di antrean terhadap `00b-file-inventory.md`.
+2. Cluster hanya boleh menggabungkan berkas yang **saling memanggil** atau berada dalam satu alur nilai; DILARANG menggabung sekadar karena satu folder.
+3. Bila total unit masih >40 setelah clustering berbasis alur, prioritaskan cluster yang memuat dana terbesar dan tandai sisanya `DEFERRED` (bukan dihapus) beserta alasan.
+4. Berkas `[MUST-AUDIT]` terbesar per domain **wajib** menjadi anggota cluster aktif — tidak boleh jadi unit tunggal yang `DEFERRED`.
+
+### 4b. Urutan Prioritas
+- `[P1-CRITICAL]` & `[P2-HIGH]`: Fungsi unprivileged (termasuk pintu samping migrate, batch, callback, dan area *Patch-Scar*) yang memindahkan nilai, menghitung proporsi/akrual, atau memicu transisi paksa.
+- `[P3-ADMIN-OR-PERIPHERY]`: Fungsi operasional khusus Admin/Keeper (dicatat untuk pemeriksaan *admin-only bug* atau jalur eskalasi).
+
+### 4c. Penempelan Tag Referensi `[LOAD: ...]` Wajib per Kelompok
+- `[LOAD: ref-math-and-vaults.md]` -> Fungsi dengan operasi bagi/kali proporsi, share, pembulatan, biaya, atau akrual indeks waktu.
+- `[LOAD: ref-calls-tokens-reentrancy.md]` -> Fungsi dengan panggilan eksternal, transfer token/NFT, callback, eksekusi batch/self-call, atau verifikasi signature.
+- `[LOAD: ref-defi-oracles-liquidation.md]` -> Fungsi dengan pembacaan harga/oracle, swap, pinjaman, atau transisi paksa (likuidasi, lelang, penyitaan, slashing).
+- Tambahkan tepat 1 tag rantai: `[LOAD: ref-chain-evm-tron.md]`, `[LOAD: ref-chain-solana.md]`, `[LOAD: ref-chain-sui-move.md]`, atau `[LOAD: ref-chain-ton-async.md]`.
 
 ---
 
 ## Langkah 5: Inisialisasi Antrean Aktif -> `audit/05-raw-leads.md`
-Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi state, *Patch-Scar*, atau ketidaksinkronan View vs Write yang ditemukan selama Langkah 1–4 tanpa melakukan penghakiman kelayakan ekonomi terlebih dahulu.
+Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi state, *Patch-Scar*, atau ketidaksinkronan View vs Write yang ditemukan selama Langkah 0–4 tanpa melakukan penghakiman kelayakan ekonomi terlebih dahulu.
+
+---
+
+## Langkah 6: Gerbang Cakupan (COVERAGE GATE) — WAJIB sebelum menutup Fase 1
+
+Hitung dan tulis ke bagian akhir `05-raw-leads.md`:
+
+| Metrik | Rumus | Ambang LULUS |
+|---|---|---|
+| Cakupan berkas | berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` ÷ total `[MUST-AUDIT]` | **>= 80%** |
+| Cakupan domain | domain `D1..Dn` dengan >=80% berkas berjejak ÷ total domain ber-`[MUST-AUDIT]` | **100%** |
+| Berkas raksasa | berkas `[MUST-AUDIT]` terbesar per domain | **wajib bukan `BELUM`** |
+| Ukuran antrean | jumlah Unit Alur Eksekusi | **<= 40** |
+
+> **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas** (lead ATAU atestasi), bukan dari banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu.
+
+Bila **salah satu** ambang gagal: Fase 1 **DITOLAK**, kembali ke Langkah 0 dan perluas enumerasi. DILARANG melanjutkan ke Fase 2 dengan gerbang gagal.
+
+**Catatan pengukuran:** pengukur cakupan (`00b-file-inventory.md`) WAJIB dieksklusi dari populasi yang diukur. Tanpa eksklusi, setiap berkas "disebut" oleh inventarisnya sendiri dan cakupan selalu tampak 100%.
+
+**Alasan aturan ini:** tanpa pengukuran, agen akan menyusut ke satu jalur yang paling menarik perhatian dan menyebutnya "audit mendalam". Sampling yang tidak diakui sebagai sampling adalah kegagalan yang tidak terdeteksi.

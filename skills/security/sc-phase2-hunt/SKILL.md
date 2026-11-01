@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (10 Non-Standard Lenses + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
-version: 5.1.0
+version: 6.0.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -17,6 +17,49 @@ Jika dijalankan melalui delegasi, berikan paket tugas berisi:
 3. Pembagian Putaran Eksplorasi:
    - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + Metode 1, 2, 3, 6, 7 -> Tahap B (Analogi & Katalog POV) -> Tahap C (`04` vs `05`).
    - Putaran 2 (Makro Lintas-Jalur & Guard-Inversion): Jalankan Metode 4, 5, 8, 9, 10 menggunakan 02-state-and-var-matrix.md, 05-raw-leads.md, dan daftar guard di 04-code-guarded.md.
+
+---
+
+---
+
+## Aturan Anti-Tunnel-Vision: Rotasi Domain & Clean-Unit Attestation
+
+Kuota "minimal N lead per domain" **DILARANG** dipakai: memaksa jumlah lead mendorong agen mengarang hipotesis lemah hanya untuk memenuhi angka (hukum Goodhart). Yang dipaksa adalah **Penyapuan Merata (Breadth-First Sweep)** plus **bukti bahwa unit benar-benar diperiksa**.
+
+### 1. Rotasi Domain Wajib
+Pada Putaran 1 dan Putaran 2, eksekusi Unit Alur Eksekusi secara **bergilir lintas domain** (`D1 -> D2 -> D3 -> … -> D1`), **BUKAN** menghabiskan satu folder lalu berhenti. Satu putaran penuh = setiap domain ber-`[MUST-AUDIT]` mendapat giliran sebelum domain mana pun mendapat giliran kedua. Pelanggaran rotasi = putaran dibatalkan dan diulang.
+
+### 2. Kewajiban Jejak Audit (Lead ATAU Negative Attestation)
+Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati tanpa jejak**. Pilih tepat satu hasil:
+- **`LEAD_GENERATED`** — ditemukan celah potensial: tulis ke `audit/05-raw-leads.md` (template penuh).
+- **`ATTESTED_CLEAN`** — setelah diuji dengan 10 Metode tidak ditemukan celah: tulis **1 baris Negative Attestation** di tabel cakupan `audit/03-attack-surface-queue.md`.
+
+**Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**
+```
+<Berkas>: <jumlah> fungsi mutasi dicek dengan Metode <X, Y, Z> —
+  mengapa invariant bertahan: <alasan teknis konkret>
+  jalur eksternal yang diuji: <daftar jalur/callback/CPI yang benar-benar disentuh>
+  jalur yang TIDAK diuji: <daftar, atau "tidak ada">
+```
+
+**Larangan atestasi kosong.** Kalimat berikut **DILARANG** dan otomatis ditolak: *"sudah diperiksa, aman"*, *"kode standar"*, *"tidak ada masalah ditemukan"*, *"mengikuti OpenZeppelin/Anchor"*. Atestasi wajib menyebut **nama fungsi yang diperiksa**, **nomor Metode**, dan **mekanisme konkret** yang membuat invariant bertahan.
+
+**Atestasi tidak boleh lebih murah daripada lead.** Bila alasan yang bisa ditulis hanyalah "tidak ada yang mencurigakan", itu tanda unit **BELUM** benar-benar diperiksa — kembalikan ke `BELUM` dan jalankan Metode yang belum dipakai.
+
+### 3. Gate Keluar Fase 2
+Agen **DILARANG** pindah ke Fase 3 sebelum **>= 80% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN`.
+
+| Metrik | Ambang |
+|---|---|
+| Berkas `[MUST-AUDIT]` berjejak **per domain** | **>= 80%** (setiap domain, tanpa kecuali) |
+| Berkas `[MUST-AUDIT]` terbesar per domain | wajib != `BELUM` |
+| Berkas berstatus `BELUM` di domain mana pun | **0** |
+
+**DILARANG memakai kuota "minimal N lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu; *Negative Attestation* yang jujur justru bukti cakupan yang sah.
+
+Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
+
+**Pencatat status:** hasil atestasi ditulis ke `audit/03-attack-surface-queue.md` sebagai tabel cakupan per domain, direkonsiliasi dengan `audit/00b-file-inventory.md`. Status sah: `BELUM` / `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN`.
 
 ---
 
@@ -147,4 +190,5 @@ Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang an
    Tulis langsung ke `audit/05-raw-leads.md` sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (Metode 1..Metode 10 dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining).
 3. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode** (`require` / `if (...) revert` / `assert!`):
    Tulis langsung ke `audit/04-code-guarded.md` sesuai template `verify/templates/04-code-guarded.md` lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk 02-state-and-var-matrix.md), Hipotesis yang Dihentikan, dan Status Putaran 2: `BELUM`.
-4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi [HUNTED].
+4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi `[HUNTED]`.
+5. **Wajib tulis status jejak** pada tabel cakupan: `LEAD_GENERATED` (butir 2) atau `ATTESTED_CLEAN` (butir 3, dengan 4 unsur atestasi lengkap). Kelompok tanpa keduanya tetap `BELUM` dan **memblokir Gate Keluar Fase 2**.

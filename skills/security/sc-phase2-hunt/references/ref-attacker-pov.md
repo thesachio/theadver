@@ -28,6 +28,8 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 | `[POV-05]` | Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing | `ref-calls-tokens-reentrancy.md` | try/catch fallback, selective revert, returnbomb |
 | `[POV-06]` | Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam) | `ref-defi-oracles-liquidation.md` | oracle vs spot venue, forced swap/rebalance |
 | `[POV-07]` | Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse | `ref-chain-evm-tron.md` | msg.value per-tx, TSTORE bocor, batch reuse |
+| `[POV-08]` | Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization | `ref-chain-solana.md` | akun kembar, `remaining_accounts`, `.reload()` |
+| `[POV-09]` | PTB Cross-Object Receipt/Position Spoofing & Custom Bit-Shift Mask Overflow | `ref-chain-sui-move.md` | object::id binding, Hot Potato, `<<` truncation |
 
 ---
 
@@ -37,7 +39,9 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 - `[LOAD: ref-calls-tokens-reentrancy.md]` -> `[POV-02]`, `[POV-05]`
 - `[LOAD: ref-defi-oracles-liquidation.md]` -> `[POV-03]`, `[POV-06]`
 - `[LOAD: ref-chain-evm-tron.md]` -> `[POV-07]`
-- `[LOAD: ref-chain-solana.md]` / `ref-chain-sui-move.md` / `ref-chain-ton-async.md` -> *(belum ada entri)*
+- `[LOAD: ref-chain-solana.md]` -> `[POV-08]`
+- `[LOAD: ref-chain-sui-move.md]` -> `[POV-09]`
+- `[LOAD: ref-chain-ton-async.md]` -> *(belum ada entri)*
 
 ---
 

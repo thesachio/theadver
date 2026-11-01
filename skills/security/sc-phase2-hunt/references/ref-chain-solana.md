@@ -25,3 +25,35 @@ Gunakan daftar periksa ini saat mengaudit program Rust di ekosistem Solana:
 6. **Perangkap Token-2022 Extensions & Overflow Rust:**
    - Jika program mendukung SPL Token-2022, periksa bagaimana program menangani ekstensi *Transfer Fee* (potongan biaya saat transfer) dan *Transfer Hook*.
    - Jika `Cargo.toml` tidak mengaktifkan `overflow-checks = true`, setiap operasi `+`, `-`, `*` biasa di Rust berisiko mengalami *wrapping overflow* di mode rilis.
+
+---
+
+## Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
+
+Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
+Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
+
+### [POV-08] Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization
+
+- **Kondisi Prasyarat (State Condition):**
+  Instruksi program menerima $\ge 2$ akun yang dapat dimutasi (`mut` atau lewat `ctx.remaining_accounts`) dengan tipe serupa, ATAU melakukan *Cross-Program Invocation* (CPI) di tengah fungsi lalu kembali membaca field dari struct akun di memori lokal.
+
+- **Kacamata Attacker (Gejala di Kode):**
+  1. Tidak ada constraint `constraint = account_a.key() != account_b.key()` pada pasangan akun sumber/tujuan atau daftar `remaining_accounts`.
+  2. Setelah mengeksekusi CPI (yang mengubah saldo/state akun di runtime), kode langsung membaca field `account.amount` atau `state.value` dari variabel Rust yang dideserialisasi di awal fungsi tanpa memanggil `.reload()?`, atau menulis kembali struct lama sehingga menimpa hasil CPI.
+  *Prinsip umumnya adalah **padanan Solana dari Metode 6**: (a) referensi kembar yang diproses dua kali, dan (b) snapshot lokal basi yang dipakai atau ditulis balik setelah interaksi eksternal.*
+
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang menyiapkan satu akun valid miliknya.
+  2. **[Pemicu Asimetri]** Penyerang memanggil instruksi dengan memasukkan alamat akun yang sama untuk parameter `source` dan `destination` (atau duplikat di `remaining_accounts`), atau memicu CPI yang mengubah saldo akun.
+  3. **[Ekstraksi Nilai]** Program memproses penjumlahan/klaim di atas snapshot memori yang belum diperbarui (atau menimpa pengurangan saldo), menggandakan hak penyerang dalam satu instruksi.
+
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor melihat deklarasi tipe `Account<'info, ...>` di Anchor sudah memeriksa pemilik dan diskriminator tipe, sehingga berasumsi dua variabel parameter dengan nama berbeda pasti menunjuk ke dua akun berbeda dan nilainya selalu mutakhir sepanjang fungsi.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika terdapat validasi ketidaksetaraan kunci (`key() != ...`) pada seluruh pasangan akun `mut`/`remaining_accounts`, serta `.reload()?` dipanggil setiap kali data akun dibaca ulang pasca-CPI.
+
+---
+
+<!-- Sisipkan [POV-09], [POV-10], dst. di BAWAH baris ini, urut menaik -->

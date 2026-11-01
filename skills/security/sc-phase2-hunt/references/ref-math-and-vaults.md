@@ -33,39 +33,45 @@ Periksa setiap operasi aritmatika dan pencetakan/pembakaran hak (*shares/LP*) te
 Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
 Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
-### [POV-01] Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi Pihak Ketiga
+### [POV-01] Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi 2-Aktor
 
 - **Kondisi Prasyarat (State Condition):**
-  Kontrak melacak hak klaim/bunga/poin menggunakan indeks global (`globalIndex`) dan titik catat per pengguna (`userIndex[u]`), serta memiliki fungsi pemindahan hak (`transfer`, `delegate`, `migrate`, `merge`) selain fungsi masuk/keluar utama.
+  Kontrak melacak pertumbuhan hak/bunga/kewajiban menggunakan indeks global (`globalIndex`) dan titik catat per akun (`userIndex[u]`), serta memiliki fungsi pemindahan saldo/posisi antar-akun (pemindahan, delegasi, migrasi, atau penggabungan posisi) di luar fungsi masuk/keluar tunggal.
 
 - **Kacamata Attacker (Gejala di Kode):**
-  Fungsi pemindahan memperbarui `balance[from]` dan `balance[to]` (atau menyalin saldo ke variabel memori sementara `uint256 balFrom = balance[from]`), tetapi **tidak** menyinkronkan/mengklaim hak tertunda pada KEDUA akun sebelum saldo berubah, atau tidak menolak kondisi `from == to`.
+  Fungsi pemindahan mengubah saldo akun pengirim (`from`) dan penerima (`to`) — atau menyalin saldo ke variabel memori sementara sebelum ditulis balik — tetapi tidak menyinkronkan/mengklaim hak tertunda pada KEDUA akun sebelum saldo berubah, atau tidak menolak kondisi `from == to`.
 
 - **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
-  1. **[Siapkan State]** Attacker_A mengakumulasi hak/bunga yang belum diklaim (`globalIndex > userIndex[Attacker_A]`).
-  2. **[Pemicu Asimetri]** Attacker_A memindahkan saldo ke Attacker_B (yang masih memiliki `userIndex` rendah) atau mentransfer ke dirinya sendiri (Attacker_A -> Attacker_A).
-  3. **[Ekstraksi Nilai]** Attacker_B (atau Attacker_A) mengeklaim hak penuh menggunakan saldo baru dikalikan selisih indeks lama, lalu mengembalikan pokoknya untuk diulang (*loop*).
+  1. **[Siapkan State]** Attacker_A mengakumulasi selisih indeks yang belum diklaim (`globalIndex > userIndex[Attacker_A]`), sementara Attacker_B memiliki `userIndex` lama yang rendah.
+  2. **[Pemicu Asimetri]** Attacker_A memindahkan saldo pokok ke Attacker_B (atau memindahkan ke dirinya sendiri Attacker_A -> Attacker_A bila kontrak memakai variabel memori sementara).
+  3. **[Ekstraksi Nilai]** Akun penerima mengeklaim hak penuh menggunakan saldo baru dikalikan selisih indeks lama, lalu mengembalikan pokoknya untuk diulang (*loop*).
 
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
-  Auditor memeriksa `stake()`, `unstake()`, dan `claim()` lalu melihat ketiganya sudah memanggil modifier `updateReward(msg.sender)`. Auditor lupa bahwa modifier tersebut hanya menerima 1 argumen (`msg.sender`), sehingga pada fungsi 2-aktor seperti `transfer(to, amount)`, akun `to` tidak ikut ter-update — atau variabel memori menimpa nilai saat `from == to`.
+  Auditor memeriksa fungsi masuk, keluar, dan klaim utama (1-aktor) lalu melihat ketiganya sudah memanggil modifier/fungsi penyinkron indeks untuk `msg.sender`. Auditor lupa bahwa penyinkron 1-argumen tersebut tidak memperbarui akun kedua (`to`) pada fungsi 2-aktor, atau luput melihat variabel memori yang saling menimpa saat `from == to`.
 
 - **Batas Realitas (Kapan Pola Ini GUGUR):**
-  Gugur jika fungsi transfer secara eksplisit memanggil sinkronisasi indeks untuk `from` DAN `to` sebelum mengubah saldo, serta menggunakan pengurangan/penambahan langsung di storage (bukan menyalin variabel memori yang saling menimpa saat `from == to`).
+  Gugur jika fungsi pemindahan secara eksplisit menyinkronkan indeks untuk `from` DAN `to` sebelum mengubah saldo, serta menggunakan pengurangan/penambahan langsung di storage tanpa penimpaan cache memori saat `from == to`.
 
 ---
 
-### [POV-04] Inverse-Function Rounding Asymmetry & Multi-Hop Truncation (mint/withdraw vs deposit/redeem)
+### [POV-04] Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation
 
-- **Asumsi Auditor Standar:** "Vault sudah aman dari *rounding exploit* karena `convertToShares` menggunakan `Rounding.Down` dan `convertToAssets` menggunakan `Rounding.Up`, serta `totalSupply == 0` sudah diproteksi dengan *virtual shares/dead shares*."
+- **Kondisi Prasyarat (State Condition):**
+  Kontrak menyediakan pasangan fungsi konversi dua arah — yaitu fungsi Berbasis Input Eksak (*Exact-Input*, pemanggil menentukan jumlah yang diserahkan, kontrak menghitung hasil) dan fungsi Berbasis Target Output Eksak (*Exact-Output*, pemanggil menentukan jumlah hasil yang diminta, kontrak menghitung balik beban biayanya) — atau melakukan konversi proporsi melewati $\ge 2$ tahap pembagian integer beruntun.
 
-- **Realita Penyerang (Counter-Auditor):** Meskipun fungsi searah (`deposit` dan `redeem`) membulatkan ke arah yang benar, fungsi kebalikannya (`mint(shares)` atau `withdraw(assets)`) atau konversi multi-tahap (`asset -> wrappedAsset -> basePoint -> share`) sering kali melakukan pembagian integer antara (*intermediate division*) yang membulatkan ke bawah sebelum pembulatan akhir. Jika `mint(1)` atau `withdraw(x)` melewati 2 kali pembagian beruntun, pemangkasan di langkah pertama dapat mengecilkan penyebut atau pengali di langkah kedua.
+- **Kacamata Attacker (Gejala di Kode):**
+  Meskipun fungsi searah (*Exact-Input*, mis. setor aset atau tukar share) sudah membulatkan ke arah yang menguntungkan protokol, fungsi kebalikannya (*Exact-Output*, mis. cetak share eksak atau tarik aset eksak) atau perhitungan potongan biaya perantara `(amount * feeBps / 10000) * totalShares / totalAssets` melakukan pembagian integer yang membulatkan ke bawah di langkah tengah sebelum pembulatan akhir.
 
-- **Target Pencarian di Kode** (Kombinasi `Metode 4` & `Metode 7`):
-  1. Sandingkan rumus di dalam `deposit(x)` vs `mint(y)` dan `withdraw(x)` vs `redeem(y)`. Cari apakah keduanya memanggil fungsi internal yang sama dengan flag `Rounding` berbeda, atau menulis ulang rumus sendiri.
-  2. Cari rantai konversi 2 langkah atau lebih: misalnya `shares = (assets * feeBps / 10000) * totalSupply / totalAssets`. Periksa apakah bagian `(assets * feeBps / 10000)` dapat menghasilkan 0 untuk nilai `assets > 0` sementara pokok `assets` tetap dipindahkan.
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang mencari atau menciptakan rasio nilai tukar di mana total aset dan total pencatatan bagian (*shares/units*) tidak berkelipatan bulat sempurna.
+  2. **[Pemicu Asimetri]** Penyerang memanggil fungsi *Exact-Output* berulang kali dengan nilai target kecil tepat di bawah ambang pembulatan (Metode 7 — *Split-vs-Bulk*: $f(a) + f(b) < f(a+b)$).
+  3. **[Ekstraksi Nilai]** Potongan biaya atau beban bagian yang harus dibakar terpangkas menjadi 0 atau berkurang 1 wei di setiap iterasi, lalu dilipatgandakan dalam satu transaksi batch/multicall.
 
-- **Uji Cepat Langkah 0 (Fase 3):**
-  - Substitusi matematis langsung dengan angka batas: `totalAssets = 10000e18 + 1`, `totalSupply = 10000e18`, `fee = 30 bps`. Hitung apakah `withdraw(a) + withdraw(b)` memotong share lebih sedikit daripada `withdraw(a + b)`. Jika tidak ada selisih $\ge 1\text{ wei}$ yang menguntungkan pengguna setelah dikurangi biaya transaksi/loop, langsung gugurkan.
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor terpaku memeriksa fungsi *Exact-Input* utama serta proteksi pendeposit pertama (`totalSupply == 0`), lalu menganggap fungsi *Exact-Output* pasangannya sudah simetris tanpa menguji apakah pembagian antara (*intermediate division*) memotong penyebut atau biaya sebelum langkah pembulatan terakhir.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika seluruh tahap pembagian pada fungsi *Exact-Output* membulatkan beban pengguna ke atas (`Rounding.Up` / *ceil*) tanpa pemangkasan perantara, atau jika selisih maksimum setelah di-loop dalam batas gas 1 blok lebih kecil dari biaya gas + fee protokol (`REJECTED_DUST` / `REJECTED_NEGATIVE_EV`).
 
 ---
 

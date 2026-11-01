@@ -135,20 +135,27 @@ Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi 
 
 ---
 
-## Langkah 6: Gerbang Cakupan (COVERAGE GATE) — WAJIB sebelum menutup Fase 1
+## Langkah 6: Gerbang Cakupan PEMETAAN (COVERAGE-MAP GATE) - WAJIB sebelum menutup Fase 1
+
+**Fase 1 hanya memetakan, belum menguji.** Karena itu gerbang keluar Fase 1 **tidak** menguji `LEAD_GENERATED`/`ATTESTED_CLEAN` (status itu baru lahir di Fase 2) - yang diuji adalah apakah setiap berkas `[MUST-AUDIT]` sudah **masuk ke sebuah Unit Alur `S-n`**.
+
+Status yang dipakai di Fase 1: `BELUM` (belum masuk unit) -> `TERPETAKAN_DI_UNIT` (sudah tercakup antrean). `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN` adalah status Fase 2.
 
 Hitung dan tulis ke bagian akhir `05-raw-leads.md`:
 
 | Metrik | Rumus | Ambang LULUS |
 |---|---|---|
-| Cakupan berkas | berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` ÷ total `[MUST-AUDIT]` | **>= 80%** |
-| Cakupan domain | domain `D1..Dn` dengan >=80% berkas berjejak ÷ total domain ber-`[MUST-AUDIT]` | **100%** |
-| Berkas raksasa | berkas `[MUST-AUDIT]` terbesar per domain | **wajib bukan `BELUM`** |
+| **Ketercakupan antrean** | berkas `[MUST-AUDIT]` berstatus `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` | **>= 100%** |
+| Cakupan domain | domain `D1..Dn` dengan >=1 berkas `TERPETAKAN_DI_UNIT` ÷ total domain ber-`[MUST-AUDIT]` | **100%** |
+| Berkas raksasa | berkas `[MUST-AUDIT]` terbesar per domain | **wajib `TERPETAKAN_DI_UNIT`** |
 | Ukuran antrean | jumlah Unit Alur Eksekusi | **<= 40** |
+| Integritas agregasi | berkas di antrean unik | **0 hilang, 0 ganda** vs `00b` |
 
-> **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas** (lead ATAU atestasi), bukan dari banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu.
+> **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis - agar modul yang memang aman tidak dipaksa melahirkan lead palsu.
 
-Bila **salah satu** ambang gagal: Fase 1 **DITOLAK**, kembali ke Langkah 0 dan perluas enumerasi. DILARANG melanjutkan ke Fase 2 dengan gerbang gagal.
+Bila **salah satu** ambang gagal: Fase 1 **DITOLAK**, kembali ke Langkah 0/4 dan perluas enumerasi atau clustering. DILARANG melanjutkan ke Fase 2 dengan gerbang gagal.
+
+**Gerbang jejak (>= 80% `LEAD_GENERATED`/`ATTESTED_CLEAN` per domain)** adalah milik **Fase 2** (`sc-phase2-hunt` §3 Gate Keluar) dan diperiksa ulang oleh **Fase 4** (`sc-phase4-report` Langkah 0a). Jangan tertukar: Fase 1 menguji **pemetaan**, Fase 2 menguji **jejak**, Fase 4 menguji **keduanya sebelum melapor**.
 
 **Catatan pengukuran:** pengukur cakupan (`00b-file-inventory.md`) WAJIB dieksklusi dari populasi yang diukur. Tanpa eksklusi, setiap berkas "disebut" oleh inventarisnya sendiri dan cakupan selalu tampak 100%.
 

@@ -14,9 +14,13 @@ Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan st
 
 Hakim **DILARANG** memeriksa 10 Pernyataan kualitas bukti sebelum gerbang cakupan ini dijalankan. Kualitas PoC hanya bermakna untuk permukaan yang benar-benar diperiksa; satu PoC sempurna di atas 2% cakupan tetap merupakan audit yang gagal.
 
-### 1. Hitung Rasio Cakupan
-Bandingkan `audit/00b-file-inventory.md` (populasi) dengan `audit/03-attack-surface-queue.md` (jejak).
-- **Pembilang:** berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN`. Keduanya sah setara — modul yang memang aman dipenuhi dengan *Negative Attestation* berisi (fungsi apa yang diperiksa, Metode yang dipakai, mengapa invariant-nya tahan), **bukan** dengan lead karangan.
+### 1. Hitung Rasio Cakupan - DUA Gerbang Berbeda
+Bandingkan `audit/00b-file-inventory.md` (populasi) dengan `audit/03-attack-surface-queue.md` (jejak). Wajib periksa **keduanya**, karena keduanya bisa gagal secara independen:
+
+**(a) Gerbang Pemetaan (warisan Fase 1):** berkas `[MUST-AUDIT]` yang `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` = **100%**. Bila kurang, berarti ada berkas yang tidak pernah masuk antrean - kegagalan paling fatal, dan tidak bisa ditambal di Fase 4.
+
+**(b) Gerbang Jejak (Fase 2):** berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN` ÷ total `[MUST-AUDIT]` >= **80% per domain**. Keduanya sah setara - modul yang memang aman dipenuhi dengan *Negative Attestation* berisi (fungsi apa diperiksa, Metode dipakai, mengapa invariant tahan), **bukan** lead karangan.
+
 - **Penyebut:** seluruh berkas `[MUST-AUDIT]` di inventaris.
 - `00b` **dieksklusi** dari pemindaian jejak (pengukur tidak boleh menjadi bagian populasi yang diukur).
 
@@ -31,7 +35,8 @@ Untuk setiap domain `D1..Dn` yang memiliki berkas `[MUST-AUDIT]`, hitung cakupan
 
 | Kondisi | Status |
 |---|---|
-| Cakupan berkas `[MUST-AUDIT]` **< 80%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
+| Gerbang pemetaan: berkas `TERPETAKAN_DI_UNIT` **< 100%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
+| Gerbang jejak: cakupan `[MUST-AUDIT]` **< 80%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
 | Ada **>=1 domain** wajib ber-cakupan **0%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
 | Berkas terbesar per domain masih `BELUM` | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
 | Seluruh kondisi di atas terpenuhi | lanjut ke Langkah 1 |

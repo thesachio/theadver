@@ -34,25 +34,34 @@ Dijalankan pada setiap sesi baru, instruksi "lanjutkan/resume", atau setelah kom
 **DILARANG** pindah `S-n` -> `S-(n+1)` atau `LEAD-x` -> `LEAD-(x+1)` sebelum memperbarui `CURRENT_ACTIVE_ITEM`, `Domain Coverage Meter`, dan `Do-Not-Reopen List` di `audit/STATE.md`. Checkpoint ditulis **sebelum** unit berikutnya dimulai.
 
 ### 4. Skema Wajib `audit/STATE.md`
+Blok di bawah **harus identik** dengan `templates/STATE.md` (sumber kebenaran). Jangan menulis varian field sendiri.
 ```
-# STATE — <proyek>
-PHASE: <1|2|3|4>
-CURRENT_ACTIVE_ITEM: <S-n | LEAD-x | null>
-LAST_UPDATED: <ISO-8601>
+# AUDIT EXECUTION STATE (CHECKPOINT)
 
-## Domain Coverage Meter
-| Domain | Berkas | LEAD | ATTESTED | BELUM | % |
+- Target Repo: <nama_repo_atau_path>
+- Last Updated: <timestamp_atau_step>
+- Active Phase: PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
+- Active Sub-Stage: ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
 
-## Completed Units
-- S1 ... (selesai: <ringkas 1 baris>)
-- S2 ...
+## 1. Cursor Position (Titik Lanjut Eksak)
+- Last Completed Item: <S-n (Domain: <D>) -> hasil 1 baris>
+- CURRENT_ACTIVE_ITEM: <S-n (Domain: <D>)>
+- Active Files in Scope: <path berkas nyata>
+- Active Strike Count (Fase 3): <0/2 atau "-" bila masih Fase 2>
 
-## Do-Not-Reopen List
-- LEAD-x — <kelas vonis> — <alasan 1 baris>
+## 2. Domain Coverage Meter (Syarat Gate >= 80%)
+| Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
 
-## Working Memory Scratchpad
-- Keputusan penting, temuan, catatan alat, path harness
+## 3. Working Memory Scratchpad (Maks 10 Baris — Konteks Sementara Unit Aktif)
+- <maks 10 baris; temuan final pindah ke 05-raw-leads.md>
+
+## 4. Do-Not-Reopen List (Sudah Final, Dilarang Dibaca Ulang)
+- Completed Units: <S-01, S-02, ...>
+- Dead-End Leads (06): <LEAD-n, ...>
+- Verified Leads (08): <LEAD-n, ...>
 ```
+
+**Aturan isi:** `CURRENT_ACTIVE_ITEM` hanya satu; `Active Files in Scope` wajib path nyata; angka `Domain Coverage Meter` harus reproduksibel dari `00b-file-inventory.md` + tabel cakupan `03-attack-surface-queue.md`; berkas ini maksimal **50 baris** dan bukan tempat menyimpan hasil - hanya posisi.
 
 ### 5. Aturan Delegasi
 Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` lebih dulu. Jangan sentuh `Completed Units` atau `Do-Not-Reopen List`. Sebelum keluar, laporkan apa yang harus ditulis ke STATE.md (CURRENT_ACTIVE_ITEM, coverage, do-not-reopen)."* Subagent DILARANG menulis STATE.md sendiri — Parent yang menulis setelah menerima ringkasan.

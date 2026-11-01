@@ -47,6 +47,27 @@ Bila status `AUDIT_INCOMPLETE_COVERAGE_BIAS`:
 3. **Kembalikan eksekusi ke Fase 1/Fase 2** untuk menyapu domain yang terlewat, memakai rotasi domain (`sc-phase2-hunt`).
 4. Temuan yang sudah ada tetap disimpan sebagai **hasil sementara**, bukan laporan final. DILARANG menghapusnya.
 
+### 3b. Audit Kejujuran Usaha pada `07` — Gate Anti-Lazy-Bailout (Pernyataan #11)
+
+**Pernyataan #11 — `LAZY_BAILOUT_DETECTED`.** `07` bukan tempat membuang lead yang belum dikerjakan. Hakim **WAJIB** memeriksa **setiap** entri di `audit/07-needs-next-step.md` sebelum menerima laporan:
+
+| Label | Yang wajib diperiksa Hakim | Vonis bila gagal |
+|---|---|---|
+| `TOOL_BLOCKED` | Bukti **3-Step Self-Healing** (`sc-phase3` Langkah 0c) dilampirkan: (1) flag/remapping/toolchain, (2) **Standalone Minimal / Interface-Only Harness**, (3) fallback RPC. Log terminal ketiganya harus ada di entri. | `LAZY_BAILOUT_DETECTED` |
+| `NEXT_MAINNET` | Bukti bahwa rantai **benar-benar** tanpa RPC/explorer publik. Bila RPC tersedia, Hakim menjalankan sendiri `cast call` / `cast storage` / `cast implementation` **pada sesi itu** dan menuntaskan vonis. | `LAZY_BAILOUT_DETECTED` |
+| `NEXT_EXPLORE` | Log eksekusi fuzzer/chaining/halmos yang **mentok timeout**, bukan sekadar alasan teks. Wajib ada perintah + keluaran + statistik waktu. | `LAZY_BAILOUT_DETECTED` |
+
+**Vonis Hakim:** bila ada entri `07` yang belum memenuhi bukti usaha di atas, Hakim **WAJIB**:
+1. Menandai status audit sebagai `LAZY_BAILOUT_DETECTED`.
+2. **Menolak laporan** — DILARANG menulis Ringkasan Eksekutif seolah audit selesai.
+3. Mengembalikan entri tersebut ke **Fase 3** untuk dieksekusi sampai tuntas — hasilnya wajib tegas: terbukti (`09`), valid-tapi-tidak-eligible (`08`), atau gugur (`06`).
+
+**Target ideal `07` = 0 entri** pada akhir audit. Setiap entri yang tersisa harus bisa dipertahankan dengan **log komputasi**, bukan dengan kalimat.
+
+> Catatan: entri `07` yang judulnya sudah menyatakan `DIPINDAHKAN KE 06`/`09` tetapi masih memuat label lama (`NEXT_EXPLORE`/`NEXT_MAINNET`) adalah **label basi** — wajib dibersihkan. Label basi dihitung sebagai entri tidak sah.
+
+---
+
 ### 4. Format Wajib di Ringkasan Eksekutif
 Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`Total | LEAD | ATTESTED | BELUM | % | Gate`) beserta baris status akhir: `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`. Laporan tanpa tabel ini dianggap belum lengkap.
 
@@ -90,4 +111,4 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
 ## Langkah 3: Ringkasan Eksekutif ke Pengguna
 Tampilkan tabel ringkasan akhir kepada pengguna yang merinci jumlah item di masing-masing file (04, 05, 06, 07, 08, dan 09), beserta daftar kandidat yang dipindahkan oleh Hakim `VERDICT.md` dari 09 ke 08, 07, atau 06.
 
-**Wajib disertai:** (a) tabel cakupan per domain dari Langkah 0a, dan (b) baris `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`. Bila status pembatalan aktif, ringkasan **DILARANG** disajikan sebagai laporan final — sajikan sebagai laporan sementara beserta daftar domain yang wajib disapu ulang.
+**Wajib disertai:** (a) tabel cakupan per domain dari Langkah 0a, (b) baris `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, dan (c) baris `07: <n> entri` + `LAZY_BAILOUT: PASS|DETECTED`. Bila status pembatalan aktif (`COVERAGE` atau `LAZY_BAILOUT`), ringkasan **DILARANG** disajikan sebagai laporan final — sajikan sebagai laporan sementara beserta daftar domain/lead yang wajib dikerjakan ulang.

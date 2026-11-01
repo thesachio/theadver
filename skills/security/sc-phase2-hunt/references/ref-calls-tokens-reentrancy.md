@@ -21,3 +21,33 @@
 - Sabotase Penolakan Penerimaan (Push-Payment DoS): Pada fungsi kritikal seperti likuidasi, lelang, pelunasan pinjaman NFT, atau pembagian hadiah berantai, apakah pengiriman dana/aset dilakukan secara *push* ke alamat pihak lawan yang bisa menolak penerimaan (melalui fallback revert atau akun yang masuk daftar *blacklist* USDC/USDT) sehingga memblokir seluruh transaksi?
 - Kebingungan Standar & Alamat Aset (Token Confusion): Pada protokol yang mendukung berbagai jenis aset (Native ETH, ERC-20, ERC-721, ERC-1155), bisakah pengguna memasukkan alamat kontrak dari tipe standar yang salah atau memasukkan amount vs tokenId secara tertukar?
 - Akuntansi Aktual vs Input Parameter (Khusus Kasta 2/3 yang Terbukti Mendukung FoT/Deflasi): Hanya jika protokol secara eksplisit mengizinkan token *Fee-on-Transfer* tanpa *whitelist* ketat dan berinteraksi dengan pool bersama, periksa apakah kontrak mencatat amount parameter input alih-alih selisih balanceOf sebelum dan sesudah transfer.
+
+---
+
+## Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
+
+Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
+Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
+
+### [POV-02] Cross-Contract / Read-Only State Desync Saat Callback di Tengah Operasi
+
+- **Kondisi Prasyarat (State Condition):**
+  Kontrak utama memiliki modifier `nonReentrant` lokal, namun menghitung nilai/kesehatan posisi menggunakan lebih dari satu variabel state (misal: `totalAssets` dan `totalSupply`, atau `collateral` dan `debt`) atau membagi state dengan kontrak pasangan (Adapter/Strategy/Router/Oracle View).
+
+- **Kacamata Attacker (Gejala di Kode):**
+  Di tengah fungsi (sebelum baris terakhir selesai), terjadi penyerahan kontrol eksternal (pengiriman native coin/ETH, `safeTransferFrom` ERC-721/ERC-1155, hook token whitelist, atau panggilan ke kontrak eksternal) ketika variabel pertama sudah diperbarui tetapi variabel pasangannya belum diperbarui.
+
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang membuka posisi di Kontrak A dan menyiapkan posisi terungkit di Kontrak B (atau fungsi lain yang tidak berbagi kunci `nonReentrant` yang sama).
+  2. **[Pemicu Asimetri]** Penyerang memicu penarikan/likuidasi/aksi yang mengeksekusi panggilan keluar tepat di tengah pembaruan dua variabel.
+  3. **[Ekstraksi Nilai]** Di dalam callback, penyerang memanggil fungsi di Kontrak B (atau fungsi lain) yang membaca nilai rasio yang sedang timpang sementara (*inflated/deflated mid-tx state*) untuk meminjam berlebih atau melikuidasi secara tidak sah.
+
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor melihat kata kunci `nonReentrant` pada fungsi tersebut lalu langsung menandainya aman dari reentrancy, tanpa memeriksa apakah ada kontrak/fungsi lain di ekosistem yang membaca state yang baru setengah selesai diperbarui tersebut.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika seluruh mutasi state internal dan akuntansi bersama diselesaikan 100% sebelum interaksi eksternal (CEI murni), atau jika terdapat *global reentrancy lock* yang juga diperiksa oleh seluruh fungsi pembaca (view check).
+
+---
+
+<!-- Sisipkan [POV-03], [POV-04], dst. di BAWAH baris ini, urut menaik -->

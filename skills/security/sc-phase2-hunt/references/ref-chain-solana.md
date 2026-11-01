@@ -56,4 +56,4 @@ Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
 
 ---
 
-<!-- Sisipkan [POV-MOVE-01], [POV-TON-01], dst. di BAWAH baris ini, urut menaik -->
+<!-- Sisipkan [POV-SOL-02], [POV-SOL-03], dst. di BAWAH baris ini, urut menaik -->

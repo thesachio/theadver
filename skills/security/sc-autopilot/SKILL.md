@@ -34,7 +34,7 @@ Dijalankan pada setiap sesi baru, instruksi "lanjutkan/resume", atau setelah kom
 **DILARANG** pindah `S-n` -> `S-(n+1)` atau `LEAD-x` -> `LEAD-(x+1)` sebelum memperbarui `CURRENT_ACTIVE_ITEM`, `Domain Coverage Meter`, dan `Do-Not-Reopen List` di `audit/STATE.md`. Checkpoint ditulis **sebelum** unit berikutnya dimulai.
 
 ### 4. Skema Wajib `audit/STATE.md`
-Blok di bawah **harus identik** dengan `templates/STATE.md` (sumber kebenaran). Jangan menulis varian field sendiri.
+Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber kebenaran tunggal). Jangan menulis varian field sendiri.
 ```
 # AUDIT EXECUTION STATE (CHECKPOINT)
 
@@ -96,7 +96,7 @@ Sebelum menjalankan Tahap 1, 2, 3, atau 4, Parent Orchestrator **WAJIB** memerik
 - Saat memanggil `delegate_task` untuk melanjutkan, **sertakan isi `Working Memory Scratchpad` dan daftar `Do-Not-Reopen List`** ke dalam Context Wajib Subagent. Subagent tidak boleh menebak konteks unit aktif.
 
 #### 2. `audit/STATE.md` BELUM ADA — Mode Fresh Start
-- Buat `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, memakai `templates/STATE.md` sebagai skema.
+- Buat `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, menyalin skema dari `/home/ubuntu/.hermes/profiles/adv/verify/templates/STATE.md`.
 - Baru setelah itu mulai dari Tahap Orkestrasi 1.
 
 #### 3. Kewajiban Update Kursor Setiap Selesai 1 `delegate_task`

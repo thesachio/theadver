@@ -1,51 +1,33 @@
-# Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
+# Indeks Katalog Attacker POV ([POV-XX])
 
-Katalog **terpusat** untuk Tahap B Fase 2. Entri di sini bersifat lintas-domain: satu POV bisa dipakai
-bersamaan dengan `ref-math-and-vaults.md` maupun `ref-calls-tokens-reentrancy.md`. Karena itu katalog
-tidak diduplikasi ke tiap file referensi domain.
+Katalog **isi** berada di bagian bawah masing-masing file referensi domain, bukan di file ini.
+File ini hanya **indeks** agar Anda dapat menemukan lokasi sebuah POV tanpa membuka tujuh file.
 
-**Cara pakai:** setelah menerjemahkan referensi domain menjadi Pola Mekanis Abstrak (Tahap B butir 1),
-cocokkan gejala kode fungsi target dengan kolom *Kacamata Attacker* di bawah. Jika prasyarat state
-terpenuhi DAN gejala kode terlihat, pola ini layak diangkat menjadi lead di `audit/05-raw-leads.md`
-dengan mencantumkan nomor `[POV-XX]` di kolom Metode Pencarian.
+**Aturan penomoran:** satu nomor `[POV-XX]` hanya boleh dipakai sekali di seluruh katalog, urut menaik
+sesuai urutan pencatatan. DILARANG memakai nomor yang belum terdaftar di tabel ini (larangan halusinasi).
 
-**Cara menambah entri:** tambahkan di atas baris penanda terakhir, satu entri = satu nomor urut baru.
-Jangan pernah memakai nomor yang belum terdaftar di file ini (larangan halusinasi nomor POV).
+**Cara menambah entri baru:**
+1. Pilih file referensi domain yang paling dekat dengan mekanismenya.
+2. Sisipkan entri lengkap (5 field wajib) di bagian `## Katalog Generalized Attacker POV & Auditor Blindspots`
+   pada file tersebut, di bawah penanda sisipan.
+3. Tambahkan satu baris ke tabel di bawah ini dan ke peta cepat.
 
----
-
-## Daftar Entri
-
-### [POV-01] Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi Pihak Ketiga
-
-- **Kondisi Prasyarat (State Condition):**
-  Kontrak melacak hak klaim/bunga/poin menggunakan indeks global (`globalIndex`) dan titik catat per
-  pengguna (`userIndex[u]`), serta memiliki fungsi pemindahan hak (`transfer`, `delegate`, `migrate`,
-  `merge`) selain fungsi masuk/keluar utama.
-
-- **Kacamata Attacker (Gejala di Kode):**
-  Fungsi pemindahan memperbarui `balance[from]` dan `balance[to]` (atau menyalin saldo ke variabel memori
-  sementara `uint256 balFrom = balance[from]`), tetapi **tidak** menyinkronkan/mengklaim hak tertunda pada
-  KEDUA akun sebelum saldo berubah, atau tidak menolak kondisi `from == to`.
-
-- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
-  1. **[Siapkan State]** Attacker_A mengakumulasi hak/bunga yang belum diklaim (`globalIndex > userIndex[Attacker_A]`).
-  2. **[Pemicu Asimetri]** Attacker_A memindahkan saldo ke Attacker_B (yang masih memiliki `userIndex` rendah)
-     atau mentransfer ke dirinya sendiri (Attacker_A -> Attacker_A).
-  3. **[Ekstraksi Nilai]** Attacker_B (atau Attacker_A) mengeklaim hak penuh menggunakan saldo baru dikalikan
-     selisih indeks lama, lalu mengembalikan pokoknya untuk diulang (*loop*).
-
-- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
-  Auditor memeriksa `stake()`, `unstake()`, dan `claim()` lalu melihat ketiganya sudah memanggil modifier
-  `updateReward(msg.sender)`. Auditor lupa bahwa modifier tersebut hanya menerima 1 argumen (`msg.sender`),
-  sehingga pada fungsi 2-aktor seperti `transfer(to, amount)`, akun `to` tidak ikut ter-update — atau variabel
-  memori menimpa nilai saat `from == to`.
-
-- **Batas Realitas (Kapan Pola Ini GUGUR):**
-  Gugur jika fungsi transfer secara eksplisit memanggil sinkronisasi indeks untuk `from` DAN `to` sebelum
-  mengubah saldo, serta menggunakan pengurangan/penambahan langsung di storage (bukan menyalin variabel
-  memori yang saling menimpa saat `from == to`).
+**Field wajib per entri:** Kondisi Prasyarat (State Condition) · Kacamata Attacker (Gejala di Kode) ·
+Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blindspot) · Batas Realitas (Kapan Gugur).
 
 ---
 
-<!-- Tambahkan [POV-02], [POV-03], dst. di atas baris ini -->
+## Tabel Indeks
+
+| Nomor | Judul | Lokasi Entri | Rujukan Domain |
+|---|---|---|---|
+| `[POV-01]` | Desinkronisasi Indeks Akrual Melalui Self-Transfer atau Mutasi Pihak Ketiga | `ref-math-and-vaults.md` | indeks akrual, share, `updateReward` |
+
+---
+
+## Peta Cepat per Tag `[LOAD: ...]`
+
+- `[LOAD: ref-math-and-vaults.md]` -> `[POV-01]`
+- `[LOAD: ref-calls-tokens-reentrancy.md]` -> *(belum ada entri)*
+- `[LOAD: ref-defi-oracles-liquidation.md]` -> *(belum ada entri)*
+- `[LOAD: ref-chain-*]` -> *(belum ada entri)*

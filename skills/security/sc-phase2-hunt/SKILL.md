@@ -53,8 +53,8 @@ Setiap kali menemukan `require(Kondisi_X >= Kondisi_Y)` atau `if (...) revert`:
 ## TAHAP B: Pengayaan Analogi Mekanis & Katalog Attacker POV ([POV-XX])
 Panggil skill_view("sc-phase2-hunt", "<nama-file-ref>") sesuai tag [LOAD: ...]:
 1. Terjemahkan konsep di dalam referensi domain sebagai Pola Mekanis Abstrak lintas domain.
-2. Buka katalog terpusat `references/ref-attacker-pov.md` (bagian `## Daftar Entri`). Cocokkan apakah **Kondisi Prasyarat** terpenuhi dan **Gejala di Kode** pada item `[POV-XX]` hadir pada fungsi yang sedang Anda bedah — terutama kolom *Auditor Blindspot*, karena di situlah peluangnya berada.
-   - **Fallback wajib:** bila `ref-attacker-pov.md` belum memuat POV yang cocok, JANGAN mengarang nomor POV. Turunkan ke analogi mekanis bebas (butir 1) dan catat di `audit/notes/` bahwa katalog POV untuk pola tersebut belum tersedia. *(Katalog POV diisi bertahap — ketiadaannya bukan cacat, jangan "diperbaiki" dengan entri karangan.)*
+2. Buka bagian `## Katalog Generalized Attacker POV & Auditor Blindspots` di **file referensi domain yang baru Anda muat** (mis. `ref-math-and-vaults.md`). Cocokkan apakah **Kondisi Prasyarat** terpenuhi dan **Gejala di Kode** pada item `[POV-XX]` hadir pada fungsi yang sedang Anda bedah — terutama kolom *Auditor Blindspot*, karena di situlah peluangnya berada. Untuk mencari POV yang tidak ada di file tersebut, lihat indeks lokasi di `references/ref-attacker-pov.md`.
+   - **Fallback wajib:** bila tidak ada POV yang cocok di seluruh katalog, JANGAN mengarang nomor POV. Turunkan ke analogi mekanis bebas (butir 1) dan catat di `audit/notes/` bahwa katalog untuk pola tersebut belum tersedia. *(Katalog POV diisi bertahap — ketiadaannya bukan cacat, jangan "diperbaiki" dengan entri karangan.)*
 
 ---
 

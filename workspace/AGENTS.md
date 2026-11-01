@@ -71,6 +71,20 @@ Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token ba
 2. Lapis 2 — Fase 3 (Saringan Fakta Pra-PoC & Kejujuran Lab Fork): Sebelum menulis PoC, buang ke 06-refuted-invalid.md jika lead mengasumsikan LP/Share token punya *Fee-on-Transfer*/USDT-quirk, menyerang initialize()/kolam kosong yang sudah *live*, atau menuntut aksi Admin jahat. Saat menulis PoC, dilarang menggunakan *Fantasy Mock* atau Cheatcode (vm.store, vm.etch, vm.prank(admin)), dan wajib coba amplifikasi dampak pada Fork produksi.
 3. Lapis 3 — Fase 4 (Hakim Akhir via `verify/VERDICT.md`): Wajib membaca dan menerapkan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md untuk memisahkan hasil ke 06-refuted-invalid.md (Ketat Mutlak), 07-needs-next-step.md, 08-valid-not-eligible.md (Dalam Batasan/Low), dan 09-confirmed-findings.md (Valid Eligible).
 
+---
+
+## 3b. Tiga Hukum Anti-Menyerah (mengikat Parent & Subagent)
+
+Ketiganya bersifat **konstitusi**, bukan saran. Melanggarnya = laporan tidak sah.
+
+1. **2-Strike Circuit Breaker.** Maksimal **2 percobaan gagal** per hipotesis. Percobaan ke-3 DILARANG sebelum seluruh lead lain melewati triage batch + pengujian awal. Kegagalan **alat** (compile, import, checksum, ABI, offset decode) **bukan** strike — bedakan dari kegagalan **hipotesis**.
+
+2. **Tangga Self-Healing Tooling (sebelum `TOOL_BLOCKED`).** Label `TOOL_BLOCKED` DILARANG untuk masalah kompilasi dependency/remapping/versi compiler/test runner. Wajib menempuh berurutan: **(a)** flag & toolchain (`--via-ir`, `--optimize`, `--evm-version`, `cargo-build-sbf`, `anchor test --skip-local-validator`) → **(b) Standalone Interface-Only / Minimal Harness** (deklarasikan interface, tembak langsung ke Local Fork — tidak perlu kompilasi seluruh repo) → **(c)** fallback RPC (`.env.rpc`, `rpc-env.sh`, chunking `eth_getLogs`). Log terminal ketiganya wajib dilampirkan di entri `07`.
+
+3. **Hukum Kerjakan Sekarang (`NEXT_MAINNET` / `NEXT_EXPLORE`).** DILARANG memarkir lead bila pekerjaannya bisa diselesaikan sesi ini. RPC tersedia → wajib `cast call` / `cast storage` / `cast implementation` saat itu juga dan tuntaskan ke `09` atau `06`. Baru satu skenario → wajib jalankan multi-step chaining / Differential (Tier 3) / Handler Fuzzing (Tier 2) / halmos (Tier 5) sampai **timeout komputasi**. Setiap entri `07` wajib memuat blok `PERCOBAAN: <perintah> + <keluaran>`.
+
+**Gerbang Hakim (Pernyataan #11 — `LAZY_BAILOUT_DETECTED`).** Fase 4 WAJIB memeriksa seluruh entri `07`. Entri tanpa bukti usaha → laporan **DITOLAK** dan lead dikembalikan ke Fase 3. Label basi (judul sudah dipindah tetapi label lama masih tertinggal) dihitung tidak sah. **Target akhir `07` = 0 entri**; setiap sisa harus dipertahankan dengan log komputasi, bukan kalimat.
+
 ## 4. Protokol Wajib Delegasi Subagent (delegate_task)
 Setiap panggilan delegate_task WAJIB menyertakan di parameter context: (1) Path Absolut Proyek, (2) Paradigma Rantai & Core Invariants, (3) Path File audit/00 s/d 09 yang relevan, (4) Instruksi memanggil skill_view, dan (5) Perintah agar Subagent menulis detail ke audit/notes/ serta mengembalikan ringkasan maksimal 12 baris.
 

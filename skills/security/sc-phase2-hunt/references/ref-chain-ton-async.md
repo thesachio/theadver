@@ -22,3 +22,35 @@ Gunakan daftar periksa ini saat mengaudit smart contract di jaringan TON. **INGA
 
 5. **Penyalahgunaan Mode Pengiriman (`send_raw_message` Mode 128 vs 64) & Storage Fee Drain:**
    - Mode `128` mengirimkan **seluruh saldo TON milik kontrak**, sedangkan Mode `64` hanya mengembalikan sisa `msg_value` dari pesan masuk. Pastikan tidak ada jalur yang memungkinkan pengguna memicu Mode `128` atau menguras saldo TON kontrak di bawah batas minimum cadangan biaya sewa penyimpanan (`raw_reserve`), yang dapat menyebabkan kontrak dibekukan oleh jaringan.
+
+---
+
+## Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
+
+Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
+Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
+
+### [POV-10] Asynchronous Bounce Payload Truncation (224-Bit Limit) & In-Flight Re-Entry
+
+- **Kondisi Prasyarat (State Condition):**
+  Kontrak pada arsitektur aktor asinkron (TON) mengubah state lokal terlebih dahulu lalu mengirim pesan keluar ke kontrak lain, dan mengandalkan handler pesan pantulan (*bounced message*) untuk memulihkan (*rollback*) state jika kontrak tujuan gagal.
+
+- **Kacamata Attacker (Gejala di Kode):**
+  1. Pesan keluar menaruh data penting untuk pemulihan (jumlah nilai, ID posisi, atau alamat pemilik) **setelah bit ke-224** dari body pesan utama atau di dalam referensi *child cell* (`ref`), padahal jaringan memotong pesan bounced hanya menyisakan 224 bit data pertama tanpa `ref`.
+  2. Selama pesan pertama masih dalam perjalanan (*in-flight*) menunggu balasan, status akun/posisi pengirim tidak dikunci (*pending lock*), sehingga pengguna dapat mengirim pesan kedua yang memodifikasi state yang sama.
+  *Prinsip umumnya: (1) adalah **padanan asinkron dari pemangkasan data di langkah antara** ([POV-09] / Metode 7) — payload hilang sebelum rollback sempat berjalan; (2) adalah **padanan asinkron dari status menggantung** (Metode 9) — state tidak terkunci selama siklus belum selesai.*
+
+- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
+  1. **[Siapkan State]** Penyerang menyiapkan state awal pada kontrak asal dan mengatur kondisi (atau takaran `msg_value` gas) agar pesan gagal di kontrak tujuan, atau menyiapkan pesan kedua saat pesan pertama masih *in-flight*.
+  2. **[Pemicu Asimetri]** Kontrak tujuan menolak pesan dan memantulkan pesan bounced yang telah terpotong (atau memproses dua pesan *in-flight* secara berurutan terhadap state yang sama).
+  3. **[Ekstraksi Nilai]** Handler bounced membaca nilai yang terpotong/rusak (atau gagal berjalan), menyebabkan pengembalian saldo berlebih atau penghapusan kewajiban tanpa membatalkan hak yang sudah dicetak.
+
+- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
+  Auditor melihat kontrak sudah menyediakan fungsi `on_bounce` lalu menganggap mekanisme *rollback* asinkron sudah tuntas, tanpa menghitung offset bit pada skema serialisasi pesan yang dikirim.
+
+- **Batas Realitas (Kapan Pola Ini GUGUR):**
+  Gugur jika seluruh data pemulihan disimpan di storage lokal kontrak pengirim (diindeks dengan `query_id` yang muat di dalam 224 bit pertama) DAN entitas dikunci penuh selama status *in-flight* belum selesai.
+
+---
+
+<!-- Sisipkan [POV-11], [POV-12], dst. di BAWAH baris ini, urut menaik -->

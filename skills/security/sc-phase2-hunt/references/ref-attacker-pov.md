@@ -27,9 +27,10 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 | `[POV-04]` | Exact-Input vs Exact-Output Rounding Asymmetry & Multi-Hop Truncation | `ref-math-and-vaults.md` | exact-in vs exact-out, intermediate division |
 | `[POV-05]` | Isolated Subcall (try/catch / Low-Level Call) State-Divergence & Returnbombing | `ref-calls-tokens-reentrancy.md` | try/catch fallback, selective revert, returnbomb |
 | `[POV-06]` | Valuation-Source vs Execution-Venue Asymmetry (Oracle-to-Market Seam) | `ref-defi-oracles-liquidation.md` | oracle vs spot venue, forced swap/rebalance |
-| `[POV-07]` | Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse | `ref-chain-evm-tron.md` | msg.value per-tx, TSTORE bocor, batch reuse |
-| `[POV-08]` | Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization | `ref-chain-solana.md` | akun kembar, `remaining_accounts`, `.reload()` |
-| `[POV-09]` | PTB Cross-Object Receipt/Position Spoofing & Custom Bit-Shift Mask Overflow | `ref-chain-sui-move.md` | object::id binding, Hot Potato, `<<` truncation |
+| `[POV-07]` | Context-Persisting Batch (delegatecall / multicall / Transient Storage) Value & State Reuse | `ref-chain-evm-tron.md` | msg.value loop/multicall, transient storage leak |
+| `[POV-08]` | Cross-Account Parameter Aliasing & Post-CPI Stale Deserialization | `ref-chain-solana.md` | duplicate account key, missing `.reload()` |
+| `[POV-09]` | PTB Cross-Object Receipt/Position Spoofing & Custom Bit-Shift Mask Overflow | `ref-chain-sui-move.md` | `object::id` binding, hot potato, `<<` overflow |
+| `[POV-10]` | Asynchronous Bounce Payload Truncation (224-Bit Limit) & In-Flight Re-Entry | `ref-chain-ton-async.md` | 224-bit bounce limit, in-flight lock |
 
 ---
 
@@ -41,7 +42,7 @@ Rangkaian Peristiwa Serangan · Mengapa Lolos dari Auditor Biasa (Auditor Blinds
 - `[LOAD: ref-chain-evm-tron.md]` -> `[POV-07]`
 - `[LOAD: ref-chain-solana.md]` -> `[POV-08]`
 - `[LOAD: ref-chain-sui-move.md]` -> `[POV-09]`
-- `[LOAD: ref-chain-ton-async.md]` -> *(belum ada entri)*
+- `[LOAD: ref-chain-ton-async.md]` -> `[POV-10]`
 
 ---
 

@@ -128,21 +128,6 @@ Entri tanpa blok `PERCOBAAN` **ditolak** dan lead dikembalikan ke antrean untuk 
 
 ---
 
-## Langkah 0e: Anti-Salah-Alamat — Isolasi Lapisan Sebelum Menyalahkan Target
-
-**Hukum Dasar:** sebelum menyatakan *tool rusak*, *target rentan*, atau *vendor tidak mendukung*, wajib membuktikan **lapisan mana** yang gagal. Kegagalan pada rantai `kode → dependency → kompiler → toolchain → emulasi → OS/disk` hampir selalu berada di lapisan **paling bawah** yang belum diperiksa.
-
-**DILARANG** menulis "bug X", "tidak didukung", atau "tidak ada workaround" tanpa salah satu bukti:
-- log `df`/`free`/`ldd`/`file` yang membuktikan lapisan bawah sehat,
-- reproduksi terisolasi yang gagal **tanpa** melibatkan kode target,
-- pembanding yang berhasil (eksperimen kontrol).
-
-**Eksperimen kontrol wajib:** setiap kegagalan build harus disandingkan dengan target yang **seharusnya berhasil**. Kontrol gagal → masalah tool/lingkungan. Kontrol berhasil → masalah kode.
-
-Tangga isolasi 7 lapisan (disk → arsitektur → library → kompiler anak → integritas artefak → memori → kode target), contoh kasus nyata, dan format pencatatan: `references/ref-layer-isolation.md`. Baca file itu sebelum menyalahkan alat mana pun.
-
----
-
 ## Langkah 1: Saringan Fakta Keras Pra-PoC (Hemat Token — WAJIB Sebelum Menulis Kode PoC!)
 
 ### Langkah 1a: Triage BATCH Seluruh Lead (Anti-FIFO, sebelum PoC apa pun)

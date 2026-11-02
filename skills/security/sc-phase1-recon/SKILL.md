@@ -60,7 +60,6 @@ Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DI
    - Identifikasi ekosistem proyek: Paradigma A (Atomic EVM/Tron/Solana), Paradigma B (Object/Move Sui/Aptos), atau Paradigma C (Async Actor TON).
    - Uji kompilasi/tes awal dengan worker tunggal: FOUNDRY_JOBS=1 (forge test -j 1), CARGO_BUILD_JOBS=1, atau RAYON_NUM_THREADS=1.
    - Periksa ketersediaan konfigurasi RPC di ./rpc-env.sh / .env.rpc untuk kebutuhan simulasi *Local Fork* di Fase 3.
-   - Unduh/ekstrak toolchain besar: **DILARANG ke `/tmp`** bila `df -h /tmp` menunjukkan tmpfs. Ekstraksi >500 MB wajib ke disk nyata (mis. `~/.tools`), lalu set `CARGO_TARGET_DIR` ke disk yang sama.
    - **Build lintas-arsitektur:** untuk program non-EVM (Solana SBF/eBPF), build lokal yang sah HANYA lewat `cargo-build-sbf`. `cargo build --release` menghasilkan shared object host (aarch64/x86_64) yang **tidak sebanding** dengan bytecode on-chain. Wajib cek `file` pada kedua binari sebelum membandingkan ukuran.
 2. **Pemetaan Fakta Siklus Hidup Produksi** (Data Faktual untuk Fase 3 & 4):
    - Periksa skrip deploy/, script/, migrations/, dan konstruktor/factory.
@@ -152,7 +151,6 @@ Hitung dan tulis ke bagian akhir `05-raw-leads.md`:
 | Berkas raksasa | berkas `[MUST-AUDIT]` terbesar per domain | **wajib `TERPETAKAN_DI_UNIT`** |
 | Ukuran antrean | jumlah Unit Alur Eksekusi | **<= 40** |
 | Integritas agregasi | berkas di antrean unik | **0 hilang, 0 ganda** vs `00b` |
-| **Integritas lingkungan** | `df -h` + `free -h` pada path kerja & toolchain | **disk >= 10 GB, RAM >= 4 GB** sebelum Fase 2 |
 
 > **Dua angka, dua fungsi.** `>= 80%` adalah ambang *minimum kelayakan* pemetaan; `= 100% non-DEFERRED` memastikan tidak ada berkas yang hilang tanpa jejak — berkas yang belum masuk unit **wajib** berstatus `DEFERRED` beserta alasan, bukan dibiarkan `BELUM`.
 

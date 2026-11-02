@@ -10,6 +10,18 @@ Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. 
 
 ---
 
+## Protokol Anti-Truncate: Penulisan File Audit Wajib Atomik
+
+**Hukum:** `open(path, "w")` dan `>` pada shell **DILARANG** untuk file `audit/04`–`09`. Keduanya memotong file ke **0 byte saat dibuka**, sebelum satu byte pun ditulis. Bila penulisan lalu gagal, isi asli hilang permanen — backup yang dibuat sesudahnya ikut menyimpan kekosongan.
+
+**Wajib:** tulis ke file `.tmp` → `fsync` → `os.replace()` (atomik). Backup **sebelum** mutasi, bukan sesudah. Verifikasi pasca-tulis (ukuran ≠ 0, heading domain masih ada).
+
+**Satu penulis per file:** Subagent DILARANG menulis langsung ke `audit/04`–`09`; mereka mengembalikan isi di ringkasan, **Parent** yang menulis.
+
+Pola kode lengkap, protokol backup write-ahead, dan prosedur pemulihan (termasuk kewajiban menandai **REKONSTRUKSI** bila isi asli hilang): `references/ref-atomic-write.md`.
+
+---
+
 ## Aturan Orkestrasi Subagent (delegate_task)
 Jika dijalankan melalui delegasi, berikan paket tugas berisi:
 1. Daftar 1 Kelompok Fungsi Siklus Hidup (2–4 fungsi) dari audit/03-attack-surface-queue.md beserta tag [LOAD: ...].

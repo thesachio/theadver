@@ -4,6 +4,22 @@
 
 ---
 
+## 0. Metode Write per Karakteristik File (pilih yang paling murah, tapi tidak merusak)
+
+DILARANG memakai "append selalu". Tiap file punya pola mutasi berbeda.
+
+| Karakteristik | File | Metode | Alasan |
+|---|---|---|---|
+| Tulis sekali | `00`, `01`, `02` | `write_file` awal; tambahan → `append` | Isi hampir tidak berubah |
+| Generate massal | `00b` | **script** (`phase0_inventory.py`); verifikasi `grep -n` | 260 baris; baca penuh ≈9k token tidak perlu |
+| Append-murni | `06`, `08`, `09` | `append` | Entri tidak diubah setelah ditulis |
+| Append lalu ubah status | `04`, `05`, `07` | entri baru → `append`; status → `patch` | Append saja membuat status basi |
+| Edit tabel/baris | `03`, `STATE` | `patch` baris | 40 token/baris vs 5.364 baca penuh (134×) |
+
+**Aturan pemilihan:** token terendah **yang tetap benar**. Append hanya sah bila entri tidak akan diubah; bila statusnya harus diperbarui nanti, pakai `patch`.
+
+---
+
 ## 1. Hukum Atomisitas: `open("w")` DILARANG untuk file audit
 
 `open(path, "w")` memotong file ke **0 byte saat dibuka**, sebelum satu byte pun ditulis. Jika penulisan gagal di tengah, isi asli sudah hilang permanen.

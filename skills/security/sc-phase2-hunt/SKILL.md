@@ -12,11 +12,27 @@ Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. 
 
 ## Protokol Anti-Truncate: Penulisan File Audit Wajib Atomik
 
-**Hukum:** `open(path, "w")` dan `>` pada shell **DILARANG** untuk file `audit/04`–`09`. Keduanya memotong file ke **0 byte saat dibuka**, sebelum satu byte pun ditulis. Bila penulisan lalu gagal, isi asli hilang permanen — backup yang dibuat sesudahnya ikut menyimpan kekosongan.
+**Hukum:** `open(path, "w")` dan `>` pada shell **DILARANG** untuk seluruh `audit/*.md` (termasuk `00`, `00b`, `01`, `02`, `03`, `STATE.md`). Keduanya memotong file ke **0 byte saat dibuka**, sebelum satu byte pun ditulis. Bila penulisan lalu gagal, isi asli hilang permanen — backup yang dibuat sesudahnya ikut menyimpan kekosongan.
 
 **Wajib:** tulis ke file `.tmp` → `fsync` → `os.replace()` (atomik). Backup **sebelum** mutasi, bukan sesudah. Verifikasi pasca-tulis (ukuran ≠ 0, heading domain masih ada).
 
 **Satu penulis per file:** Subagent DILARANG menulis langsung ke `audit/04`–`09`; mereka mengembalikan isi di ringkasan, **Parent** yang menulis.
+
+### Metode Write per Karakteristik File (hemat token)
+
+DILARANG memakai "append selalu" sebagai resep tunggal — tiap file punya pola mutasi berbeda, dan append pada file yang **diubah berulang** justru gagal (status tidak ter-update) atau memaksa baca penuh.
+
+| Karakteristik | File | Metode wajib | DILARANG |
+|---|---|---|---|
+| Tulis sekali | `00`, `01`, `02` | `write_file` saat awal; tambahan kecil → `append` | tulis ulang penuh untuk tambahan |
+| **Generate massal** | `00b` | **script** (`phase0_inventory.py` dll); verifikasi via `grep -n` | menulis manual; membaca penuh (≈9k token) |
+| **Append-murni** | `06`, `08`, `09` | `append` (`mode="a"`) | baca-lalu-tulis-ulang |
+| **Append lalu ubah status** | `04`, `05`, `07` | entri baru → `append`; ubah status → `patch` pada blok itu | append untuk mengubah; tulis ulang penuh |
+| **Edit tabel/baris** | `03`, `STATE` | `patch` baris (`grep -n` dulu bila perlu) | baca penuh lalu tulis ulang |
+
+**Patokan biaya:** entri baru ≈ 300 token tulis. Baca penuh `03`/`04`/`05` ≈ 4–5 ribu token, dan naik terus seiring file membesar. Ubah 1 baris tabel = ~40 token vs 5.364 token bila baca penuh (**rasio ≈134×**).
+
+**Aturan pemilihan:** pilih metode dengan **token terendah yang tetap tidak merusak data**. Append hanya sah bila entri memang tidak akan diubah; bila status entri harus diperbarui kemudian, gunakan `patch`.
 
 Pola kode lengkap, protokol backup write-ahead, dan prosedur pemulihan (termasuk kewajiban menandai **REKONSTRUKSI** bila isi asli hilang): `references/ref-atomic-write.md`.
 

@@ -40,7 +40,7 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 
 - Target Repo: <nama_repo_atau_path>
 - Last Updated: <timestamp_atau_step>
-- Active Phase: PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
+- Active Phase: PHASE_0_INTEL | PHASE_1_RECON | PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
 - Active Sub-Stage: ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
 
 ## 1. Cursor Position (Titik Lanjut Eksak)
@@ -96,8 +96,9 @@ Sebelum menjalankan Tahap 1, 2, 3, atau 4, Parent Orchestrator **WAJIB** memerik
 - Saat memanggil `delegate_task` untuk melanjutkan, **sertakan isi `Working Memory Scratchpad` dan daftar `Do-Not-Reopen List`** ke dalam Context Wajib Subagent. Subagent tidak boleh menebak konteks unit aktif.
 
 #### 2. `audit/STATE.md` BELUM ADA — Mode Fresh Start
-- Buat `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, menyalin skema dari `/home/ubuntu/.hermes/profiles/adv/verify/templates/STATE.md`.
-- Baru setelah itu mulai dari Tahap Orkestrasi 1.
+- **Jika `audit/INTEL.md` juga belum ada** → inisialisasi `audit/STATE.md` dengan `Active Phase: PHASE_0_INTEL` dan `CURRENT_ACTIVE_ITEM: STEP_0_PROJECT_INTEL`, lalu jalankan Tahap Orkestrasi 0.5.
+- **Jika `audit/INTEL.md` sudah ada** → inisialisasi `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, lalu langsung ke Tahap Orkestrasi 1.
+- Skema disalin dari `verify/templates/STATE.md`.
 
 #### 3. Kewajiban Update Kursor Setiap Selesai 1 `delegate_task`
 Setiap kali satu panggilan `delegate_task` selesai (baik **1 Unit `S-n`** di Tahap 2 maupun **1 Batch/Lead** di Tahap 3) dan mengembalikan **manifes** 12 baris, Parent Orchestrator **WAJIB langsung memperbarui `audit/STATE.md` SEBELUM memanggil `delegate_task` berikutnya**:
@@ -130,49 +131,83 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
 
 ---
 
+### Tahap Orkestrasi 0.5: Project Intelligence & Direct Reference Links (sc-project-intel)
+
+1. Periksa apakah `audit/INTEL.md` sudah ada dan **tidak kosong**.
+2. **SUDAH ADA** → lanjutkan langsung ke Tahap Orkestrasi 1.
+3. **BELUM ADA** → jalankan prosedur `sc-project-intel` (atau tugaskan Subagent Intel) untuk mengumpulkan **6 informasi inti & tautan langsung** ke `audit/INTEL.md` sesuai `verify/templates/INTEL.md`:
+   - Nama Proyek & organisasi
+   - Overview 1–3 kalimat
+   - Link UI/dApp
+   - Link Repo GitHub spesifik **+ commit HEAD**
+   - **Direct Link Bug Bounty Rules**
+   - **Direct Links Past Audit Reports**
+
+   Setelah selesai, perbarui `audit/STATE.md` ke `PHASE_1_RECON` (`CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`) sebelum menyentuh Tahap 1.
+
+> `TIDAK_DITEMUKAN` adalah hasil sah (lihat hukum kejujuran `sc-project-intel`). INTEL tidak boleh memblokir audit — status `PARTIAL` tetap lanjut ke Tahap 1 dengan catatan Bagian 6 terisi.
+
+---
+
 ### Tahap Orkestrasi 1: Threat-First Recon (sc-phase1-recon)
 0. **Pre-flight:** bila `audit/STATE.md` belum ada, buat lebih dulu (lihat Langkah −1), lalu set `PHASE: 1`.
 1. Periksa apakah `audit/00b-file-inventory.md` **DAN** `audit/00-project-map.md` s/d `audit/03-attack-surface-queue.md` sudah ada.
    - **Semua ada** -> lanjutkan ke butir 2 (jangan menimpa hasil yang sudah valid).
-   - **Ada yang hilang** -> jalankan butir 2. Bila yang hilang hanya sebagian (mis. `00b` tidak ada tetapi `00–03` ada), **tetap jalankan dari Langkah 0**: inventaris adalah fondasi seluruh gerbang cakupan, dan tanpanya Fase 1 tidak sah.
+   - **Ada yang hilang** -> jalankan butir 2. Bila yang hilang hanya sebagian (mis. `00b` tidak ada tetapi `00`–`03` ada), **tetap jalankan dari Langkah 0**: inventaris adalah fondasi seluruh gerbang cakupan.
 
-   **Proyek lama dengan audit/ sebelumnya (rebuild bersih).** Untuk proyek yang sudah pernah diaudit dengan antrean lama (terutama yang lahir sebelum Langkah 0 ada — mis. proyek 312 berkas yang audit-nya berbasis sampling), **DILARANG melanjutkan di atas folder lama**. Langkah wajib sebelum memulai ulang:
+   **Proyek lama dengan audit/ sebelumnya (rebuild bersih).** Untuk proyek yang sudah pernah diaudit dengan antrean lama, **DILARANG melanjutkan di atas folder lama**:
    ```bash
-   mv audit audit_old_biased      # arsipkan, JANGAN dihapus
+   mv audit audit_old_$(date +%Y%m%d)   # arsipkan, JANGAN rm -rf
    ```
-   Setelah itu Autopilot benar-benar mulai dari `STATE.md` dan `00b-file-inventory.md` yang bersih. Alasan: antrean lama, penomoran `S-n` lama, dan status cakupan lama akan **bertabrakan** dengan gate baru (Flow-Cluster <=40, Queue Mapping Gate, Trace Gate) dan menghasilkan hitungan palsu.
+2. Panggil delegate_task untuk Subagent Recon dengan instruksi wajib:
+   - **Baca `audit/INTEL.md` lebih dulu** (bila ada) untuk **menyelaraskan scope bounty** (Bagian 3) dan **riwayat laporan audit** (Bagian 4) sebelum menyusun inventaris.
+   - Menerapkan **3-Level Chain Detection** (`sc-phase2-hunt/references/ref-attacker-pov.md` Bagian 3) dan menuliskannya ke `00-project-map.md`; tulis `CHAIN: AMBIGUOUS (<runtime>)` bila `.rs` bukan program Solana.
+   - Menetapkan **Kelas Topologi Entitas** pada **setiap** unit `S-n` di `03-attack-surface-queue.md`: `[CLASS-A]` (Single-Entity), `[CLASS-B]` (Dual-Entity), `[CLASS-C]` (Multi-Entity Long Flow).
+   - Wajib `skill_view('sc-phase1-recon')`, DILARANG mengubah kode sumber, laporkan data untuk STATE.md, kembalikan ringkasan maksimal 12 baris.
+3. Setelah selesai, **perbarui `audit/STATE.md`** (PHASE, Domain Coverage Meter, antrean), lalu baca `00-project-map.md` dan `03-attack-surface-queue.md`.
 
-   **Larangan penghapusan permanen:** DILARANG `rm -rf audit`. Arsipkan dengan `mv` beserta tanggal, mis. `mv audit audit_old_$(date +%Y%m%d)`, agar bukti audit lama tetap bisa dirujuk saat menulis retraksi.
-2. Jika BELUM ADA: Panggil delegate_task untuk menugaskan Subagent Recon:
-   - Goal: "Jalankan prosedur lengkap sc-phase1-recon pada proyek <nama-proyek>: Langkah 0 (inventaris `00b-file-inventory.md`, klasifikasi PERILAKU bukan ambang baris), lalu Langkah 1–6 (termasuk Flow-Cluster <=40 Unit dan Coverage Gate >=80% per domain) untuk menghasilkan 00-project-map.md, 01-threat-and-env.md, 02-state-and-var-matrix.md, 03-attack-surface-queue.md, dan menginisialisasi 05-raw-leads.md."
-   - Context Wajib: Path Absolut Proyek, path `audit/STATE.md`, dan instruksi: "Wajib panggil skill_view('sc-phase1-recon') dan baca `audit/STATE.md` lebih dulu. Petakan 3 Kasta Realitas Aset, siklus hidup produksi, Patch-Scar, dan View-vs-Write matrix. DILARANG mengubah kode sumber. Laporkan data yang harus ditulis ke STATE.md. Kembalikan ringkasan maksimal 12 baris."
-3. Setelah selesai, **perbarui `audit/STATE.md`** (PHASE, Domain Coverage Meter, antrean), lalu baca audit/00-project-map.md dan audit/03-attack-surface-queue.md menggunakan read_file.
+---
 
 ### Tahap Orkestrasi 2: Two-Stage Counter-Auditor Hunting (sc-phase2-hunt)
-0. **Pre-flight:** set `PHASE: 2`. **Rotasi domain wajib**: unit dieksekusi bergilir `D1 -> D2 -> ... -> Dn -> D1`, bukan menghabiskan satu folder. Setiap unit **wajib** menghasilkan `LEAD_GENERATED` atau `ATTESTED_CLEAN` (4 unsur: fungsi, Metode, mekanisme tahan, jalur tidak diuji) sebelum pindah unit — perbarui STATE.md lebih dulu (Write-Ahead). Gate keluar: >=80% berkas `[MUST-AUDIT]` berjejak di SETIAP domain. DILARANG memakai kuota "minimal N lead per domain".
-1. **Putaran 1 (Mikro Unit Antrean — Metode 1, 2, 3, 6, 7 + Katalog POV):**
-   - Ambil unit antrean prioritas dari audit/03-attack-surface-queue.md.
-   - Panggil delegate_task satu per satu untuk setiap unit antrean:
-     * Goal: "Bedah unit antrean [NamaTarget] menggunakan prosedur Putaran 1 (Fondasi + Metode 1, 2, 3, 6, 7 -> Tahap B Katalog POV -> Tahap C) di sc-phase2-hunt."
-     * Context Wajib: Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants dari 00-project-map.md, path ke 01-threat-and-env.md & 02-state-and-var-matrix.md, serta instruksi: "Wajib panggil skill_view('sc-phase2-hunt') dan panggil skill_view pada modul references/ sesuai tag [LOAD: ...]. Terapkan Metode 1 (Backward Sink), Metode 2 (State-Transition Differential), Metode 3 (Multi-Identity Sybil), Metode 6 (Stale Snapshot Write-Back & Duplicate Reference [A,A]), dan Metode 7 (Split-vs-Bulk). **KELUARAN: untuk unit antrean `S-n`, tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB untuk hasil unit); `audit/03-attack-surface-queue.md` boleh di-`patch` langsung pada baris status unit (DILARANG `open('w')` / `>` / tulis ulang penuh); `audit/STATE.md` DILARANG disentuh. Kembalikan ringkasan maksimal 20 baris: manifes `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris verdict per entri.** Entri `05` wajib memuat kolom Metode Pencarian & Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk. Laporkan perubahan kursor — Parent yang men-`patch` `audit/STATE.md`."
-2. **Putaran 2 (Makro Lintas-Jalur — Metode 4, 5, 8, 9, 10):**
-   - Periksa isi audit/05-raw-leads.md dan audit/04-code-guarded.md.
-   - Tugaskan Subagent khusus untuk menjalankan 5 metode makro di `sc-phase2-hunt`:
-     * **Metode 4:** Bedah *Patch-Scar*, jalur sampingan (migrate/rescue/sweep/batch), dan asimetri rumus View vs Write dari 02-state-and-var-matrix.md.
-     * **Metode 5 (*Guard-Inversion*):** Bongkar seluruh daftar guard di 04-code-guarded.md dengan melacak fungsi publik pengubah variabel pembentuk guard.
-     * **Metode 8 (*Caller-Callee Seam & Direct Bypass*):** Uji celah lempar tanggung jawab Router <-> Pool/Vault/Strategy dan panggilan langsung melompati Router.
-     * **Metode 9 (*Suspended Lifecycle State*):** Uji siklus multi-tahap yang dihentikan pada status *pending/menggantung* lalu dipanggilkan transfer/borrow/delegate.
-     * **Metode 10 (*Live On-Chain Residue & Upgrade Drift*):** Identifikasi peluang penyedotan *allowance*/saldo mengendap di kontrak perantara atau variabel proxy yang belum diinisialisasi pasca-upgrade.
+0. **Pre-flight:** set `PHASE: 2`.
+
+   **Interleaved Domain Wave & Position-Blind Fixed Quota:**
+   - Rotasi berjalan lintas domain `D1 -> D2 -> ... -> Dn -> D1`. Di dalam setiap domain, unit `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` dibedah **tanpa mendiskriminasi urutan bawah** — kontrak `[CLASS-A]` tunggal bisa memegang 100% TVL.
+   - **1 panggilan `delegate_task` = tepat 1 Unit `S-n`.** DILARANG merapel beberapa unit di ekor antrean (*No Tail-End Compression*).
+   - Prompt Subagent **DILARANG** memuat label "prioritas rendah / urutan bawah / EV kecil" (*Position-Blind*).
+   - Gate keluar: >= 80% berkas `[MUST-AUDIT]` berjejak di **SETIAP** domain. DILARANG memakai kuota "minimal N lead per domain".
+
+1. **Putaran 1 (Mikro — metode sesuai kelas topologi unit):**
+   - Ambil **satu** unit dari `audit/03-attack-surface-queue.md`, panggil `delegate_task` satu per satu.
+     * **Goal:** "Bedah unit `S-n` menggunakan prosedur Putaran 1 di `sc-phase2-hunt`."
+     * **Context Wajib:**
+       - Path Absolut Proyek, Paradigma Rantai, Core Invariants dari `00-project-map.md`, path `01-threat-and-env.md` & `02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
+       - Wajib `skill_view('sc-phase2-hunt')`, lalu **baca `references/ref-method-registry.md`** dan **`references/ref-attacker-pov.md`**.
+       - **Jalankan paket metode `M-001..M-NNN` sesuai kelas topologi unit**:
+         `[CLASS-A]` → *Single-Pass Deep Kill* (`M-005` inline saat itu juga);
+         `[CLASS-B]` → *Dual-Entity* (CLASS-A + `M-003`, `M-006` Prinsip A+B, `M-008`, `M-010`);
+         `[CLASS-C]` → *Multi-Entity Long Flow* (paket penuh, penekanan rantai komposisi panjang).
+       - **Lazy-load `references/ref-pov-<math|call|defi|chain>.md`** HANYA bila gejala pemicu di tabel router `ref-attacker-pov.md` terpenuhi.
+       - **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB); `03` boleh di-`patch` pada baris status; **`STATE.md` DILARANG disentuh**. Kembalikan manifes ≤ 20 baris: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris verdict per entri.
+       - Entri `05` wajib memuat `Kelas Topologi`, kolom Metode Pencarian (`M-00X`/`[POV-XX]`), dan Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk.
+
+2. **Putaran 2 / Sintesis Lintas-Jalur:**
+   - Bongkar **seluruh** guard di `04-code-guarded.md` **lintas-entitas** (`M-005` cross-contract, `M-008` seam, `M-009` suspended lifecycle, `M-010` residual/drift).
+   - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan >= 80% per domain dan Putaran 2 ditutup.
+
+---
 
 ### Tahap Orkestrasi 3: Method-Routed Pre-PoC Gate & Local Fork Simulation (sc-phase3-verify-and-poc)
 0. **Pre-flight:** set `PHASE: 3`. **Langkah 1a wajib:** triage BATCH atas SELURUH lead di `05-raw-leads.md` (routing metode + 4 Kemustahilan Fakta) sebelum menulis satu baris PoC pun. Setelah tabel triage tuntas, urutkan PoC berdasarkan **EV tertinggi** dengan keterwakilan domain — **BUKAN FIFO**. Patuhi **2-Strike Circuit Breaker**: maksimal 2 percobaan gagal per hipotesis, lalu `REJECTED_POC_FAILS` ke `06` dan masuk `Do-Not-Reopen List`.
    **Juga berlaku mutlak di tahap ini:**
    - **Langkah 0c (Tangga Self-Healing):** label `TOOL_BLOCKED` DILARANG untuk masalah kompilasi dependency/remapping/versi compiler/test runner. Wajib menempuh Usaha 1 (flag & toolchain) → Usaha 2 (**Standalone Interface-Only / Minimal Harness**) → Usaha 3 (fallback RPC), lalu lampirkan log ketiganya.
    - **Langkah 0d (Do-It-Now):** `NEXT_MAINNET` DILARANG bila RPC tersedia — jalankan `cast call`/`cast storage`/`cast implementation` saat itu juga. `NEXT_EXPLORE` DILARANG bila baru 1 skenario sederhana — wajib jalankan multi-step chaining / Differential (Tier 3) / Handler Fuzzing (Tier 2) / halmos (Tier 5) hingga timeout komputasi.
-1. **Simulasi & Pembuktian Seluruh Raw Leads (`05-raw-leads.md`):**
+1. **Simulasi & Pembuktian Seluruh Raw Leads (`05-raw-leads.md`) — Unified Cross-Class:**
+   - **Kuota delegasi PoC: maksimal 1 s/d 3 Lead per Subagent**, dari urutan **pertama sampai urutan paling akhir**. DILARANG KERAS merapel 5–10 lead sisa ke satu Subagent pembersih (*No Tail-End Compression*). Prompt DILARANG melabeli lead sebagai "sisa/prioritas rendah/EV kecil".
+   - Fase 3 berjalan atas **gabungan lead A + B + C** setelah semua kelas lulus Gate Cakupan Fase 2.
    - Untuk setiap lead aktif di audit/05-raw-leads.md, panggil delegate_task untuk menugaskan Subagent Verifier:
-     * Goal: "Uji Lead [ID_Lead] dengan Langkah 0 (Routing Metode 1-10 / POV) & Langkah 1 (Saringan Fakta Pra-PoC) lalu jalankan simulasi eksploitasi pada Local Fork sesuai sc-phase3-verify-and-poc."
-     * Context Wajib: Path Absolut Proyek, detail lead dari 05-raw-leads.md, path `audit/STATE.md`, dan instruksi: "Wajib panggil skill_view('sc-phase3-verify-and-poc') dan baca `audit/STATE.md` lebih dulu. Jalankan Langkah 0b (2-Strike), Langkah 0c (Tangga Self-Healing), Langkah 0d (Do-It-Now), Langkah 1a (triage batch) dan 4 Saringan Fakta Pra-PoC. Saat menulis kode simulasi PoC: gunakan kontrak asli (larangan Fantasy Mock), hanya vm.prank(attacker) tanpa vm.store/vm.etch, worker tunggal (-j 1), wajib Local Fork produksi bila RPC tersedia. **DISTRIBUSI:** hasil wajib tegas ke `09` (Fork PASS + dampak nyata), `08` (valid tapi Low/admin-only/pre-live), atau `06` (gugur). **KELUARAN: tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<lead>.md` — staging WAJIB untuk hasil verifikasi lead; jangan menulis ke `06`/`07`/`08`/`09` langsung.** **`07` HANYA boleh dengan blok bukti `PERCOBAAN:` berisi perintah + keluaran — `NEXT_EXPLORE` wajib lampiran log fuzzer/chaining yang mentok timeout, `TOOL_BLOCKED` wajib lampiran log ketiga usaha self-healing, `NEXT_MAINNET` wajib bukti rantai tanpa RPC. Tanpa lampiran, jangan tulis 07 — kerjakan sampai tuntas.** Laporkan ke STATE.md. Kembalikan maksimal 12 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 08: <n> | 09: <n>` + 1 baris verdict per entri."
+     * Goal: "Uji Lead [ID_Lead] (maks 1–3 lead per Subagent) dengan Langkah 0 (Routing dinamis `M-001..M-NNN` / `[POV-XX]` via `ref-method-registry.md` & `ref-pov-*.md`) & Langkah 1 (Saringan Fakta Pra-PoC) lalu jalankan simulasi eksploitasi pada Local Fork sesuai sc-phase3-verify-and-poc."
+     * Context Wajib: Path Absolut Proyek, detail lead dari 05-raw-leads.md, path `audit/STATE.md`, dan instruksi: "Wajib panggil skill_view('sc-phase3-verify-and-poc') dan baca `audit/STATE.md` lebih dulu. Jalankan Langkah 0b (2-Strike), Langkah 0c (Tangga Self-Healing), Langkah 0d (Do-It-Now), Langkah 1a (triage batch) dan 4 Saringan Fakta Pra-PoC. Saat menulis kode simulasi PoC: gunakan kontrak asli (larangan Fantasy Mock), hanya vm.prank(attacker) tanpa vm.store/vm.etch, worker tunggal (-j 1), wajib Local Fork produksi bila RPC tersedia. **PROTOKOL 3-WAY EV AMPLIFICATION (WAJIB):** DILARANG memvonis `REJECTED_DUST` / `REJECTED_NEGATIVE_EV` sebelum ketiga pengali diuji dan angkanya dicatat di `audit/notes/` — (a) Flashloan/Capital Scaling, (b) Single-Tx Looping/Batching, (c) Cross-Lead/Cross-Class Chaining ke guard di `04-code-guarded.md`. **DISTRIBUSI:** hasil wajib tegas ke `09` (Fork PASS + dampak nyata), `08` (valid tapi Low/admin-only/pre-live), atau `06` (gugur). **KELUARAN: tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<lead>.md` — staging WAJIB untuk hasil verifikasi lead; jangan menulis ke `06`/`07`/`08`/`09` langsung.** **`07` HANYA boleh dengan blok bukti `PERCOBAAN:` berisi perintah + keluaran — `NEXT_EXPLORE` wajib lampiran log fuzzer/chaining yang mentok timeout, `TOOL_BLOCKED` wajib lampiran log ketiga usaha self-healing, `NEXT_MAINNET` wajib bukti rantai tanpa RPC. Tanpa lampiran, jangan tulis 07 — kerjakan sampai tuntas.** Laporkan ke STATE.md. Kembalikan maksimal 12 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 08: <n> | 09: <n>` + 1 baris verdict per entri."
 2. **Fuzzing Invarian Stateful & Simetri** (untuk sisa kandidat yang belum bisa dituntaskan):
    - Tugaskan 1 Subagent Fase 3 untuk menjalankan Handler Stateful Invariant Fuzzing (Tier 2), Differential/Split-vs-Bulk Fuzzing (Tier 3), atau Symbolic Proving Halmos (Tier 5). **Wajib dijalankan pada sesi ini** — bukan ditunda sebagai alasan `NEXT_EXPLORE`. Lampirkan perintah, statistik run, dan waktu timeout ke `notes/`.
 

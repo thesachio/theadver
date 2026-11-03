@@ -132,18 +132,27 @@ Entri tanpa blok `PERCOBAAN` **ditolak** dan lead dikembalikan ke antrean untuk 
 
 ## Langkah 1: Saringan Fakta Keras Pra-PoC (Hemat Token — WAJIB Sebelum Menulis Kode PoC!)
 
-### Langkah 1a: Triage BATCH Seluruh Lead (Anti-FIFO, sebelum PoC apa pun)
+### Langkah 1a: Triage BATCH Seluruh Lead (Unified Cross-Class Triage)
 **DILARANG** menulis kode PoC sebelum **seluruh** lead di `audit/05-raw-leads.md` melewati Langkah 0 (routing metode + 4 Kemustahilan Fakta) secara **batch**.
 
+**Unified Phase 3 Gate.** Fase 3 berjalan di atas **gabungan seluruh lead** dari `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` — dan hanya setelah **semua kelas menuntaskan Fase 2** (Gate Cakupan §3 `sc-phase2-hunt` lulus). DILARANG memulai PoC dari satu kelas saja lalu mengejar kelas lain belakangan.
+
 Prosedur:
-1. Tabel-kan semua lead: `ID | Berkas:Baris | Metode/POV | Hasil Langkah 0 | Keputusan`.
+1. Tabel-kan semua lead: `ID | Kelas | Berkas:Baris | Metode/POV | Hasil Langkah 1b | Potensi Chaining Lintas-Kelas | Keputusan`.
+   - **Sebelum** mengisi kolom terakhir, periksa lebih dulu apakah lead dari `[CLASS-A]` (entitas tunggal) dapat menjadi **pemicu/penggeser state** untuk menjebol guard di `04-code-guarded.md`, atau menyulut lead `[CLASS-B]`/`[CLASS-C]` menjadi rantai. Lead `[CLASS-A]` yang tampak "kecil sendirian" justru kandidat penggeser state terkuat karena variabelnya lokal.
 2. Jalankan pemeriksaan termurah untuk **setiap** lead — tanpa menulis satu baris Solidity pun.
 3. Lead yang gugur langsung ke `06-refuted-invalid.md` (`REJECTED_MISMATCH` / `REJECTED_BY_DESIGN` / `REJECTED_NO_VICTIM` / dst.) beserta buktinya.
 4. Baru setelah tabel tuntas, lead yang tersisa masuk antrean PoC.
 
 **Alasan:** lead paling menarik perhatian bukan berarti lead paling berharga. Triage batch memastikan keputusan "mana yang layak di-PoC" diambil dengan pandangan penuh, bukan karena kebetulan dibaca lebih dulu.
 
-### Langkah 1b: Routing berdasarkan Metode Pencarian (wajib, sebelum 4 saringan)
+### Langkah 1b: Routing berdasarkan Metode Pencarian (Dynamic Registry Lookup)
+**Single Source of Truth bersifat dinamis.** Aturan routing uji cepat tidak lagi hanya hidup di daftar di bawah:
+- Untuk setiap kode `M-001..M-NNN` (atau alias `Metode 1..Metode N`), rujuk bagian **`Routing Uji Cepat Fase 3 (Pre-PoC Gate)`** di `sc-phase2-hunt/references/ref-method-registry.md`.
+- Untuk setiap kode `[POV-*-XX]`, rujuk bagian **`Batas Realitas & Routing Uji Cepat Fase 3`** di `sc-phase2-hunt/references/ref-pov-<math|call|defi|chain>.md` (ditemukan lewat indeks `references/ref-attacker-pov.md`).
+
+Daftar di bawah adalah **fast-cache** untuk rute yang paling sering dipakai — bukan himpunan tertutup. Bila registry memuat rute yang lebih baru, registry yang menang.
+
 Baca kolom `Metode Pencarian` dan `Delta State` pada lead di `audit/05-raw-leads.md`. Kolom itu bukan hiasan: ia menentukan uji termurah yang harus dijalankan lebih dulu, sehingga Anda tidak menulis PoC penuh untuk lead yang bisa digugurkan dengan satu pemeriksaan cepat:
 - `[POV-DEFI-01]` (self-liquidation / bad debt): hitung dulu pertidaksamaan `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` memakai angka parameter live. Jika ruas kiri menang di semua kondisi batas -> lead **Negative-EV**, langsung ke `06` tanpa menulis PoC.
 - `[POV-MATH-01]` (desinkronisasi indeks akrual): cek apakah fungsi pemindah menyinkronkan indeks untuk **from DAN to** sebelum saldo berubah. Jika ya -> `06`.
@@ -155,16 +164,16 @@ Baca kolom `Metode Pencarian` dan `Delta State` pada lead di `audit/05-raw-leads
 - `[POV-SOL-01]` (Solana account aliasing / post-CPI stale data): cek apakah ada constraint `key() !=` antar-akun `mut` atau `.reload()?` pasca-CPI. Jika sudah ada -> `06`.
 - `[POV-MOVE-01]` (Move cross-object spoofing / bit-shift mask): cek apakah sudah memeriksa `assert!(receipt.pool_id == object::id(pool))` atau batas mask `<<` menolak bit tertinggi. Jika sudah ada -> `06`.
 - `[POV-TON-01]` (TON 224-bit bounce truncation / in-flight lock): hitung total bit field sebelum data pemulihan (apakah $\le 224$ bit tanpa `ref`?) atau apakah state dikunci berdasarkan `query_id`. Jika terkunci -> `06`.
-- `[Metode 3]` (multi-identity sybil): PoC WAJIB memakai dua identitas/akun/objek yang dikendalikan penyerang dalam satu jendela eksekusi — EVM: dua EOA dalam 1 tx; non-EVM: dua signer, dua capability, atau dua jalur message. PoC satu-identitas tidak membuktikan apa pun.
-- `[Metode 4]` (patch-scar / view-vs-write): jika klaim desinkronisasi view vs write, pastikan ada fungsi tulis/eksternal yang benar-benar memanggil fungsi view tersebut untuk keputusan finansial; jika hanya tampilan UI -> `06` / `08`.
-- `[Metode 5]` (guard-inversion): guard sudah dianalisis di Putaran 2. Jika tidak ada fungsi publik yang bisa menggeser variabel pembentuk guard -> `06`.
-- `[Metode 6]` (stale snapshot write-back / duplicate reference `[A, A]`): (a) pastikan urutan baca-lokal -> mutasi-persisten -> tulis-balik benar-benar terjadi; jika tidak ada tulis-balik setelah interaksi eksternal -> `06`. (b) untuk referensi kembar, cek deduplikasi; jika sudah ada -> `06`; jika belum -> PoC cukup 1 transaksi dengan input kembar `[id, id]`.
-- `[Metode 7]` (metamorphic split-vs-bulk): hitung selisih maksimum `N x aksi(kecil)` vs `1 x aksi(besar)` dalam batas gas 1 blok. Jika total selisih lebih kecil dari biaya gas + fee protokol -> `REJECTED_DUST` / `REJECTED_NEGATIVE_EV` ke `06`.
-- `[Metode 8]` (caller-callee seam / direct downstream bypass): cek pembatasan caller di komponen hilir **dan** apakah validasi kritis diulang di sana. Jika pembatasan caller sah DAN validasi diulang -> `06`; jika salah satu tidak ada -> PoC wajib memanggil hilir secara langsung.
-- `[Metode 9]` (half-baked / suspended lifecycle): cek apakah Langkah 1 (`request`/`createOrder`/`initiate`) langsung mengurangi/mengunci saldo. Jika sudah dikunci penuh -> `06`; jika belum -> PoC wajib mengeksekusi Langkah 1 (Gantung) -> Aksi Sampingan -> Langkah 2.
-- `[Metode 10]` (live residual state / delegated authority / post-upgrade drift): sebelum menulis PoC, baca state live lebih dulu. Jika di state produksi tidak ada saldo tertinggal, tidak ada otorisasi tertunda aktif, dan field pasca-upgrade sudah terisi -> langsung buang ke `06` tanpa menulis PoC.
+- `[M-003 / Metode 3]` (multi-identity sybil): PoC WAJIB memakai dua identitas/akun/objek yang dikendalikan penyerang dalam satu jendela eksekusi — EVM: dua EOA dalam 1 tx; non-EVM: dua signer, dua capability, atau dua jalur message. PoC satu-identitas tidak membuktikan apa pun.
+- `[M-004 / Metode 4]` (patch-scar / view-vs-write): jika klaim desinkronisasi view vs write, pastikan ada fungsi tulis/eksternal yang benar-benar memanggil fungsi view tersebut untuk keputusan finansial; jika hanya tampilan UI -> `06` / `08`.
+- `[M-005 / Metode 5]` (guard-inversion): guard sudah dianalisis di Putaran 2. Jika tidak ada fungsi publik yang bisa menggeser variabel pembentuk guard -> `06`.
+- `[M-006 / Metode 6]` (stale snapshot write-back / duplicate reference `[A, A]`): (a) pastikan urutan baca-lokal -> mutasi-persisten -> tulis-balik benar-benar terjadi; jika tidak ada tulis-balik setelah interaksi eksternal -> `06`. (b) untuk referensi kembar, cek deduplikasi; jika sudah ada -> `06`; jika belum -> PoC cukup 1 transaksi dengan input kembar `[id, id]`.
+- `[M-007 / Metode 7]` (metamorphic split-vs-bulk): hitung selisih maksimum `N x aksi(kecil)` vs `1 x aksi(besar)` dalam batas gas 1 blok. Jika total selisih lebih kecil dari biaya gas + fee protokol -> `REJECTED_DUST` / `REJECTED_NEGATIVE_EV` ke `06`.
+- `[M-008 / Metode 8]` (caller-callee seam / direct downstream bypass): cek pembatasan caller di komponen hilir **dan** apakah validasi kritis diulang di sana. Jika pembatasan caller sah DAN validasi diulang -> `06`; jika salah satu tidak ada -> PoC wajib memanggil hilir secara langsung.
+- `[M-009 / Metode 9]` (half-baked / suspended lifecycle): cek apakah Langkah 1 (`request`/`createOrder`/`initiate`) langsung mengurangi/mengunci saldo. Jika sudah dikunci penuh -> `06`; jika belum -> PoC wajib mengeksekusi Langkah 1 (Gantung) -> Aksi Sampingan -> Langkah 2.
+- `[M-010 / Metode 10]` (live residual state / delegated authority / post-upgrade drift): sebelum menulis PoC, baca state live lebih dulu. Jika di state produksi tidak ada saldo tertinggal, tidak ada otorisasi tertunda aktif, dan field pasca-upgrade sudah terisi -> langsung buang ke `06` tanpa menulis PoC.
 
-Jika kolom `Metode Pencarian` tidak ada pada sebuah lead, catat di `audit/notes/` dan minta Fase 2 melengkapinya — jangan menebak metode. Jika metodenya ada tetapi **tidak punya rute khusus** (`Metode 1` backward tracing dan `Metode 2` delta analysis memang cara membaca, bukan gerbang), lanjutkan langsung ke 4 Kemustahilan Fakta tanpa mengarang uji tambahan.
+Jika kolom `Metode Pencarian` tidak ada pada sebuah lead, catat di `audit/notes/` dan minta Fase 2 melengkapinya — jangan menebak metode. Jika metodenya ada tetapi **tidak punya rute khusus** (`M-001`/`Metode 1` backward tracing dan `M-002`/`Metode 2` delta analysis memang cara membaca, bukan gerbang), lanjutkan langsung ke 4 Kemustahilan Fakta tanpa mengarang uji tambahan.
 
 ### Langkah 1c: 4 Kemustahilan Fakta Dasar
 Sebelum menghabiskan token menulis kode simulasi, periksa 4 Kemustahilan Fakta berikut (rujuk `00-project-map.md` dan `01-threat-and-env.md`). Jika jawaban dari SALAH SATU pertanyaan ini adalah YA, jangan tulis PoC — tulis entri lengkap ke `audit/notes/staging-<lead>.md` (merge ke `06` dilakukan Parent):
@@ -186,6 +195,20 @@ Setelah Langkah 1a lolos, **DILARANG** mengerjakan PoC berdasarkan urutan nomor 
 3. **Biaya bukti paling murah** pada EV setara — lead yang butuh satu `cast call` didahulukan daripada yang butuh harness baru.
 
 **Batalkan PoC kapan saja** begitu `2-Strike Circuit Breaker` (Langkah 0b) terpicu.
+
+**Pengunci Anti-Low-Rate #1 — Kuota Beban Identik & Position-Blind Dispatch (*No Tail-End Compression*).**
+Jika dijalankan lewat delegasi Subagent: **1 Subagent menangani maksimal 1 s/d 3 Lead** untuk di-PoC — sama batasnya untuk lead urutan teratas maupun lead urutan paling buntut. **DILARANG KERAS** merapel 5–10 lead sisa di ekor antrean ke dalam satu "Subagent pembersih" di akhir. Prompt Subagent DILARANG memuat label posisi ("sisa", "prioritas rendah", "EV kecil").
+
+**Pengunci Anti-Low-Rate #2 — Protokol *Mandatory 3-Way EV Amplification* sebelum vonis `REJECTED_DUST` / `REJECTED_NEGATIVE_EV`.**
+Lead yang pada **1 transaksi sederhana** tampak menghasilkan selisih kecil **DILARANG** langsung dibuang ke `06`. Wajib diuji terhadap **3 Pengali Dampak** berikut dan hasilnya dicatat di `audit/notes/`:
+
+| # | Pengali | Cara Uji |
+|---|---|---|
+| (a) | **Flashloan / Capital Scaling** | Uji dengan modal pinjaman kilat **maksimum yang realistis** pada pool/rantai target — bukan saldo attacker sendiri. |
+| (b) | **Single-Tx Looping / Batching** | Uji pemanggilan berulang ($N$ iterasi) dalam **1 transaksi** (multicall, PTB, atau kontrak penyerang kustom) sampai batas gas/komputasi 1 blok. |
+| (c) | **Cross-Lead / Cross-Class Chaining** | Uji apakah anomali kecil ini (misal dari unit `[CLASS-A]`) dapat menjadi **langkah pembuka** untuk menggeser variabel pembentuk guard di `04-code-guarded.md`, atau digabung dengan lead lain di `05-raw-leads.md` (`[CLASS-B]` / `[CLASS-C]`). |
+
+> Vonis `REJECTED_DUST` / `REJECTED_NEGATIVE_EV` hanya sah bila **ketiga** pengali sudah dicoba dan dirinci angkanya. Menvonis tanpa mencatat ketiga hasil = pelanggaran Pernyataan #11 (`LAZY_BAILOUT_DETECTED`).
 
 **Pencatatan wajib:** tulis urutan eksekusi beserta alasan EV di `audit/notes/fase3-urutan-poc.md` sebelum mulai. Urutan yang tidak tercatat dianggap FIFO dan melanggar aturan.
 

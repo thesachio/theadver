@@ -64,7 +64,7 @@ Backup **SEBELUM** mutasi, bukan sesudah. Backup yang dibuat setelah kegagalan m
 
 | Karakteristik | File | Metode wajib | DILARANG |
 |---|---|---|---|
-| Tulis sekali | `00`, `01`, `02` | `write_file` awal; tambahan → `append` | tulis ulang penuh |
+| Tulis sekali | `INTEL.md`, `00`, `01`, `02` | `write_file` awal; tambahan → `append` | tulis ulang penuh |
 | Generate massal | `00b` | **script** (`phase0_inventory.py`); verifikasi `grep -n` | baca penuh (≈9k token) |
 | Append-murni | `06`, `08`, `09` | `append` | edit entri setelah ditulis |
 | Append lalu ubah status | `04`, `05`, `07` | entri baru → `append`; status → `patch` | append saja (status jadi basi) |
@@ -79,11 +79,12 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Mereka menulis entri lengkap
 
 ---
 
-## 2. Arsitektur File Murni di audit/ (STATE + 00b + 00 s/d 09)
+## 2. Arsitektur File Murni di audit/ (STATE + INTEL + 00b + 00 s/d 09)
 Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token baca-tulis dan bebas risiko tertimpa:
 - `STATE.md` (**Kursor Checkpoint & Resume**): Satu-satunya sumber kebenaran posisi eksekusi aktif — `Active Phase`, `Active Sub-Stage`, `CURRENT_ACTIVE_ITEM`, `Domain Coverage Meter`, `Working Memory Scratchpad` (maks 10 baris), dan `Do-Not-Reopen List`. **Maksimal 50 baris.** Dibuat sejak Fase 1 Langkah 0; skema di `verify/templates/STATE.md`.
+- `INTEL.md` (**Konteks Awal & Tautan Referensi Langsung — Fase 0**): Berisi 6 informasi inti hasil `sc-project-intel` (Nama Proyek, Overview singkat 1–3 kalimat, Link UI/dApp, Link Repo GitHub Spesifik + commit HEAD, Direct Link aturan Bug Bounty, dan Direct Links laporan audit terdahulu). Maksimal 40 baris; skema di `verify/templates/INTEL.md`.
 - `00b-file-inventory.md` (**Inventaris Fisik & Domain**): Daftar populasi penuh berkas kontrak beserta LOC efektif, jumlah fungsi mutasi state, domain arsitektur (D1..Dn), dan label `[MUST-AUDIT]` vs `[STATELESS/INTERFACE]`. Klasifikasi ditentukan **perilaku** (mengubah state / merutekan dana / eksekusi alur), **bukan** ambang jumlah baris. Berkas duplikat terverifikasi dihitung sekali.
-- `00-project-map.md` s/d `03-attack-surface-queue.md` (Output Fase 1): Peta proyek & invarian (00), Baseline Realitas 3 Paradigma Rantai & 3 Kasta Aset (01), Matriks mutasi variabel (02), dan Antrean Unit Alur Eksekusi berlabel [LOAD: ref-...] (03). `03` dibangun dengan **Flow-Cluster** (maksimal 40 unit; setiap berkas `[MUST-AUDIT]` muncul tepat satu unit) dan memuat tabel cakupan per domain.
+- `00-project-map.md` s/d `03-attack-surface-queue.md` (Output Fase 1): Peta proyek & invarian (00), Baseline Realitas 3 Paradigma Rantai & 3 Kasta Aset (01), Matriks mutasi variabel (02), dan Antrean Unit Alur Eksekusi berlabel [LOAD: ref-...] (03). `03` dibangun dengan **Flow-Cluster** (maksimal 40 unit; setiap berkas `[MUST-AUDIT]` muncul tepat satu unit) dan memuat tabel cakupan per domain. Setiap unit `S-n` di `03` juga memuat tag **Kelas Topologi Entitas** (`[CLASS-A]` Single-Entity, `[CLASS-B]` Dual-Entity, `[CLASS-C]` Multi-Entity Long Flow) dan memanggil `ref-method-registry.md` + `ref-attacker-pov.md` pada baris `[LOAD: ...]`.
 - `04-code-guarded.md` (Output Fase 2 Putaran 1 -> Umpan Putaran 2): Murni hipotesis yang dihentikan oleh guard kode (require / if (...) revert / assert! beserta File:Baris, Ekspresi Guard, dan Variabel Pembentuk). Dibaca kembali oleh Subagent Putaran 2 untuk mencari celah *Guard-Inversion* (Metode 5).
 - `05-raw-leads.md` (Output Fase 1 & 2 -> Input Fase 3): Murni antrean kerja aktif berisi seluruh anomali mutasi state yang belum terhalang guard kode dan menunggu pembuktian di laboratorium Fase 3.
 - `06-refuted-invalid.md` (Output Fase 3 & 4 — Gugur Permanen): Murni hipotesis yang mati permanen karena gagal *Pre-PoC Fact Gate*, PoC gagal/revert di state nyata, atau melanggar **Pernyataan Ketat Mutlak (#1–#6)** di `verify/VERDICT.md` — yaitu kelas: `REJECTED_FANTASY_MOCK`, `REJECTED_UNPROVEN_DEPLOYMENT`, `REJECTED_GENESIS_MIRAGE`, `REJECTED_NO_VICTIM`, `REJECTED_NEGATIVE_EV`, `REJECTED_CHEATCODE`, `REJECTED_PRIVILEGED_FANTASY`, `REJECTED_NON_LIVE_INIT`, `REJECTED_DUST`, `REJECTED_BY_DESIGN`, `REJECTED_MISMATCH`, `REJECTED_POC_FAILS`.

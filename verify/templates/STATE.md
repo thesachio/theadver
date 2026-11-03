@@ -2,8 +2,8 @@
 
 - Target Repo: <nama_repo_atau_path>
 - Last Updated: <timestamp_atau_step>
-- Active Phase: PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
-- Active Sub-Stage: ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
+- Active Phase: PHASE_0_INTEL | PHASE_1_RECON | PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
+- Active Sub-Stage: STEP_0_PROJECT_INTEL | STEP_0_INVENTORY | ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
 
 ## 1. Cursor Position (Titik Lanjut Eksak)
 - Last Completed Item: S-07 (Domain: spoke-pools) -> Hasil: ATTESTED_CLEAN + LEAD-09

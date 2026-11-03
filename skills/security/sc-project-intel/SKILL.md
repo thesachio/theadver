@@ -49,6 +49,34 @@ Berhenti setelah keenamnya terisi (atau ditandai `TIDAK_DITEMUKAN`). **Dilarang 
 > URL karangan menghancurkan seluruh laporan. "Tidak ketemu" ≠ "tidak ada" — bila gagal karena blokir
 > situs/login, tulis `TIDAK_DITEMUKAN` **dan** sebutkan penyebabnya.
 
+### Aturan Jujur per Butir INTEL (mengikat)
+
+Setiap butir punya cara sah menyatakan ketiadaan. **Mengosongkan slot = INTEL ditolak.**
+Bentuk penulisan lengkap per butir ada di tabel "Aturan Jujur per Bagian" pada
+`verify/templates/INTEL.md`.
+
+| Butir | Bila tidak ditemukan | DILARANG |
+|---|---|---|
+| Project Name | `TIDAK_DITEMUKAN` + sumber dicek | Menebak dari nama folder |
+| Overview | `TIDAK_DITEMUKAN — tidak ada README/docs` | Mengarang dari pengetahuan umum model |
+| Main UI (dApp) | `TIDAK_DITEMUKAN` (mungkin kontrak/library tanpa UI) | Menulis domain akar belum diuji |
+| Official Docs | `TIDAK_DITEMUKAN` | URL mesin pencari |
+| GitHub Repo | `TIDAK_DITEMUKAN — bukan repo git` | Menebak `github.com/<org>/<nama>` |
+| Audited Commit | `TIDAK_DITEMUKAN` | `latest` / `main` / hash karangan |
+| Bug Bounty | `TIDAK_DITEMUKAN` | Mengisi `Immunefi` tanpa halaman nyata |
+| Scope Note | `TIDAK_DITEMUKAN — tidak ada aturan tertulis` | **Menyimpulkan scope dari praktik umum** |
+| Past Audits | `TIDAK_DITEMUKAN` | Menaikkan "disebut di README" jadi laporan |
+| Deployment | `TIDAK_DITEMUKAN` per sub-baris | Alamat tanpa `cast code` non-kosong |
+
+**Empat hukum penegakan:**
+
+1. **Satu alasan per ketiadaan.** `TIDAK_DITEMUKAN` tanpa alasan + sumber di Bagian 6 = INTEL **tidak jujur**.
+2. **"Gagal diakses" ≠ "tidak ada".** Tulis `TIDAK_DITEMUKAN (batas akses: 403/login/timeout)`.
+   DILARANG menyimpulkan aturan/laporan itu tidak eksis.
+3. **Bila ragu, turunkan.** Satu slot kosong yang jujur tidak merusak laporan; satu URL palsu membatalkan seluruhnya.
+4. **Konsistensi status.** `COMPLETE` hanya sah bila keenam butir di Bagian 6 = `DITEMUKAN`.
+   Satu saja `TIDAK_DITEMUKAN` ⇒ wajib `PARTIAL`.
+
 ---
 
 ## Prosedur Eksekusi 3 Langkah

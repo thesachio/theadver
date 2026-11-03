@@ -39,17 +39,25 @@
 ## 4. Past Audit Reports (Direct File/Report Links)
 - [<Nama Auditor 1 — Tanggal/Tahun>](<URL langsung ke file PDF / repo / halaman laporan audit>) — Fokus/Versi: <singkat>
 - [<Nama Auditor 2 — Tanggal/Tahun>](<URL langsung ke file PDF / repo / halaman laporan audit>) — Fokus/Versi: <singkat>
-- *(Jika belum ditemukan laporan publik, tulis: `TIDAK_DITEMUKAN` — jangan mengosongkan bagian ini.)*
+- *(Bila belum ditemukan laporan publik, ganti KEDUA baris di atas dengan:)*
+  `TIDAK_DITEMUKAN — tidak ada laporan audit publik di docs/, folder audits/, maupun situs auditor.`
+- *(Bila README hanya MENYEBUT adanya audit tanpa tautan:)*
+  `TIDAK_DITEMUKAN — README menyebut "audit by X" tanpa tautan laporan (klaim tak terverifikasi).`
 
 ## 5. Deployment & Live Surface (fakta terukur, bukan asumsi)
 - Chain / Network Aktif : <daftar chainId yang benar-benar dipakai, atau TIDAK_DITEMUKAN>
 - Kontrak Utama (alamat) : <alamat + chain, atau TIDAK_DITEMUKAN>
 - Bukti Live : <perintah `cast call`/`cast code` + hasil ringkas yang membuktikan kode ter-deploy>
 
-## 6. Catatan Ketiadaan (WAJIB diisi bila Intel Status = PARTIAL)
-- Tidak ditemukan : <daftar butir yang gagal ditemukan — mis. "bounty page", "laporan audit publik">
-- Sudah dicoba : <sumber yang benar-benar dicek: docs resmi, GitHub org, Immunefi search, dll>
-- Dampak ke audit : <apa yang TIDAK bisa diklaim nanti karena butir ini kosong>
+## 6. Catatan Ketiadaan (WAJIB bila Intel Status = PARTIAL)
+| Butir | Status | Alasan + sumber dicoba | Dampak |
+|---|---|---|---|
+| UI | DITEMUKAN/TIDAK_DITEMUKAN | <mis. "404; tak disebut README"> | <tak bisa diklaim> |
+| Docs | DITEMUKAN/TIDAK_DITEMUKAN | ... | ... |
+| Repo | DITEMUKAN/TIDAK_DITEMUKAN | ... | ... |
+| Bounty | DITEMUKAN/TIDAK_DITEMUKAN | ... | ... |
+| Audits | DITEMUKAN/TIDAK_DITEMUKAN | ... | ... |
+- Ringkasan : <butir TIDAK_DITEMUKAN, atau "tidak ada — INTEL COMPLETE">
 ```
 
 ---
@@ -68,3 +76,36 @@
    atau tx deploy. "Seharusnya live" bukan bukti.
 6. **Bagian 6 tidak boleh kosong** bila `Intel Status = PARTIAL`. Justru bagian inilah yang
    melindungi audit dari klaim berlebih di Fase 4.
+
+---
+
+## Aturan Jujur per Bagian (WAJIB — "tidak ditemukan" bukan kegagalan)
+
+Setiap bagian punya **cara sah mengatakan tidak ada**. Dilarang mengosongkan slot, dilarang
+mengisi dengan tebakan, dilarang memaksakan jawaban agar terlihat lengkap.
+
+| Bagian | Bila TIDAK ditemukan, tulis PERSIS | DILARANG |
+|---|---|---|
+| 1 · Project Name | `TIDAK_DITEMUKAN` diikuti sumber yang diperiksa (`README`/`git remote`) | Menebak nama dari nama folder |
+| 1 · Brief Overview | `TIDAK_DITEMUKAN — tidak ada README/docs yang menjelaskan mekanisme` | Mengarang deskripsi dari pengetahuan umum/model |
+| 2 · Main UI (dApp) | `TIDAK_DITEMUKAN` — protokol mungkin hanya kontrak/library tanpa UI | Menulis domain akar yang belum diuji |
+| 2 · Official Docs | `TIDAK_DITEMUKAN` | Menulis URL hasil pencarian |
+| 2 · Specific GitHub Repo | `TIDAK_DITEMUKAN` — bukan repo git / tanpa remote | Menebak `github.com/<org>/<nama>` dari nama proyek |
+| 2 · Audited Commit | `TIDAK_DITEMUKAN` — bukan repo git | Menulis `latest`, `main`, atau hash karangan |
+| 3 · Platform | `TIDAK_DITEMUKAN` | Mengisi `Immunefi` tanpa halaman bounty yang benar-benar ada |
+| 3 · Direct Bounty URL | `TIDAK_DITEMUKAN` | Menunjuk beranda platform, bukan halaman proyek |
+| 3 · High-Level Scope Note | `TIDAK_DITEMUKAN — tidak ada aturan scope tertulis` | **Menyimpulkan scope dari praktik umum** |
+| 4 · Past Audit Reports | `TIDAK_DITEMUKAN` | Menaikkan *"disebut di README"* menjadi laporan |
+| 5 · Chain / Kontrak / Bukti Live | `TIDAK_DITEMUKAN` per sub-baris | Menulis alamat tanpa `cast code` non-kosong |
+
+### Empat hukum pengisian
+
+1. **Satu alasan per ketiadaan.** `TIDAK_DITEMUKAN` saja tidak cukup — wajib disertai **alasan singkat
+   + sumber yang sudah dicoba** di tabel Bagian 6. Tanpa itu, INTEL dianggap **tidak jujur**.
+2. **"Gagal diakses" ≠ "tidak ada".** Bila penyebabnya 403/429/login/timeout, tulis
+   `TIDAK_DITEMUKAN (batas akses: <penyebab>)`. DILARANG menyimpulkan aturan/laporan itu tidak eksis.
+3. **Dilarang mengisi slot dengan asumsi.** Bila ragu, turunkan ke `TIDAK_DITEMUKAN`. Satu slot kosong
+   yang jujur tidak merusak laporan; satu URL palsu membatalkan seluruhnya.
+4. **Konsistensi wajib.** `Intel Status = COMPLETE` hanya sah bila **keenam** butir di tabel Bagian 6
+   berstatus `DITEMUKAN`. Satu saja `TIDAK_DITEMUKAN` ⇒ status **wajib** `PARTIAL`.
+

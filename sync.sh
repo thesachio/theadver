@@ -16,6 +16,7 @@ PROFILE="${PROFILE:-/home/ubuntu/.hermes/profiles/adv}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PATHS=(
+  "skills/security/sc-project-intel"
   "skills/security/sc-autopilot"
   "skills/security/sc-phase1-recon"
   "skills/security/sc-phase2-hunt"

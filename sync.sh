@@ -26,6 +26,8 @@ PATHS=(
   "verify/tools"
   "workspace/AGENTS.md"
   "workspace/rpc-env.sh"
+  "workspace/rpc-free-tier.md"
+  "workspace/RPC-STATUS.md"
   "workspace/.env.rpc"
   "SOUL.md"
 )

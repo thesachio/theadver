@@ -1,6 +1,6 @@
 # 09 — Confirmed Findings
 
-HANYA temuan yang lolos **kesepuluh** Pernyataan `verify/VERDICT.md` **dan** punya
+HANYA temuan yang lolos **kesebelas** Pernyataan `verify/VERDICT.md` **dan** punya
 `TANGGA_BUKTI: A` (fork state produksi, `[PASS]`, tanpa cheatcode, tanpa fantasy mock),
 serta `DEPLOYMENT_MATCH` terbukti (sha256 sama / source explorer cocok).
 

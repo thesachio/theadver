@@ -23,6 +23,7 @@ PATHS=(
   "skills/security/sc-phase4-report"
   "verify/VERDICT.md"
   "verify/templates"
+  "verify/tools"
   "workspace/AGENTS.md"
   "workspace/rpc-env.sh"
   "workspace/.env.rpc"

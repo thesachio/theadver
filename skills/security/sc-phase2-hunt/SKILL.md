@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (10 Non-Standard Lenses + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
-version: 5.1.0
+version: 6.0.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -10,13 +10,101 @@ Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. 
 
 ---
 
+## Protokol Anti-Truncate: Penulisan File Audit Wajib Atomik
+
+**Hukum:** `open(path, "w")` dan `>` pada shell **DILARANG** untuk seluruh `audit/*.md` (termasuk `00`, `00b`, `01`, `02`, `03`, `STATE.md`). Keduanya memotong file ke **0 byte saat dibuka**, sebelum satu byte pun ditulis. Bila penulisan lalu gagal, isi asli hilang permanen — backup yang dibuat sesudahnya ikut menyimpan kekosongan.
+
+**Sumber otoritatif:** `workspace/AGENTS.md` **Pasal 1.3** (Protokol Anti-Truncate & Metode Write). Ringkasan di bawah adalah salinan kerja; bila berbeda, **AGENTS.md yang menang**.
+
+**Wajib:** tulis ke file `.tmp` → `fsync` → `os.replace()` (atomik). Backup **sebelum** mutasi, bukan sesudah. Verifikasi pasca-tulis (ukuran ≠ 0, heading domain masih ada).
+
+**Satu penulis aktif pada satu waktu (`max_concurrent_children: 1`):** Subagent **DILARANG** menggunakan `write_file` penuh, `open("w")`, atau shell `>` pada `audit/03`–`09`. Subagent **WAJIB** memakai native `append` (entri baru) atau `patch` (ubah status baris di `03`/`04`/`05`/`07`) — **kecuali** entri hasil unit hantaran Fase 2, yang tetap **WAJIB** lewat staging `audit/notes/staging-<unit>.md` lalu di-merge Parent. `audit/STATE.md` **HANYA** boleh ditulis/di-`patch` oleh Parent.
+
+**Batas yang mengikat (jangan dibaca sebagai izin umum):** izin `append`/`patch` langsung bagi Subagent hanya berlaku untuk entri yang **bukan** hasil pendadahan unit `S-n` — mis. temuan susulan, koreksi bukti, atau entri hasil verifikasi Fase 3 yang sudah final. Untuk unit `S-n`, staging tetap wajib karena Parent perlu memverifikasi jumlah entri terhadap manifes sebelum entri masuk file audit.
+
+**Mengapa staging, bukan ringkasan 12 baris.** Satu entri `04`/`05` berukuran 15–20 baris. Unit normal menghasilkan 3 lead + 5 guard ≈ 120–160 baris. Ringkasan `≤12 baris` **secara matematis tidak dapat** membawa muatan itu — memaksanya berarti Parent menulis entri yang tidak pernah dibaca utuh oleh siapa pun, atau Subagent memangkas temuan agar muat. Keduanya kegagalan audit.
+
+**Pembagian peran yang benar:**
+
+| Peran | Menulis | Bentuk |
+|---|---|---|
+| Subagent | `audit/notes/staging-<unit>.md` **saja** | Entri lengkap siap-tempel (format final `04`/`05`), memakai `write_file` atau `atomic_write` |
+| Subagent → Parent | Ringkasan `≤12 baris` | **Hanya** manifes: `STAGING: <path> \| 04: <n> \| 05: <n>` + 1 baris verdict per entri |
+| Parent | `audit/04`–`09` | Salin dari staging memakai metode di `references/ref-atomic-write.md` (append/patch), verifikasi `grep -c '^## \['`, lalu hapus staging |
+
+**Larangan tetap berlaku pada Parent:** dilarang `open(path,"w")` / `>` untuk `04`–`09`. Gunakan `append`/`patch` sesuai tabel karakteristik file.
+
+### Metode Write per Karakteristik File (hemat token)
+
+DILARANG memakai "append selalu" sebagai resep tunggal — tiap file punya pola mutasi berbeda, dan append pada file yang **diubah berulang** justru gagal (status tidak ter-update) atau memaksa baca penuh.
+
+| Karakteristik | File | Metode wajib | DILARANG |
+|---|---|---|---|
+| Tulis sekali | `00`, `01`, `02` | `write_file` saat awal; tambahan kecil → `append` | tulis ulang penuh untuk tambahan |
+| **Generate massal** | `00b` | **script** (`phase0_inventory.py` dll); verifikasi via `grep -n` | menulis manual; membaca penuh (≈9k token) |
+| **Append-murni** | `06`, `08`, `09` | `append` (`mode="a"`) | baca-lalu-tulis-ulang |
+| **Append lalu ubah status** | `04`, `05`, `07` | entri baru → `append`; ubah status → `patch` pada blok itu | append untuk mengubah; tulis ulang penuh |
+| **Edit tabel/baris** | `03`, `STATE` | `patch` baris (`grep -n` dulu bila perlu) | baca penuh lalu tulis ulang |
+
+**Patokan biaya:** entri baru ≈ 300 token tulis. Baca penuh `03`/`04`/`05` ≈ 4–5 ribu token, dan naik terus seiring file membesar. Ubah 1 baris tabel = ~40 token vs 5.364 token bila baca penuh (**rasio ≈134×**).
+
+**Aturan pemilihan:** pilih metode dengan **token terendah yang tetap tidak merusak data**. Append hanya sah bila entri memang tidak akan diubah; bila status entri harus diperbarui kemudian, gunakan `patch`.
+
+Pola kode lengkap, protokol backup write-ahead, dan prosedur pemulihan (termasuk kewajiban menandai **REKONSTRUKSI** bila isi asli hilang): `references/ref-atomic-write.md`.
+
+---
+
 ## Aturan Orkestrasi Subagent (delegate_task)
 Jika dijalankan melalui delegasi, berikan paket tugas berisi:
 1. Daftar 1 Kelompok Fungsi Siklus Hidup (2–4 fungsi) dari audit/03-attack-surface-queue.md beserta tag [LOAD: ...].
 2. Instruksi wajib membaca audit/00-project-map.md, audit/01-threat-and-env.md (3 Kasta Aset & Jejak *Patch-Scar*), dan audit/02-state-and-var-matrix.md.
 3. Pembagian Putaran Eksplorasi:
-   - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + Metode 1, 2, 3, 6, 7 -> Tahap B (Analogi & Katalog POV) -> Tahap C (`04` vs `05`).
+   - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + Metode 1, 2, 3, 6, 7 -> Tahap B (Analogi & Katalog POV) -> Tahap C (klasifikasi `04` vs `05`).
+   - **Tahap C — Keluaran:** tulis entri lengkap ke `audit/notes/staging-<unit>.md` (**bukan** ke `04`/`05` langsung). Format entri wajib sudah final agar Parent hanya menyalin: untuk `04` sertakan File:Baris, Ekspresi Guard, Variabel Pembentuk; untuk `05` sertakan Metode Pencarian 1–10 (`[POV-XX]`) dan Delta State. Ringkasan ke Parent cukup manifes: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris per entri.
    - Putaran 2 (Makro Lintas-Jalur & Guard-Inversion): Jalankan Metode 4, 5, 8, 9, 10 menggunakan 02-state-and-var-matrix.md, 05-raw-leads.md, dan daftar guard di 04-code-guarded.md.
+
+---
+
+---
+
+## Aturan Anti-Tunnel-Vision: Rotasi Domain & Clean-Unit Attestation
+
+Kuota "minimal N lead per domain" **DILARANG** dipakai: memaksa jumlah lead mendorong agen mengarang hipotesis lemah hanya untuk memenuhi angka (hukum Goodhart). Yang dipaksa adalah **Penyapuan Merata (Breadth-First Sweep)** plus **bukti bahwa unit benar-benar diperiksa**.
+
+### 1. Rotasi Domain Wajib
+Pada Putaran 1 dan Putaran 2, eksekusi Unit Alur Eksekusi secara **bergilir lintas domain** (`D1 -> D2 -> D3 -> … -> D1`), **BUKAN** menghabiskan satu folder lalu berhenti. Satu putaran penuh = setiap domain ber-`[MUST-AUDIT]` mendapat giliran sebelum domain mana pun mendapat giliran kedua. Pelanggaran rotasi = putaran dibatalkan dan diulang.
+
+### 2. Kewajiban Jejak Audit (Lead ATAU Negative Attestation)
+Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati tanpa jejak**. Pilih tepat satu hasil:
+- **`LEAD_GENERATED`** — ditemukan celah potensial: tulis entri lengkap ke `audit/notes/staging-<unit>.md` (template penuh).
+- **`ATTESTED_CLEAN`** — setelah diuji dengan 10 Metode tidak ditemukan celah: tulis **1 baris Negative Attestation** di tabel cakupan `audit/03-attack-surface-queue.md`.
+
+**Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**
+```
+<Berkas>: <jumlah> fungsi mutasi dicek dengan Metode <X, Y, Z> —
+  mengapa invariant bertahan: <alasan teknis konkret>
+  jalur eksternal yang diuji: <daftar jalur/callback/CPI yang benar-benar disentuh>
+  jalur yang TIDAK diuji: <daftar, atau "tidak ada">
+```
+
+**Larangan atestasi kosong.** Kalimat berikut **DILARANG** dan otomatis ditolak: *"sudah diperiksa, aman"*, *"kode standar"*, *"tidak ada masalah ditemukan"*, *"mengikuti OpenZeppelin/Anchor"*. Atestasi wajib menyebut **nama fungsi yang diperiksa**, **nomor Metode**, dan **mekanisme konkret** yang membuat invariant bertahan.
+
+**Atestasi tidak boleh lebih murah daripada lead.** Bila alasan yang bisa ditulis hanyalah "tidak ada yang mencurigakan", itu tanda unit **BELUM** benar-benar diperiksa — kembalikan ke `BELUM` dan jalankan Metode yang belum dipakai.
+
+### 3. Gate Keluar Fase 2
+Agen **DILARANG** pindah ke Fase 3 sebelum **>= 80% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN`.
+
+| Metrik | Ambang |
+|---|---|
+| Berkas `[MUST-AUDIT]` berjejak **per domain** | **>= 80%** (setiap domain, tanpa kecuali) |
+| Berkas `[MUST-AUDIT]` terbesar per domain | wajib != `BELUM` |
+| Berkas berstatus `BELUM` di domain mana pun | **0** |
+
+**DILARANG memakai kuota "minimal N lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu; *Negative Attestation* yang jujur justru bukti cakupan yang sah.
+
+Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
+
+**Pencatat status:** hasil atestasi ditulis ke `audit/03-attack-surface-queue.md` sebagai tabel cakupan per domain, direkonsiliasi dengan `audit/00b-file-inventory.md`. Status sah: `BELUM` / `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN`.
 
 ---
 
@@ -144,7 +232,8 @@ Panggil skill_view("sc-phase2-hunt", "<nama-file-ref>") sesuai tag [LOAD: ...]:
 Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasinya di simulasi Fase 3):
 1. **Dua Larangan Fakta Dasar Kode:** Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang bisa memanggil fungsi onlyOwner secara langsung.
 2. **Jika Ditemukan Anomali yang Tidak Dihentikan Guard** (atau Guard Bisa Ditembus via Metode 5):
-   Tulis langsung ke `audit/05-raw-leads.md` sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (Metode 1..Metode 10 dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining).
+   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (Metode 1..Metode 10 dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining). **DILARANG menulis ke `05-raw-leads.md` langsung** — `05` hanya ditulis Parent saat merge.
 3. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode** (`require` / `if (...) revert` / `assert!`):
-   Tulis langsung ke `audit/04-code-guarded.md` sesuai template `verify/templates/04-code-guarded.md` lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk 02-state-and-var-matrix.md), Hipotesis yang Dihentikan, dan Status Putaran 2: `BELUM`.
-4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi [HUNTED].
+   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/04-code-guarded.md` lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk 02-state-and-var-matrix.md), Hipotesis yang Dihentikan, dan Status Putaran 2: `BELUM`. **DILARANG menulis ke `04-code-guarded.md` langsung.**
+4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi `[HUNTED]`.
+5. **Wajib tulis status jejak** pada tabel cakupan: `LEAD_GENERATED` (butir 2) atau `ATTESTED_CLEAN` (butir 3, dengan 4 unsur atestasi lengkap). Kelompok tanpa keduanya tetap `BELUM` dan **memblokir Gate Keluar Fase 2**.

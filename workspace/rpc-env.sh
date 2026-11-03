@@ -32,11 +32,18 @@ if [ ! -f "$RPC_FILE" ]; then
   return 1 2>/dev/null || exit 1
 fi
 
+RPC_SECRET_FILE="${SCRIPT_DIR}/.env.rpc.secret"
+
 _adv_load_rpc() {
   # set -a -> semua variabel otomatis di-export (terbaca subprocess forge/anvil/cast)
   set -a
   # shellcheck disable=SC1090
   . "$RPC_FILE"
+  # kredensial lokal (di-ignore git): dimuat SETELAH .env.rpc agar menimpa placeholder
+  if [ -f "$RPC_SECRET_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$RPC_SECRET_FILE"
+  fi
   set +a
 }
 

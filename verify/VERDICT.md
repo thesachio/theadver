@@ -16,7 +16,7 @@ Protokol ini berlaku untuk **audit baru**. Audit yang sudah berjalan dengan skem
 
 | Audit | Skema | Catatan |
 |---|---|---|
-| **Baru** (mulai sekarang) | `00`–`09` (10 file murni): `04-code-guarded` · `05-raw-leads` · `06-refuted-invalid` · `07-needs-next-step` · `08-valid-not-eligible` · `09-confirmed-findings` | 10 Pernyataan + Tangga Bukti + Langkah 0 wajib |
+| **Baru** (mulai sekarang) | `00`–`09` (10 file murni): `04-code-guarded` · `05-raw-leads` · `06-refuted-invalid` · `07-needs-next-step` · `08-valid-not-eligible` · `09-confirmed-findings` | 11 Pernyataan + Gate Cakupan + Tangga Bukti + Langkah 0 wajib |
 | **Legacy** (mis. Across, selesai) | `04-rejected-hypotheses` · `05-raw-leads` · `06-unproven-needs-review` · `07-confirmed-findings` | tetap apa adanya; **jangan** dipetakan ulang. Catatan: `04` legacy = hipotesis ditolak, berbeda arti dari `04-code-guarded` skema baru |
 
 Artefak legacy tetap sah dibaca dengan penomoran lamanya. Jangan mencampur penomoran antar-audit dalam satu laporan.
@@ -66,9 +66,49 @@ Baca **hanya** rentang baris yang diklaim beserta fungsi penjaga di sekitarnya.
 
 ---
 
-## LANGKAH 4 — Gate 10 Pernyataan Wajib
+## LANGKAH 4a — Gate Cakupan (WAJIB SEBELUM LANGKAH 4)
 
-Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit/09-confirmed-findings.md` bila memenuhi **kesepuluh** pernyataan berikut.
+**Kualitas PoC hanya bermakna untuk permukaan yang benar-benar diperiksa.** Satu PoC sempurna di atas cakupan 2% tetap merupakan audit yang **gagal**. Karena itu gerbang ini dijalankan **lebih dulu**: Hakim DILARANG memeriksa 11 Pernyataan sebelum cakupan dinyatakan sah.
+
+### Dua gerbang berbeda
+
+| Gerbang | Ambang | Diukur pada |
+|---|---|---|
+| **Gerbang Fase 2** | ≥ 80% berkas `[MUST-AUDIT]` per domain berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` | `audit/03-attack-surface-queue.md` |
+| **Gerbang Fase 4** | 0 berkas `BELUM` di seluruh domain | tabel cakupan di `03` |
+
+**DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kuota lead memicu pembuatan lead sampah pada modul yang memang aman (hukum Goodhart). Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis.
+
+### Kondisi pembatalan — `AUDIT_INCOMPLETE_COVERAGE_BIAS`
+
+> **Rujukan silang:** status vonis & akibatnya di tingkat laporan juga dicatat di **Pernyataan #11d**. Bila ada perbedaan redaksi antara bagian ini dan #11d, **bagian ini (LANGKAH 4a) yang menang**.
+
+Vonis ini dijatuhkan bila **salah satu** terpenuhi:
+
+1. Ada domain `D1..Dn` tanpa berkas `[MUST-AUDIT]` sama sekali di antrean (domain kosong / tidak terwakili).
+2. Ada berkas `[MUST-AUDIT]` berstatus `BELUM`, atau berstatus `DICAKUP_U1/U10/S-xx` tanpa uji spesifik.
+3. Ada domain dengan cakupan < 80% pada Gerbang Fase 2.
+4. Audit memakai sampel, bukan populasi penuh yang terdaftar di `00b-file-inventory.md`.
+
+**Bila `AUDIT_INCOMPLETE_COVERAGE_BIAS` dijatuhkan:**
+
+- **DILARANG** menulis Ringkasan Eksekutif seolah audit selesai.
+- Hakim **wajib** mengembalikan eksekusi ke Fase 1/Fase 2 untuk menyapu domain yang terlewat.
+- Temuan yang sudah ada **tetap disimpan** sebagai hasil sementara dan **DILARANG dihapus**.
+- Status akhir laporan wajib ditulis: `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, bukan `PASS`.
+
+### Format tabel cakupan wajib di Ringkasan Eksekutif
+
+| Domain | Total | LEAD | ATTESTED | BELUM | % | Gate |
+|---|---|---|---|---|---|---|
+
+Laporan tanpa tabel ini **dianggap belum lengkap**. Baris status akhir: `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`.
+
+---
+
+## LANGKAH 4 — Gate 11 Pernyataan Wajib
+
+Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit/09-confirmed-findings.md` bila memenuhi **kesebelas** pernyataan berikut. Pernyataan #11 berbeda sifatnya: ia tidak menilai satu temuan, melainkan **kejujuran keseluruhan laporan** — dan bila dilanggar, seluruh laporan ditolak.
 
 ### A. ENAM PERNYATAAN KETAT MUTLAK (Zero-Tolerance — melanggar = `06-refuted-invalid.md`)
 
@@ -111,7 +151,11 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 **9. Kejujuran Sandbox & Bukti Fork Produksi (Sandbox & Fork Integrity)**
 > *"PoC dapat direproduksi dan menghasilkan `[PASS]` pada fork state produksi nyata (`Mode Uji: FORK`) tanpa memalsukan storage internal, dan mematuhi fisika gas/mempool rantai target."*
 - `vm.store`, `vm.etch` state protokol, `vm.prank(admin/pool)`, `deal` ke protokol, atau revert di state nyata → **[KETAT]** `REJECTED_CHEATCODE` / `REJECTED_POC_FAILS` → `06`
-- Logika kode + PoC lokal jujur tetapi belum dapat diuji pada fork produksi (RPC/tooling/verifikasi mainnet lanjutan) → **`NEEDS_NEXT_STEP`** → `07-needs-next-step.md`
+- **Logika kode + PoC lokal jujur tetapi belum dapat diuji pada fork produksi → `NEEDS_NEXT_STEP` → `07-needs-next-step.md`, HANYA BILA memenuhi ketiga syarat berikut:**
+  1. **Blok `PERCOBAAN:` wajib** — entri `07` harus memuat perintah yang benar-benar dijalankan **beserta keluarannya** (bukan rencana). `NEXT_EXPLORE` wajib melampirkan log Tier 2/3/5 (handler fuzzing, differential, multi-step chaining, halmos) yang **mentok timeout komputasi**; `TOOL_BLOCKED` wajib melampirkan log **ketiga** usaha Tangga Self-Healing (flag/toolchain → standalone interface-only → fallback RPC); `NEXT_MAINNET` wajib bukti rantai benar-benar tanpa RPC/explorer — bila RPC tersedia, DILARANG parkir di sini, jalankan `cast call`/`cast storage` saat itu juga.
+  2. **RPC tersedia ⇒ DILARANG `07`.** Selama pekerjaan itu masih bisa diselesaikan pada sesi berjalan, `07` tidak sah.
+  3. **Entri tanpa blok `PERCOBAAN:` = `LAZY_BAILOUT_DETECTED`** (lihat Pernyataan #11) → laporan DITOLAK dan lead dikembalikan ke Fase 3.
+  4. **Field `Disposition:` wajib** — setiap entri `07` harus mendeklarasikan tepat satu label: `Disposition: NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED`. Entri tanpa field ini tidak dapat diperiksa Hakim dan diperlakukan sebagai `LAZY_BAILOUT_DETECTED`.
 - **Bukti berbasis mock pihak ketiga tidak dapat memenuhi pernyataan ini** (lihat Langkah 2.3).
 
 **10. Kalibrasi Bahaya Finansial & Severity (Financial Danger Floor)**
@@ -123,6 +167,48 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
   3. **Nuisance Griefing** — memaksa gas ulang / mereset timer non-finansial, tanpa keuntungan penyerang dan tanpa pembekuan dana.
   → **`VALID_NOT_ELIGIBLE [LOW_NUISANCE]`** → `08-valid-not-eligible.md`
 - Klaim HIGH/MEDIUM tetapi bukti hanya kelas Low atau admin-only → **turunkan ke LOW (S4)** dan pindahkan `09` → `08`.
+
+### C. SATU PERNYATAAN INTEGRITAS LAPORAN (Report Integrity — melanggar = seluruh laporan DITOLAK)
+
+**11. Kejujuran Usaha & Cakupan (Anti-Lazy-Bailout)** — *baru*
+
+> *"Setiap entri di `07-needs-next-step.md` memuat blok `PERCOBAAN:` berisi perintah yang benar-benar dijalankan beserta keluarannya — bukan rencana, bukan kalimat alasan. Setiap klaim `TOOL_BLOCKED` melampirkan log ketiga usaha Tangga Self-Healing. Setiap klaim `NEXT_EXPLORE` melampirkan log Tier 2/3/5 yang mentok timeout komputasi. Setiap klaim `NEXT_MAINNET` melampirkan bukti bahwa RPC/explorer memang tidak tersedia."*
+
+→ Pelanggaran: **`LAZY_BAILOUT_DETECTED`** → **laporan DITOLAK**, `07` dikembalikan ke Fase 3. Temuan yang sudah ada **tetap disimpan** sebagai hasil sementara dan DILARANG dihapus.
+
+**Cara Hakim memeriksa (wajib, per entri `07`):**
+
+| Label | Bukti yang wajib ada di entri | Tanpa bukti |
+|---|---|---|
+| `NEXT_EXPLORE` | Log Tier 2 (handler fuzzing) / Tier 3 (differential) / Tier 5 (halmos/symbolic) **yang berjalan sampai timeout komputasi** | `LAZY_BAILOUT_DETECTED` |
+| `TOOL_BLOCKED` | Log terminal **ketiga** anak tangga: (1) flag/remapping/toolchain, (2) standalone interface-only harness, (3) fallback RPC | `LAZY_BAILOUT_DETECTED` |
+| `NEXT_MAINNET` | Bukti chain tanpa RPC/explorer publik; bila RPC tersedia, **`07` tidak sah** — Hakim jalankan `cast call`/`cast storage` sendiri | `LAZY_BAILOUT_DETECTED` |
+
+**Label basi tidak sah.** Judul entri sudah dipindah ke wadah lain tetapi label lama masih tertinggal → dihitung sebagai pelanggaran #11.
+
+**11d. Gerbang Cakupan (`AUDIT_INCOMPLETE_COVERAGE_BIAS`) — laporan DITOLAK, dikembalikan ke Fase 1/2**
+
+> **Prosedur, ambang, dan format tabel cakupan: lihat [LANGKAH 4a](#langkah-4a--gate-cakupan-wajib-sebelum-langkah-4) (sumber normatif).** Bagian ini hanya menetapkan **status vonis** dan akibatnya di tingkat laporan; bila ada perbedaan redaksi, **LANGKAH 4a yang menang**.
+
+> *"Cakupan berkas `[MUST-AUDIT]` yang berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` mencapai minimal 80% di setiap domain, dan tidak ada berkas terbesar di suatu domain yang masih berstatus `BELUM`."*
+
+Hakim **WAJIB** menghitung sendiri dari `00b-file-inventory.md` × `03-attack-surface-queue.md`, bukan mempercayai tabel cakupan yang ditulis pelaksana.
+
+**Syarat tolak (salah satu saja cukup):**
+1. Cakupan `[MUST-AUDIT]` berstatus `LEAD_GENERATED` / `ATTESTED_CLEAN` **< 80%** pada domain mana pun.
+2. Ada berkas `[MUST-AUDIT]` berstatus `BELUM`, atau berstatus `DICAKUP_U1/U10/S-xx` tanpa uji spesifik.
+3. Ada domain `D1..Dn` tanpa berkas `[MUST-AUDIT]` sama sekali di antrean (domain kosong / tidak terwakili).
+4. Audit memakai sampel, bukan populasi penuh yang terdaftar di `00b-file-inventory.md` (gate pemetaan < 100%).
+
+**Atestasi hampa tidak dihitung sebagai jejak (#11c):** `ATTESTED_CLEAN` yang tidak memuat `File:Baris` konkret per fungsi yang diperiksa — atau yang bersandar hanya pada volume (`forge build`/`cargo test` PASS, jumlah berkas, `N/N PASS`, nama unit `S-0n`) — **DIBATALKAN**. Berkas tersebut dikembalikan ke `BELUM` **sebelum** persentase dihitung. Tanpa aturan ini, angka cakupan dapat mencapai 100% sementara berkas berisiko tinggi belum pernah dibedah.
+
+→ Pelanggaran: **`AUDIT_INCOMPLETE_COVERAGE_BIAS`** → **laporan DITOLAK**. Akibat wajib (identik dengan LANGKAH 4a): (a) Ringkasan Eksekutif DILARANG ditulis seolah audit selesai; (b) eksekusi dikembalikan ke Fase 1/Fase 2; (c) temuan yang sudah ada tetap disimpan sebagai hasil sementara, DILARANG dihapus; (d) baris status wajib `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, bukan `PASS`.
+
+**Larangan pelarian wadah (#11b).** Memindahkan lead dari `07` ke `08` (`LOW_NUISANCE`/`ADMIN_ONLY`/`PRE_LIVE_SCOPE`) **hanya sah bila mekanismenya sudah terbukti secara mekanis** (PoC jalan tanpa curang + dampak kuantitatif terukur). Lead yang **belum teruji** lalu dilabeli Low = melanggar #11 dengan cara lain: `07` mensyaratkan bukti usaha, `08` mensyaratkan bukti mekanisme — **tidak ada wadah yang boleh menampung lead yang belum dikerjakan**. Bila ragu antara `07` dan `08`, lead itu masih `07` dan wajib `PERCOBAAN:`.
+
+**Target akhir `07` = 0 entri.** Setiap sisa wajib dipertahankan dengan log komputasi, bukan kalimat.
+
+**Hubungan dengan Aturan Anti-False-Negative:** #11 adalah cermin dari aturan tersebut. Anti-false-negative melarang menyimpulkan *"aman"* dari data kosong; #11 melarang menyimpulkan *"belum bisa diuji"* tanpa percobaan. Keduanya menolak kesimpulan yang lebih murah daripada pekerjaannya.
 
 ---
 
@@ -152,9 +238,11 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 
 | Verdict | Ketegasan | Kriteria | Wadah |
 |---|---|---|---|
-| `VALID_ELIGIBLE` | Lolos 10 pernyataan | Fork PASS + tanpa curang + bahaya finansial nyata (Critical/High/Medium) | `09-confirmed-findings.md` |
+| `VALID_ELIGIBLE` | Lolos 11 pernyataan | Fork PASS + tanpa curang + bahaya finansial nyata (Critical/High/Medium) | `09-confirmed-findings.md` |
 | `VALID_NOT_ELIGIBLE` | Dalam batasan (#7b, #8b, #10b) | Mekanisme nyata, dampak Low/annoying, admin-only, atau belum live | `08-valid-not-eligible.md` |
-| `NEEDS_NEXT_STEP` | Dalam batasan eksplorasi (#9b) | Logika kuat, butuh fork/verifikasi mainnet/RPC; atau klaim `HEAD-only` | `07-needs-next-step.md` |
+| `NEEDS_NEXT_STEP` | Dalam batasan eksplorasi (#9b) | Logika kuat, butuh fork/verifikasi mainnet/RPC; atau klaim `HEAD-only` — **wajib `Disposition:` + blok `PERCOBAAN:`** | `07-needs-next-step.md` |
+| `LAZY_BAILOUT_DETECTED` | **Penolakan laporan (#11)** | Entri `07` tanpa bukti usaha: `TOOL_BLOCKED` tanpa log 3-Step Self-Healing, `NEXT_MAINNET` padahal RPC tersedia, `NEXT_EXPLORE` tanpa log fuzzer/halmos mentok timeout, atau label basi | **DITOLAK** → kembali ke Fase 3 |
+| `AUDIT_INCOMPLETE_COVERAGE_BIAS` | **Penolakan laporan (#11d)** | Cakupan `[MUST-AUDIT]` < 80% di domain mana pun, berkas terbesar per domain `BELUM`, domain 0%, gate pemetaan < 100%, atau `ATTESTED_CLEAN` tanpa `File:Baris` | **DITOLAK** → kembali ke Fase 1/2 |
 | `REJECTED_POC_FAILS` | Gugur mutlak (#9a) | PoC gagal kompilasi / revert di state nyata | `06-refuted-invalid.md` |
 | `REJECTED_FANTASY_MOCK` | Gugur mutlak (#1) | Sifat palsu pada token Kasta 1 / parameter ter-whitelist | `06-refuted-invalid.md` |
 | `REJECTED_CHEATCODE` | Gugur mutlak (#9a) | `vm.store`/`vm.etch`/`vm.prank(admin)`/fisika rantai dilanggar | `06-refuted-invalid.md` |
@@ -167,6 +255,8 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | `REJECTED_BY_DESIGN` | Gugur mutlak (#6) | Perilaku didokumentasikan sebagai disengaja | `06-refuted-invalid.md` |
 | `REJECTED_MISMATCH` | Gugur mutlak (#6) | Baris kode tidak mendukung klaim | `06-refuted-invalid.md` |
 | `REJECTED_UNPROVEN_DEPLOYMENT` | Gugur mutlak (#2) | Klaim produksi dipaksakan padahal kode ter-deploy tidak terbukti sama | `06-refuted-invalid.md` |
+| **`AUDIT_INCOMPLETE_COVERAGE_BIAS`** | **Pembatalan laporan (#4a)** | Domain kosong, berkas `BELUM`, cakupan < 80%, atau audit memakai sampel | **Bukan wadah** — laporan DITOLAK, kembali ke Fase 1/2 |
+| **`LAZY_BAILOUT_DETECTED`** | **Pembatalan laporan (#11)** | Entri `07` tanpa blok `PERCOBAAN:` / log Tangga Self-Healing / bukti RPC tidak tersedia | **Bukan wadah** — laporan DITOLAK, `07` dikembalikan ke Fase 3 |
 
 ---
 
@@ -176,12 +266,14 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 ID                : <id_lead_atau_kandidat>
 VERDICT           : <kelas_verdict>
 TARGET_FILE       : <09-confirmed-findings.md | 08-valid-not-eligible.md | 07-needs-next-step.md | 06-refuted-invalid.md>
-ALASAN            : <1-2 kalimat tegas, merujuk nomor Pernyataan (1-10) dan File:Baris>
+ALASAN            : <1-2 kalimat tegas, merujuk nomor Pernyataan (1-11) dan File:Baris>
 BUKTI             : <Mode Uji FORK/LOKAL + hasil eksekusi, atau sumber on-chain>
 TANGGA_BUKTI      : <A | B | C | D>
 DEPLOYMENT_MATCH  : <sha256 sama | source explorer cocok | BEDA -> HEAD-only | tidak terverifikasi (sebut sumber yang gagal)>
 BIAYA-BACA        : <jumlah baris yang dibaca>
 ```
+
+Untuk verdict pembatalan laporan (`AUDIT_INCOMPLETE_COVERAGE_BIAS`, `LAZY_BAILOUT_DETECTED`), `TARGET_FILE` diisi `LAPORAN_DITOLAK` dan `ALASAN` wajib menyebut domain/entri `07` yang bermasalah, bukan nomor Pernyataan.
 
 ---
 

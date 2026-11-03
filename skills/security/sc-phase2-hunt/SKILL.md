@@ -91,8 +91,28 @@ Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati t
 
 **Atestasi tidak boleh lebih murah daripada lead.** Bila alasan yang bisa ditulis hanyalah "tidak ada yang mencurigakan", itu tanda unit **BELUM** benar-benar diperiksa — kembalikan ke `BELUM` dan jalankan Metode yang belum dipakai.
 
+### 2b. Gate Atestasi Bersitasi (anti-atestasi-hampa) — WAJIB SEBELUM Gate Keluar
+
+**Insiden yang melahirkan gate ini:** pada audit nyata, 9 unit ditandai `ATTESTED_CLEAN` dengan kalimat berbasis *volume* ("SBF build EXIT=0, 34 berkas", "U18 4/4 PASS"). Coverage Gate **lulus 100%**, padahal `HyperliquidDepositHandler` (190 LOC, 10 fungsi mutasi, live di HyperEVM `0xbFB53E9C…27D5`) dan `DonationBox` (live `0xbb0B…d851`, layout **OZ-Ownable**, bukan `AccessControl`) belum pernah dibedah. Cacat itu baru tertangkap di putaran manual berikutnya, bukan oleh workflow.
+
+**Akar masalah:** aturan "atestasi 4 unsur" ada, tetapi **penegakannya** memakai metrik volume. Compile sukses / jumlah berkas / jumlah test PASS **bukan** bukti bahwa fungsi diperiksa.
+
+**Hukum baru — Atestasi DITOLAK bila tidak memuat keempatnya:**
+1. **Nama fungsi yang diperiksa** — daftar eksplisit `namaFungsi()` untuk **setiap** berkas `[MUST-AUDIT]` di unit itu (bukan "10 state-fn").
+2. **`File:Baris`** untuk minimal satu baris kode konkret per fungsi (mis. `handlers/HyperliquidDepositHandler.sol:299-302`).
+3. **Metode** (1–10 / `[POV-XX]`) yang benar-benar dipakai.
+4. **Jalur eksternal yang disentuh** + **jalur yang TIDAK diuji** (eksplisit, boleh "tidak ada").
+
+**DILARANG sebagai bukti tunggal** (otomatis tolak): `forge build`/`cargo test` PASS, jumlah berkas, jumlah fungsi mutasi, "unit X/ X PASS", nama unit (`S-0n`), atau rujukan ke `notes/s03/` tanpa kutipan `File:Baris`.
+
+**Uji dry-run wajib:** sebelum menulis `ATTESTED_CLEAN` untuk sebuah unit, jalankan `skenario-kontra`: sebutkan **satu** hipotesis serangan konkret untuk berkas dengan LOC/fungsi-mutasi terbesar di unit itu, lalu jelaskan dalam 1 kalimat mengapa hipotesis itu gugur. Bila penjelasannya butuh membaca ulang kode → unit **BELUM** selesai; kembalikan ke `BELUM`.
+
+**Rekonsiliasi wajib ke `00-project-map.md`:** atestasi tidak sah bila menyebut kontrak yang **tidak ada** di `00b-file-inventory.md` atau sebaliknya menyatakan kelas unit lain (mis. menyebut `ForwarderBase` untuk unit yang isinya `DonationBox`).
+
+**Putaran Audit Ulang (opsional, wajib bila ada indikasi):** bila ditemukan unit ber-atestasi tanpa `File:Baris`, jalankan sub-putaran **P3** yang menyisir hanya unit tersebut memakai `PUSH4..EQ` dispatcher scan + `cast call` state live + baca kode per-fungsi. Hasil masuk `06` sebagai entri `P3-xx`, **tanpa mengubah verdict lama**.
+
 ### 3. Gate Keluar Fase 2
-Agen **DILARANG** pindah ke Fase 3 sebelum **>= 80% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN`.
+Agen **DILARANG** pindah ke Fase 3 sebelum **>= 80% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN` **yang lolos Gate Atestasi Bersitasi (§2b)**.
 
 | Metrik | Ambang |
 |---|---|

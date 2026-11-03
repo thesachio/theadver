@@ -29,31 +29,8 @@ Gunakan daftar periksa ini saat mengaudit kontrak Solidity/Vyper di jaringan EVM
 
 ---
 
-## Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
-
-Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
-Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
-
-### [POV-EVM-01] Multicall Context Reuse & Residual Authority Exploitation
-
-- **Kondisi Prasyarat (State Condition):**
-  Kontrak menyediakan mekanisme eksekusi jamak dalam satu transaksi (pewarisan Multicall berbasis `delegatecall`, loop batch internal, atau pemakaian *Transient Storage* `TSTORE`/`TLOAD`) DAN memiliki fungsi yang membaca `msg.value` atau flag otorisasi sementara.
-
-- **Kacamata Attacker (Gejala di Kode):**
-  Fungsi satuan memeriksa `require(msg.value == requiredAmount)` atau memakai `msg.value` untuk mencatat pembayaran tanpa mengurangi penghitung global per-transaksi, atau menetapkan flag sementara di *Transient Storage* yang tidak dihapus (`TSTORE(slot, 0)`) sebelum sub-eksekusi berikutnya dimulai.
-  *Prinsip umumnya: **satu konteks luar (nilai pembayaran, otorisasi sementara, atau status sesi) dipakai ulang oleh N sub-panggilan** sementara kontrak menganggapnya sekali pakai. TVM Tron memiliki perilaku `msg.value` yang sama; pada Solana padanannya adalah konteks instruksi/akun yang dipakai ulang di dalam satu transaksi.*
-
-- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
-  1. **[Siapkan State]** Penyerang menyusun payload panggilan batch berisi $N$ panggilan berulang ke fungsi pembayaran/pencetakan yang sama.
-  2. **[Pemicu Asimetri]** Penyerang memanggil fungsi pembungkus batch (multicall) sambil mengirimkan `msg.value` hanya sebesar 1 kali nilai pembayaran ($1 \times X$).
-  3. **[Ekstraksi Nilai]** Karena setiap sub-panggilan `delegatecall` membaca konteks `msg.value` yang sama ($X$), kontrak mengkreditkan nilai sebesar $N \times X$ kepada penyerang dengan modal hanya $1 \times X$.
-
-- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
-  Auditor menguji fungsi pembayaran secara terpisah (1 transaksi = 1 panggilan) di mana `msg.value` memang valid, dan menganggap kontrak pembungkus Multicall dari library standar sudah aman tanpa melihat efek penggabungan keduanya.
-
-- **Batas Realitas (Kapan Pola Ini GUGUR):**
-  Gugur jika fungsi pembungkus batch tidak `payable`, atau kontrak melacak total pemakaian pembayaran dalam akumulator per-transaksi, atau setiap slot *Transient Storage* selalu di-reset sebelum keluar dari masing-masing aksi.
-
 ---
-
-<!-- Sisipkan [POV-EVM-02], [POV-EVM-03], dst. di BAWAH baris ini, urut menaik -->
+## Katalog Generalized Attacker POV & Auditor Blindspots (Modular Lazy-Load)
+Untuk mencocokkan gejala kode dengan pola serangan on-chain nyata tanpa membebani konteks:
+1. Periksa **Tabel Router Gejala Kode** di `references/ref-attacker-pov.md`.
+2. Jika gejala pemicunya cocok dengan fungsi yang sedang dibedah, muat katalog lengkapnya di `references/ref-pov-chain.md`.

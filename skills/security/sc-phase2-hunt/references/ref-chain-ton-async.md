@@ -25,32 +25,8 @@ Gunakan daftar periksa ini saat mengaudit smart contract di jaringan TON. **INGA
 
 ---
 
-## Katalog Generalized Attacker POV & Auditor Blindspots (Diisi Bertahap)
-
-Entri di bawah ini adalah pola eksploitasi nyata yang telah digeneralisasi. Pakai pada Tahap B Fase 2: cocokkan **Kondisi Prasyarat** dan **Gejala di Kode** dengan fungsi yang sedang dibedah.
-Indeks seluruh POV lintas file: `references/ref-attacker-pov.md`.
-
-### [POV-TON-01] Async Message Interleaving & Bounce Payload Truncation
-
-- **Kondisi Prasyarat (State Condition):**
-  Kontrak pada arsitektur aktor asinkron (TON) mengubah state lokal terlebih dahulu lalu mengirim pesan keluar ke kontrak lain, dan mengandalkan handler pesan pantulan (*bounced message*) untuk memulihkan (*rollback*) state jika kontrak tujuan gagal.
-
-- **Kacamata Attacker (Gejala di Kode):**
-  1. Pesan keluar menaruh data penting untuk pemulihan (jumlah nilai, ID posisi, atau alamat pemilik) **setelah bit ke-224** dari body pesan utama atau di dalam referensi *child cell* (`ref`), padahal jaringan memotong pesan bounced hanya menyisakan 224 bit data pertama tanpa `ref`.
-  2. Selama pesan pertama masih dalam perjalanan (*in-flight*) menunggu balasan, status akun/posisi pengirim tidak dikunci (*pending lock*), sehingga pengguna dapat mengirim pesan kedua yang memodifikasi state yang sama.
-  *Prinsip umumnya: (1) adalah **padanan asinkron dari pemangkasan data di langkah antara** ([POV-MOVE-01] / Metode 7) — payload hilang sebelum rollback sempat berjalan; (2) adalah **padanan asinkron dari status menggantung** (Metode 9) — state tidak terkunci selama siklus belum selesai.*
-
-- **Rangkaian Peristiwa Serangan (Generalized Event Sequence):**
-  1. **[Siapkan State]** Penyerang menyiapkan state awal pada kontrak asal dan mengatur kondisi (atau takaran `msg_value` gas) agar pesan gagal di kontrak tujuan, atau menyiapkan pesan kedua saat pesan pertama masih *in-flight*.
-  2. **[Pemicu Asimetri]** Kontrak tujuan menolak pesan dan memantulkan pesan bounced yang telah terpotong (atau memproses dua pesan *in-flight* secara berurutan terhadap state yang sama).
-  3. **[Ekstraksi Nilai]** Handler bounced membaca nilai yang terpotong/rusak (atau gagal berjalan), menyebabkan pengembalian saldo berlebih atau penghapusan kewajiban tanpa membatalkan hak yang sudah dicetak.
-
-- **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
-  Auditor melihat kontrak sudah menyediakan fungsi `on_bounce` lalu menganggap mekanisme *rollback* asinkron sudah tuntas, tanpa menghitung offset bit pada skema serialisasi pesan yang dikirim.
-
-- **Batas Realitas (Kapan Pola Ini GUGUR):**
-  Gugur jika seluruh data pemulihan disimpan di storage lokal kontrak pengirim (diindeks dengan `query_id` yang muat di dalam 224 bit pertama) DAN entitas dikunci penuh selama status *in-flight* belum selesai.
-
 ---
-
-<!-- Sisipkan [POV-TON-02], [POV-TON-03], dst. di BAWAH baris ini, urut menaik -->
+## Katalog Generalized Attacker POV & Auditor Blindspots (Modular Lazy-Load)
+Untuk mencocokkan gejala kode dengan pola serangan on-chain nyata tanpa membebani konteks:
+1. Periksa **Tabel Router Gejala Kode** di `references/ref-attacker-pov.md`.
+2. Jika gejala pemicunya cocok dengan fungsi yang sedang dibedah, muat katalog lengkapnya di `references/ref-pov-chain.md`.

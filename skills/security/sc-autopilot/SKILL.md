@@ -41,7 +41,7 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 - Target Repo: <nama_repo_atau_path>
 - Last Updated: <timestamp_atau_step>
 - Active Phase: PHASE_0_INTEL | PHASE_1_RECON | PHASE_2_HUNT | PHASE_3_VERIFY | PHASE_4_VERDICT
-- Active Sub-Stage: ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
+- Active Sub-Stage: STEP_0_PROJECT_INTEL | STEP_0_INVENTORY | ROUND_1_MICRO | ROUND_2_MACRO | STEP_0_BATCH | POC_EXECUTION
 
 ## 1. Cursor Position (Titik Lanjut Eksak)
 - Last Completed Item: <S-n (Domain: <D>) -> hasil 1 baris>
@@ -71,7 +71,7 @@ Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` 
 - PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`: Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File audit/00 s/d 09, instruksi skill_view, serta perintah agar Subagent menulis entri lengkap ke `audit/notes/staging-<unit>.md` dan mengembalikan **manifes** maksimal 12 baris (bukan muatan entri) — lihat **3b. Protokol Staging**.
 - JAGA PEMISAHAN 6 FILE HASIL (`04` s/d `09` — 1 File = 1 Domain Murni):
   * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang terhalang `require`/`assert!` (umpan Putaran 2 *Guard-Inversion* / Metode 5).
-  * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3 (wajib memuat Metode Pencarian 1–10 / `[POV-XX]` dan Delta State).
+  * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3 (wajib memuat Metode Pencarian (M-001..M-NNN / `[POV-XX]`) dan Delta State).
   * `06-refuted-invalid.md` -> Murni hipotesis gugur permanen (gagal Langkah 0/1 *Pre-PoC Fact Gate*, gagal simulasi PoC, atau melanggar **Pernyataan Ketat Mutlak #1–#6** beserta sub-kasus ketat #7a/#8a/#9a/#10a di `VERDICT.md`).
   * `07-needs-next-step.md` -> Murni kandidat *unproven* (`NEXT_EXPLORE` / `NEXT_MAINNET` / `TOOL_BLOCKED`), termasuk klaim `HEAD-only` (gagal Pernyataan #2).
   * `08-valid-not-eligible.md` -> Murni temuan valid dalam batasan toleransi (`LOW_NUISANCE`: *DoS no fund loss*, *minor capped damage*, *griefing* — #10b; `ADMIN_ONLY` — #8b; atau `PRE_LIVE_SCOPE` — #7b).

@@ -107,7 +107,7 @@ Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token ba
 ## 2c. Protokol Anti-Truncate & Metode Write per Karakteristik File (Mengikat Seluruh Fase)
 1. **Larangan Mutlak Truncate (`open("w")` & `>`)**: Menggunakan `open(path, "w")`, shell `>`, atau `sed -i` pada file `audit/*.md` **DILARANG KERAS** karena langsung memotong file menjadi **0 byte** sebelum data ditulis. Jika menulis via skrip Python, wajib gunakan pola atomik: tulis ke `.tmp` -> `f.flush()` -> `os.fsync()` -> `os.replace(tmp, path)`. Backup wajib dibuat **sebelum** mutasi (*write-ahead backup*), bukan sesudahnya.
 2. **Pemilihan Metode Write (Wajib Hemat Token & Tidak Merusak Status)**:
-   - **Tulis sekali** (`00`, `01`, `02`): gunakan `write_file` saat inisialisasi awal; tambahan kecil berikutnya gunakan `append`. **Dilarang tulis ulang penuh.**
+   - **Tulis sekali** (`INTEL.md`, `00`, `01`, `02`): gunakan `write_file` saat inisialisasi awal; tambahan kecil berikutnya gunakan `append`. **Dilarang tulis ulang penuh.**
    - **Generate massal** (`00b`): gunakan script (`phase0_inventory.py`) dan verifikasi via `grep -n`. Dilarang menulis manual atau membaca penuh.
    - **Append-murni** (`06`, `08`, `09`): gunakan `append` karena entri yang sudah masuk tidak diubah lagi statusnya.
    - **Append lalu ubah status** (`04`, `05`, `07`): saat menambah entri baru gunakan `append`; saat mengubah status entri (mis. `BELUM` -> `DITEMBUS`/`TETAP_AMAN` di `04`, atau update status di `05`/`07`) **wajib** gunakan `patch` pada blok entri tersebut.

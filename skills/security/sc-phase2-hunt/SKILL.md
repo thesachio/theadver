@@ -1,6 +1,6 @@
 ---
 name: sc-phase2-hunt
-description: Phase 2 — Counter-Auditor Adversarial Hunting (10 Non-Standard Lenses + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
+description: Phase 2 — Counter-Auditor Adversarial Hunting (Class-Routed Dynamic Registry M-001..M-NNN + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
 version: 6.1.0
 ---
 
@@ -40,7 +40,7 @@ DILARANG memakai "append selalu" sebagai resep tunggal — tiap file punya pola 
 
 | Karakteristik | File | Metode wajib | DILARANG |
 |---|---|---|---|
-| Tulis sekali | `00`, `01`, `02` | `write_file` saat awal; tambahan kecil → `append` | tulis ulang penuh untuk tambahan |
+| Tulis sekali | `INTEL.md`, `00`, `01`, `02` | `write_file` saat awal; tambahan kecil → `append` | tulis ulang penuh untuk tambahan |
 | **Generate massal** | `00b` | **script** (`phase0_inventory.py` dll); verifikasi via `grep -n` | menulis manual; membaca penuh (≈9k token) |
 | **Append-murni** | `06`, `08`, `09` | `append` (`mode="a"`) | baca-lalu-tulis-ulang |
 | **Append lalu ubah status** | `04`, `05`, `07` | entri baru → `append`; ubah status → `patch` pada blok itu | append untuk mengubah; tulis ulang penuh |
@@ -110,7 +110,7 @@ Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati t
 **Hukum baru — Atestasi DITOLAK bila tidak memuat keempatnya:**
 1. **Nama fungsi yang diperiksa** — daftar eksplisit `namaFungsi()` untuk **setiap** berkas `[MUST-AUDIT]` di unit itu (bukan "10 state-fn").
 2. **`File:Baris`** untuk minimal satu baris kode konkret per fungsi (mis. `handlers/HyperliquidDepositHandler.sol:299-302`).
-3. **Metode** (1–10 / `[POV-XX]`) yang benar-benar dipakai.
+3. **Metode** (M-001..M-NNN / `[POV-XX]`) yang benar-benar dipakai.
 4. **Jalur eksternal yang disentuh** + **jalur yang TIDAK diuji** (eksplisit, boleh "tidak ada").
 
 **DILARANG sebagai bukti tunggal** (otomatis tolak): `forge build`/`cargo test` PASS, jumlah berkas, jumlah fungsi mutasi, "unit X/ X PASS", nama unit (`S-0n`), atau rujukan ke `notes/s03/` tanpa kutipan `File:Baris`.

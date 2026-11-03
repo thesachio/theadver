@@ -1,7 +1,7 @@
 ---
 name: sc-phase4-report
 description: Phase 4 — Final Verdict Judging (via verify/VERDICT.md) and Pure 6-File Audit Reporting (04 to 09).
-version: 6.0.0
+version: 6.1.0
 ---
 
 # Phase 4: Final Verdict Judging & Pure 6-File Audit Reporting (04–09)
@@ -17,7 +17,12 @@ Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan st
 Hakim **DILARANG** memeriksa 11 Pernyataan kualitas bukti sebelum gerbang cakupan ini dijalankan. Kualitas PoC hanya bermakna untuk permukaan yang benar-benar diperiksa; satu PoC sempurna di atas 2% cakupan tetap merupakan audit yang gagal.
 
 ### 1. Hitung Rasio Cakupan - DUA Gerbang Berbeda
-Bandingkan `audit/00b-file-inventory.md` (populasi) dengan `audit/03-attack-surface-queue.md` (jejak). Wajib periksa **keduanya**, karena keduanya bisa gagal secara independen:
+Bandingkan `audit/00b-file-inventory.md` (populasi) dengan `audit/03-attack-surface-queue.md` (jejak). Wajib periksa **keduanya**, karena keduanya bisa gagal secara independen.
+
+**Rujukan cakupan resmi (tiga sumber, bukan satu):** bila `audit/INTEL.md` ada (hasil Fase 0 `sc-project-intel`), ia ikut menjadi **rujukan cakupan resmi** bersama `00-project-map.md` dan `00b-file-inventory.md`:
+- **Bagian 3 INTEL — Bug Bounty Scope:** kontrak/repo yang dinyatakan *in-scope* oleh program bounty. Bila inventaris memuat kontrak yang **tidak** in-scope, atau sebaliknya ada kontrak in-scope yang **tidak** masuk `00b`, itu adalah `AUDIT_INCOMPLETE_COVERAGE_BIAS` (ketidaksesuaian populasi), bukan sekadar catatan.
+- **Bagian 4 INTEL — Past Audit Reports:** dipakai memastikan area yang sudah pernah diaudit pihak lain tetap berjejak (bukan diasumsikan aman). Bila laporan lama menyebut area X dan X tidak berstatus `LEAD_GENERATED`/`ATTESTED_CLEAN`, tandai sebagai celah jejak.
+- Bila `INTEL.md` tidak ada atau berstatus `TIDAK_DITEMUKAN`, populasi tetap sah memakai `00b` saja — **catat secara eksplisit di Ringkasan Eksekutif** bahwa rujukan INTEL tidak tersedia (jangan diamkan).
 
 **(a) Gerbang Pemetaan (warisan Fase 1):** berkas `[MUST-AUDIT]` yang `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` = **100%**. Bila kurang, berarti ada berkas yang tidak pernah masuk antrean - kegagalan paling fatal, dan tidak bisa ditambal di Fase 4.
 
@@ -81,6 +86,7 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
 1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
 2. **Jalankan Langkah 0 VERDICT.md lebih dulu — Rekonsiliasi Identitas Deployment (wajib, sebelum menilai apa pun):**
    Cocokkan kode yang dikutip dengan sumber terverifikasi explorer / `sha256`. Klaim yang hanya berlaku di HEAD — bukan di deployment produksi — wajib ditandai `HEAD-only` dan **maksimal berada di `07`**, tidak boleh diadili sebagai temuan.
+   **Rekonsiliasi cakupan identitas:** rujuk `audit/INTEL.md` (bila ada) Bagian 3 (alamat/repo in-scope) dan Bagian 4 (laporan audit lampau) bersama `00-project-map.md` + `00b-file-inventory.md`. Kandidat yang lokasinya tidak dapat dipetakan ke salah satu sumber resmi tersebut **DILARANG** diadili sebagai temuan — kembalikan ke `07` (`HEAD-only`/`UNVERIFIED`) atau `06` (`REJECTED_MISMATCH`).
 3. **Adili Setiap Kandidat** di `audit/09-confirmed-findings.md` dan `audit/05-raw-leads.md`:
    Uji setiap kandidat terhadap 11 Pernyataan Wajib di VERDICT.md (termasuk Langkah 4a Gate Cakupan):
    - **Lolos Seluruh 11 Pernyataan (`VALID_ELIGIBLE`):** Terbukti lewat simulasi PoC pada fork state produksi (`Mode Uji: FORK`), tanpa *Fantasy Mock*/Cheatcode, dan membuktikan bahaya finansial nyata (pencurian dana, insolvensi, pembekuan aset permanen, atau sabotase repay/liquidate) -> Disahkan tetap di `audit/09-confirmed-findings.md`.

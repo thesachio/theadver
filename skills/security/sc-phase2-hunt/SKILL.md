@@ -6,7 +6,7 @@ version: 6.1.0
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
 
-Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. Jangan membaca kode secara pasif dari baris atas ke bawah seperti auditor biasa; gunakan Fondasi First-Principles dan 10 Metode Counter-Auditor di bawah ini tanpa melakukan penghakiman kelayakan ekonomi secara prematur.
+Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. Jangan membaca kode secara pasif dari baris atas ke bawah seperti auditor biasa; gunakan Fondasi First-Principles dan metode dari `references/ref-method-registry.md` (`M-001..M-NNN`) di bawah ini tanpa melakukan penghakiman kelayakan ekonomi secara prematur.
 
 ---
 
@@ -87,7 +87,7 @@ Pada Putaran 1 dan Putaran 2, eksekusi Unit Alur Eksekusi secara **bergilir lint
 ### 2. Kewajiban Jejak Audit (Lead ATAU Negative Attestation)
 Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati tanpa jejak**. Pilih tepat satu hasil:
 - **`LEAD_GENERATED`** — ditemukan celah potensial: tulis entri lengkap ke `audit/notes/staging-<unit>.md` (template penuh).
-- **`ATTESTED_CLEAN`** — setelah diuji dengan 10 Metode tidak ditemukan celah: tulis **1 baris Negative Attestation** di tabel cakupan `audit/03-attack-surface-queue.md`.
+- **`ATTESTED_CLEAN`** — setelah diuji dengan metode dari `ref-method-registry.md` (`M-001..M-NNN`) dan/atau `[POV-XX]` tidak ditemukan celah: tulis **1 baris Negative Attestation** di tabel cakupan `audit/03-attack-surface-queue.md`.
 
 **Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**
 ```

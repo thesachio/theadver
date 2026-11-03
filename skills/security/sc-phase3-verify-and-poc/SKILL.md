@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
-description: Phase 3 — Method-Routed Pre-PoC Triage (Methods 1-10 & POV), 6-Tier Local Fork Exploit Simulation, and Pure Staging Distribution (06, 07, 09).
-version: 6.0.0
+description: Phase 3 — Dynamic Registry-Routed Pre-PoC Triage (M-001..M-NNN & [POV-XX]), 6-Tier Local Fork Exploit Simulation, and Pure Staging Distribution (06, 07, 09).
+version: 6.1.0
 ---
 
 # Phase 3: Pre-PoC Sanity Check & Local Fork Exploit Simulation

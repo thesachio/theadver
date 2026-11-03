@@ -12,7 +12,7 @@
 #
 set -euo pipefail
 
-PROFILE="${PROFILE:-${HOME}/.hermes/profiles/adv}"
+PROFILE="${PROFILE:-/home/ubuntu/.hermes/profiles/adv}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PATHS=(

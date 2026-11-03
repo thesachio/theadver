@@ -61,8 +61,8 @@ Gunakan alat fence-aware — **jangan** pakai `grep -c '^## \['` mentah, karena 
 di dalam blok kode ikut terhitung (false positive).
 
 ```bash
-python3 `verify/tools/verify07.py` <file.md>          # ringkasan
-python3 `verify/tools/verify07.py` <file.md> --json   # mesin
+python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py <file.md>          # ringkasan
+python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py <file.md> --json   # mesin
 # exit 0 = semua entri sah · 1 = ada LAZY_BAILOUT_DETECTED · 2 = file tidak terbaca
 ```
 

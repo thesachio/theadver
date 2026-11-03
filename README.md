@@ -76,7 +76,7 @@ Solc 0.8.28 via Forge. `rg`, `jq`, `git` tersedia.
 
 ```yaml
 terminal:
-  cwd: `./workspace`
+  cwd: /home/ubuntu/.hermes/profiles/adv/workspace
 skills:
   write_approval: true
 memory:

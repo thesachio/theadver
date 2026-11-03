@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (10 Non-Standard Lenses + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
-version: 6.0.0
+version: 6.1.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -55,17 +55,27 @@ Pola kode lengkap, protokol backup write-ahead, dan prosedur pemulihan (termasuk
 ---
 
 ## Aturan Orkestrasi Subagent (delegate_task)
+
 Jika dijalankan melalui delegasi, berikan paket tugas berisi:
-1. Daftar 1 Kelompok Fungsi Siklus Hidup (2–4 fungsi) dari audit/03-attack-surface-queue.md beserta tag [LOAD: ...].
-2. Instruksi wajib membaca audit/00-project-map.md, audit/01-threat-and-env.md (3 Kasta Aset & Jejak *Patch-Scar*), dan audit/02-state-and-var-matrix.md.
+1. **Tepat 1 Unit `S-n`** dari `audit/03-attack-surface-queue.md` (lihat *Fixed Quota* di bawah), beserta tag `[LOAD: ...]`.
+2. Instruksi wajib membaca `audit/00-project-map.md`, `audit/01-threat-and-env.md` (3 Kasta Aset & Jejak *Patch-Scar*), `audit/02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
 3. Pembagian Putaran Eksplorasi:
-   - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + Metode 1, 2, 3, 6, 7 -> Tahap B (Analogi & Katalog POV) -> Tahap C (klasifikasi `04` vs `05`).
-   - **Tahap C — Keluaran:** tulis entri lengkap ke `audit/notes/staging-<unit>.md` (**bukan** ke `04`/`05` langsung). Format entri wajib sudah final agar Parent hanya menyalin: untuk `04` sertakan File:Baris, Ekspresi Guard, Variabel Pembentuk; untuk `05` sertakan Metode Pencarian 1–10 (`[POV-XX]`) dan Delta State. Ringkasan ke Parent cukup manifes: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris per entri.
-   - Putaran 2 (Makro Lintas-Jalur & Guard-Inversion): Jalankan Metode 4, 5, 8, 9, 10 menggunakan 02-state-and-var-matrix.md, 05-raw-leads.md, dan daftar guard di 04-code-guarded.md.
+   - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + metode sesuai kelas topologi unit (lihat `references/ref-method-registry.md`) -> Tahap B (Symptom Router & Lazy-Load POV) -> Tahap C (klasifikasi `04` vs `05`).
+   - **Tahap C — Keluaran:** tulis entri lengkap ke `audit/notes/staging-<unit>.md` (**bukan** ke `04`/`05` langsung). Format entri wajib sudah final agar Parent hanya menyalin: untuk `04` sertakan File:Baris, Ekspresi Guard, Variabel Pembentuk; untuk `05` sertakan Metode Pencarian (`M-001..M-NNN` dan/atau `[POV-XX]`) dan Delta State. Ringkasan ke Parent cukup manifes: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris per entri.
+   - Putaran 2 (Makro Lintas-Jalur & Guard-Inversion): Jalankan metode makro (`M-004`, `M-005`, `M-008`, `M-009`, `M-010`) menggunakan `02-state-and-var-matrix.md`, `05-raw-leads.md`, dan daftar guard di `04-code-guarded.md`.
 
----
+### Pengunci Anti-Low-Rate Reasoning (WAJIB)
 
----
+**A. Interleaved Domain Wave.** Dalam setiap rotasi domain (`D1 -> D2 -> ... -> Dn`), unit `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` dibedah **proporsional sesuai aliran nilai** di domain tersebut. **DILARANG** menaruh seluruh `[CLASS-A]` di buntut sesi — kontrak tunggal `[CLASS-A]` dapat memegang **100% TVL**, sehingga menundanya = menunda aset terbesar.
+
+**B. Position-Blind Subagent Dispatch & Fixed Quota (`1 Subagent = Tepat 1 Unit S-n`).**
+- Setiap `delegate_task` di Fase 2 hanya mengerjakan **tepat 1 Unit Alur `S-n`**, dari unit pertama hingga unit terakhir. **DILARANG** merapel beberapa unit di ekor antrean (*No Tail-End Compression*).
+- Prompt Subagent harus **Position-Blind**: DILARANG melabeli unit sebagai "prioritas rendah", "urutan bawah", atau "EV kecil". Subagent hanya menerima identitas unit, bukan posisinya dalam antrean.
+
+**C. Eksekusi Berbasis Kelas Entitas (`[CLASS-A]` vs `[CLASS-B]` vs `[CLASS-C]`).**
+- **`[CLASS-A]` (Single-Entity):** jalankan **1 Pass Tajam Tuntas (*Single-Pass Deep Kill*)** — seluruh variabel pembentuk guard berada di dalam 1 entitas, jadi Subagent **wajib langsung menguji Guard-Inversion (`M-005`) inline saat itu juga**. Hanya lempar ke `04-code-guarded.md` bila guard terbukti tahan **di dalam** entitas namun berpotensi dipengaruhi faktor eksternal pada sintesis lintas-kelas.
+- **`[CLASS-B]` (Dual-Entity) & `[CLASS-C]` (Multi-Entity Long Flow):** jalankan paket metode sesuai matriks kelas di `references/ref-method-registry.md`, lalu lanjutkan dengan **Putaran Sintesis Lintas-Jalur & Pembongkaran `04-code-guarded.md`** sebelum menutup Fase 2.
+
 
 ## Aturan Anti-Tunnel-Vision: Rotasi Domain & Clean-Unit Attestation
 
@@ -128,131 +138,50 @@ Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
 
 ---
 
-## TAHAP A: Fondasi First-Principles & 10 Metode "Counter-Auditor" (WAJIB Sebelum Membaca Referensi!)
-
-Jangan memeriksa fungsi secara terisolasi. Uji fondasi batas & 5 primitif universal berikut, lalu terapkan 10 Metode Counter-Auditor dan tulis perhitungannya di audit/notes/:
+## TAHAP A: Fondasi First-Principles & Resolusi Metode Dinamis (WAJIB Sebelum Membaca Referensi!)
 
 ### Fondasi Wajib: 4 Kondisi Batas Konkret & 5 Primitif Universal
 Saat membedah setiap fungsi di unit antrean, selalu substitusikan 4 Kondisi Batas (1. Likuiditas realistis tanpa ilusi `totalSupply == 0` pada pool live; 2. Batas bawah 0, 1 wei, `min - 1`; 3. Blok/waktu sama $\Delta t = 0$; 4. Entitas kembar `sender == recipient` / `target == address(this)`) terhadap 5 Primitif Universal: (1) Kuantisasi Proporsi, (2) Transisi Paksa & Sabotase DoS, (3) Replay Otoritas/Signature, (4) Penyerahan Kontrol Eksekusi, dan (5) Lompatan Mesin Status.
 
 ---
 
-### Kelompok Putaran 1 — Lensa Mikro Fungsi & Matematika (Metode 1, 2, 3, 6, 7)
 
-### Metode 1 — Backward Sink-to-Source Tracing (Kebalikan Arah Baca Auditor)
-Auditor membaca dari baris pertama fungsi (require) ke bawah sehingga mudah terhipnotis bahwa fungsi sudah aman. Anda WAJIB membaca dari bawah ke atas:
-1. Cari Titik Kritis di Bawah (*The Sink*): baris pengiriman token/koin/NFT, pencetakan hak/share, penghapusan utang/kewajiban, atau penyitaan jaminan.
-2. Lacak mundur ke atas (*backward*) setiap variabel pembentuk jumlah di *Sink* tersebut: *"Bagaimana cara memperbesar angka yang keluar di Sink sambil memperkecil pengorbanan di Source menggunakan input yang diizinkan pada 3 Kasta Aset di 01-threat-and-env.md?"*
+### Resolusi Metode Dinamis via Single-Source Method Registry (`references/ref-method-registry.md`)
 
-### Metode 2 — State-Transition Differential Analysis (Expected vs. Actual Delta)
-Untuk setiap aksi atau pasangan aksi (Masuk/Buat vs Keluar/Batal/Transfer/Sita dari 02-state-and-var-matrix.md), bandingkan perubahan state yang seharusnya terjadi secara ekonomi vs yang benar-benar tertulis di kode:
-- Catat di audit/notes/ dengan kerangka:
-  State Awal -> Aksi -> Delta Ekspektasi (Hak vs Kewajiban) vs Delta Aktual di Kode -> Selisih Variabel yang Tidak Sinkron.
-- Periksa apakah ada variabel global yang berubah tanpa memperbarui variabel user (atau sebaliknya), indeks akrual yang terlambat disinkronkan satu langkah, atau operasi batal/klaim sebagian yang lupa me-reset salah satu field struct.
+Seluruh definisi metode (`M-001` s/d `M-010`, plus slot ekspansi `M-011`..`M-NNN`) **tidak lagi ditulis di berkas ini**. Berkas ini hanya menyimpan prosedur pemanggilannya.
 
-### Metode 3 — Irrational Multi-Identity Sybil & Zero-Time Loop (Aksi "Tidak Masuk Akal" bagi Pengguna Normal)
+1. **Muat registry** — panggil `skill_view("sc-phase2-hunt", "references/ref-method-registry.md")` (atau `read_file`).
+2. **Baca kelas topologi unit** yang sedang dibedah (`[CLASS-A]`, `[CLASS-B]`, atau `[CLASS-C]`) dari `audit/03-attack-surface-queue.md` (field `Topologi Entitas`).
+3. **Jalankan seluruh metode yang dipetakan** untuk kelas tersebut pada Bagian 1 & Bagian 3 registry:
+   - **`[CLASS-A]` (Single-Entity):** fokus utama `M-001` (*Backward Sink*), `M-002` (*State Delta*), `M-004` (*Patch-Scar & View-vs-Write*), `M-005` (*Inline Guard-Inversion*), `M-006` (*Prinsip B: Duplicate Reference `[A,A]`*), `M-007` (*Split-vs-Bulk*), `M-009` (*Local Suspended State*) — plus `M-011..M-NNN` yang bertarget `[CLASS-A]`.
+   - **`[CLASS-B]` (Dual-Entity):** seluruh metode relevan `[CLASS-A]` ditambah `M-003` (*Multi-Identity Sybil & Zero-Time Loop*), `M-006` (*Prinsip A: Stale Snapshot Write-Back* + Prinsip B), `M-008` (*Caller-Callee Seam & Direct Bypass*), `M-010` (*Residual Balance/Authority*) — plus `M-011..M-NNN` bertarget `[CLASS-B]`.
+   - **`[CLASS-C]` (Multi-Entity Long Flow):** **Paket Penuh 100% metode** (`M-001`..`M-NNN`) dengan penekanan pada rantai komposisi panjang, `M-003`, `M-004`, `M-005` (*Cross-Contract*), `M-008`, `M-009` (*Suspended Multi-Step/Async Lifecycle*), dan `M-010` (*Post-Upgrade & Config Drift*).
 
-**Prinsip:** Auditor menguji alur pengguna waras. Anda WAJIB menguji perilaku "tidak rasional" yang hanya mungkin bila **dua atau lebih identitas/akun/objek/kapabilitas yang dikendalikan satu penyerang** berinteraksi secara atomik atau dalam jendela eksekusi yang sama ($\Delta t = 0$). Kerugian di satu identitas boleh terjadi asal keuntungan di identitas lain lebih besar — penyerang tidak peduli "kantong" mana yang rugi.
-
-**Contoh EVM:** dua EOA milik penyerang (`Attacker_A`, `Attacker_B`) dalam 1 transaksi.
-
-**Padanan non-EVM:** **Solana** — dua signer, atau satu signer + account alias/duplicate account · **Move** — dua capability atau dua object milik satu owner · **TON** — dua actor, atau dua jalur message dari actor yang sama.
-
-**Langkah uji:**
-1. **Self-Transfer & Ping-Pong Loop:** Apa yang terjadi jika identitas pertama memindahkan/mendelegasikan hak ke dirinya sendiri (`from == to`) atau memantulkannya A -> B -> A berulang kali dalam jendela eksekusi yang sama?
-2. **Self-Liquidation / Self-Penalty Arbitrage:** Apa yang terjadi jika identitas pertama sengaja membuat posisinya terkena likuidasi/slashing/lelang/bad-debt, sementara identitas kedua bertindak sebagai likuidator/penawar yang memanen bonus atau mengalihkan kerugian (*bad debt socialization*) ke kolam publik?
-3. **Zero / Boundary & Dust Amplification:** Masukkan nilai 0, 1 unit terkecil, atau `batas_minimum - 1` untuk menguji apakah biaya/penalti terpotong jadi 0 karena pembulatan dan dapat di-loop dalam satu batch/multicall.
-
-### Metode 6 — Stale Local-Snapshot Write-Back & Duplicate-Reference Aliasing (`[A, A]`)
-
-**Prinsip A — Snapshot basi ditulis balik:** Sebuah salinan state dibuat lokal, lalu di tengah eksekusi terjadi interaksi eksternal (callback/panggilan ke modul lain) yang mengubah state persisten yang sama, dan di akhir salinan lokal ditulis kembali — sehingga perubahan terbaru terhapus senyap. Yang dicari bukan nama tipe atau kata kunci bahasanya, melainkan **urutan baca-lokal -> mutasi-persisten -> tulis-balik**.
-
-**Contoh EVM:** `Struct memory s = map[user]` -> panggil callback yang mengubah `map[user]` -> `map[user] = s`.
-
-**Padanan non-EVM:** **Solana** — account data dibaca sebelum CPI, ditulis balik tanpa `.reload()` · **Move** — objek di-*unpack*, dipakai lintas call, lalu di-*pack* ulang dengan nilai lama · **TON** — `c4`/`c5` dibaca sebelum mengirim pesan, lalu disimpan setelahnya.
-
-**Prinsip B — Referensi kembar diproses dua kali:** Satu referensi yang sama muncul lebih dari sekali dalam satu input dan diproses berulang, karena validasi/pembacaan saldo terjadi sebelum mutasi di dalam loop.
-
-**Contoh EVM:** `claim([1, 1])`; dedup biasanya `ids[i] < ids[i+1]` atau bitmap.
-
-**Padanan non-EVM:** duplicate account, repeated `remaining_accounts`, duplicate recipient, resource/object reference kembar.
-
-**Langkah uji:**
-1. Cari fungsi yang menyalin struktur/saldo ke variabel lokal, memanggil keluar, lalu menulis balik ke state persisten di akhir.
-2. Pada setiap fungsi ber-parameter daftar, uji input dengan elemen kembar `[A, A]`. Periksa apakah ada deduplikasi sebelum mutasi.
-
-### Metode 7 — Metamorphic Split-vs-Bulk Asymmetry ($f(a + b) \neq f(a) + f(b)$)
-Auditor menguji rumus dengan 1 angka tunggal. Anda WAJIB menguji apakah rumus bersifat non-linear ketika input dipecah atau digabung dalam 1 transaksi:
-1. **Salami Slicing (Pecah Jadi $N$ Potongan Kecil):** Bandingkan 1 panggilan `aksi(1000)` vs 100 panggilan `aksi(10)`. Jika biaya/utang/share yang dibakar menggunakan pembulatan ke bawah (*round down*), memecah transaksi dapat membuat kewajiban terpotong menjadi 0 di setiap iterasi.
-2. **Bulk Consolidation (Gabung via Flashloan Lalu Pecah):** Bandingkan eksekusi terpisah vs menggabungkan likuiditas/posisi sesaat pada titik perhitungan bagi-hasil/reward/tier, lalu memecahnya kembali di blok yang sama.
-
----
-
-### Kelompok Putaran 2 — Lensa Makro Lintas-Jalur, Guard, & On-Chain (Metode 4, 5, 8, 9, 10)
-
-### Metode 4 — Patch-Scar, Periphery, & View-vs-Write Asymmetry (Menyerang Titik Lelah Auditor)
-1. **Bedah *Patch-Scar* (Bekas Tambalan):** Jika fungsi utama memiliki `if`/`require` khusus yang terlihat seperti tambalan audit (lihat 01-threat-and-env.md), periksa apakah jalur sampingan (transfer, migrate, rescue, sweep, emergencyWithdraw, batch, onERC721Received) yang menyentuh variabel yang sama lupa dipasang tambalan tersebut.
-2. **Desinkronisasi Rumus `View` vs `Write`:** Bandingkan baris demi baris rumus di fungsi view/preview dengan fungsi tulis pasangannya di 02-state-and-var-matrix.md (misal: perbedaan arah pembulatan `mulDivDown` vs `mulDivUp`, atau biaya yang dihitung di preview tetapi tidak dipotong di fungsi eksekusi).
-
-### Metode 5 — Guard-Inversion (Membalik Guard Kode Menjadi Target Manipulasi)
-Setiap kali menemukan `require(Kondisi_X >= Kondisi_Y)` atau `if (...) revert`:
-- Jangan langsung berhenti! Tanyakan: *"Variabel apa yang menyusun Kondisi_X dan Kondisi_Y? Berdasarkan 02-state-and-var-matrix.md, bisakah fungsi publik lain (atau flashloan/donasi/callback) mengubah nilai X atau Y sesaat sebelum baris require ini dieksekusi?"*
-- *(Pada Putaran 2, gunakan metode ini secara khusus untuk membongkar seluruh daftar guard yang terkumpul di audit/04-code-guarded.md).*
-
-### Metode 8 — Caller-Callee Assumption Seam & Direct Downstream Bypass (Celah Lempar Tanggung Jawab)
-
-**Prinsip:** Dua lapisan komponen (hulu dan hilir) masing-masing menganggap lapisan lain sudah memvalidasi. Yang menentukan bukan nama modifier, melainkan dua pertanyaan: **(a) apakah jalur hilir benar-benar membatasi caller yang sah, dan (b) apakah jalur hilir mengulang seluruh validasi kritis** — atau hanya mempercayai bahwa pemanggil hulu sudah melakukannya.
-
-**Contoh EVM:** hulu `Router/Gateway/Manager`, hilir `Pool/Vault/Strategy`; pembatasan lazim `onlyRouter` / `onlyManager`.
-
-**Padanan non-EVM:** **Solana** — CPI dari program lain vs instruksi yang dipanggil langsung tanpa signer · **Move** — fungsi yang menuntut capability (`RouterCap`) vs `public entry` bebas · **TON** — pesan dari kontrak resmi vs pesan eksternal.
-
-**Langkah uji:**
-1. **Unvalidated Seam:** Pada titik panggilan hulu -> hilir, apakah hulu meneruskan parameter (`receiver`, `from`, `onBehalfOf`, `token`, `data`) tanpa validasi karena mengira hilir akan memvalidasinya — sementara hilir percaya buta karena panggilan datang dari hulu?
-2. **Direct Downstream Bypass:** Jika validasi keamanan (slippage, whitelist, fee, access check) hanya ada di hulu, periksa apakah penyerang dapat memanggil fungsi publik hilir secara langsung tanpa melewati hulu.
-
-### Metode 9 — Half-Baked / Suspended Lifecycle State (Menyerang Saat Status "Menggantung")
-Auditor menguji siklus hidup yang selesai tuntas (Request -> Finalize). Anda WAJIB menguji siklus yang sengaja dihentikan di tengah jalan:
-- Mulai Langkah 1 dari proses multi-tahap (misal: `requestWithdraw`, `initiateCooldown`, `createOrder`, `startAuction`, `propose`, atau kirim pesan async tahap pertama).
-- JANGAN jalankan langkah penyelesaiannya. Saat akun/objek masih berada dalam status *"Pending / Menggantung"* tersebut, panggil fungsi jalur lain (transfer, delegate, borrow, liquidate, emergencyWithdraw, atau cancel berulang) untuk memeriksa apakah saldo/jaminan yang sedang menggantung belum dikunci sehingga bisa dipakai dua kali (*double-spend*).
-
-### Metode 10 — Live Residual State, Delegated Authority, & Post-Upgrade Drift
-
-**Prinsip:** Auditor menguji pada *sandbox* bersih, sedangkan sistem di produksi membawa **state sisa yang nyata**: otorisasi tertunda yang belum terpakai, saldo/objek aset yang tertinggal, dan konfigurasi usang setelah peningkatan/migrasi. Tiga hal ini tidak muncul di `setUp()` yang kosong — harus dibaca dari state live lebih dulu.
-
-**Contoh EVM:** `allowance`/`approve` yang belum terpakai · saldo token mengendap di Router/Helper/Migrator · slot proxy EIP-1967 dan variabel implementasi baru yang masih 0.
-
-**Padanan non-EVM:** **Solana** — delegated authority/capability pada token account, saldo mengendap di PDA, data akun lama setelah program upgrade · **Move** — capability tertunda, object aset tertinggal, field baru yang belum terisi setelah migrasi · **TON** — saldo tersisa di kontrak perantara, konfigurasi actor yang tidak sinkron setelah upgrade.
-
-**Tabel padanan istilah:**
-
-| Istilah EVM | Konsep umum |
-|---|---|
-| `allowance` / `approve` | otorisasi tertunda yang belum terpakai |
-| `cast call` / `eth_getStorageAt` | pembacaan state live sebelum menulis PoC |
-| saldo mengendap di kontrak | *residual balance* / *asset object* tertinggal |
-| slot proxy EIP-1967 | *storage slot* / *object field* / *account data* / *actor state* |
-| konfigurasi usang pasca-upgrade | *stale configuration* setelah migrasi |
-
-**Langkah uji:**
-1. **Delegated Authority & Residual Balance:** Apakah komponen perantara (Router/Helper/Migrator/Adapter) memiliki panggilan eksternal terbuka (`call`, `transferFrom`, `sweep`, `swap` dengan parameter alamat bebas) yang dapat menarik saldo tertinggal atau menyedot otorisasi pengguna aktif?
-2. **Post-Upgrade Drift:** Setelah peningkatan/migrasi, apakah ada variabel/field baru yang berasumsi sudah terisi saat inisialisasi padahal pada state produksi masih 0 — atau berbenturan dengan nilai lama dari versi sebelumnya?
+> **Larangan angka mati:** DILARANG menyebut "Metode 1 s/d 10" sebagai himpunan tertutup. Metode yang sah = apa pun yang terdaftar di registry pada sesi itu. Menambah `M-011` cukup dengan menyunting registry, **tidak** berkas ini.
 
 ---
 
 ## TAHAP B: Pengayaan Analogi Mekanis & Katalog Attacker POV ([POV-XX])
-Panggil skill_view("sc-phase2-hunt", "<nama-file-ref>") sesuai tag [LOAD: ...]:
-1. Terjemahkan konsep di dalam referensi domain sebagai Pola Mekanis Abstrak lintas domain.
-2. Buka bagian `## Katalog Generalized Attacker POV & Auditor Blindspots` di **file referensi domain yang baru Anda muat** (mis. `ref-math-and-vaults.md`). Cocokkan apakah **Kondisi Prasyarat** terpenuhi dan **Gejala di Kode** pada item `[POV-XX]` hadir pada fungsi yang sedang Anda bedah — terutama kolom *Auditor Blindspot*, karena di situlah peluangnya berada. Untuk mencari POV yang tidak ada di file tersebut, lihat indeks lokasi di `references/ref-attacker-pov.md`.
-   - **Fallback wajib:** bila tidak ada POV yang cocok di seluruh katalog, JANGAN mengarang nomor POV. Turunkan ke analogi mekanis bebas (butir 1) dan catat di `audit/notes/` bahwa katalog untuk pola tersebut belum tersedia. *(Katalog POV diisi bertahap — ketiadaannya bukan cacat, jangan "diperbaiki" dengan entri karangan.)*
+
+Tahap B **modular dan lazy-load**. Jangan memuat seluruh katalog sekaligus.
+
+1. **Muat Checklist Prinsip Dasar & Rantai (Tipis < 60 Baris).**
+   Panggil `skill_view` pada checklist domain (`ref-math-and-vaults.md`, `ref-calls-tokens-reentrancy.md`, `ref-defi-oracles-liquidation.md`) dan **tepat 1** cartridge rantai (`ref-chain-*.md`) sesuai tag `[LOAD: ...]` pada unit `S-n`. Terjemahkan setiap butir sebagai **pola mekanis abstrak** lintas domain.
+2. **Cek Gejala di Symptom Router (`references/ref-attacker-pov.md`).**
+   Buka `references/ref-attacker-pov.md` dan periksa kolom **Gejala Pemicu di Kode (Trigger Symptom)** pada **Tabel Router Bagian 2**.
+3. **Lazy-Load Katalog POV yang Cocok (`references/ref-pov-*.md`).**
+   **HANYA JIKA** fungsi/unit yang sedang dibedah menunjukkan gejala pemicu tersebut, buka berkas `ref-pov-math.md`, `ref-pov-call.md`, `ref-pov-defi.md`, atau `ref-pov-chain.md` yang relevan, lalu cocokkan **Kondisi Prasyarat**, **Kacamata Attacker**, dan **Auditor Blindspot**-nya.
+
+- **Fallback wajib:** bila tidak ada `[POV-XX]` yang cocok di katalog, **JANGAN mengarang nomor POV**. Gunakan metode dari `ref-method-registry.md` dan catat di `audit/notes/` bahwa katalog untuk pola tersebut belum tersedia.
 
 ---
+
 
 ## TAHAP C: Pemisahan Murni (04-code-guarded.md vs 05-raw-leads.md)
 Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasinya di simulasi Fase 3):
 1. **Dua Larangan Fakta Dasar Kode:** Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang bisa memanggil fungsi onlyOwner secara langsung.
-2. **Jika Ditemukan Anomali yang Tidak Dihentikan Guard** (atau Guard Bisa Ditembus via Metode 5):
-   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (Metode 1..Metode 10 dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining). **DILARANG menulis ke `05-raw-leads.md` langsung** — `05` hanya ditulis Parent saat merge.
+2. **Jika Ditemukan Anomali yang Tidak Dihentikan Guard** (atau Guard Bisa Ditembus via `M-005` Guard-Inversion):
+   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (`M-001..M-NNN` dari `ref-method-registry.md` dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining). **DILARANG menulis ke `05-raw-leads.md` langsung** — `05` hanya ditulis Parent saat merge.
 3. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode** (`require` / `if (...) revert` / `assert!`):
    Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/04-code-guarded.md` lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk 02-state-and-var-matrix.md), Hipotesis yang Dihentikan, dan Status Putaran 2: `BELUM`. **DILARANG menulis ke `04-code-guarded.md` langsung.**
 4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi `[HUNTED]`.

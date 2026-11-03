@@ -1,7 +1,7 @@
 ---
 name: sc-phase1-recon
 description: Phase 0 & 1 — Domain-Agnostic Recon, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
-version: 6.0.0
+version: 6.1.0
 ---
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
@@ -10,6 +10,17 @@ Di Fase 0 dan Fase 1, peran Anda murni sebagai Pemeta Fakta Objektif (*Cartograp
 Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00`, `00b`, `01` s/d `03`, serta inisialisasi `05-raw-leads.md`).
 
 **GERBANG TULIS (WAJIB):** sebelum menulis satu byte pun ke `audit/*.md`, baca **`workspace/AGENTS.md` Pasal 1.3 (Protokol Anti-Truncate & Metode Write)**. `open(path,"w")` dan `>` shell **DILARANG** untuk seluruh `audit/*.md` — keduanya memotong file ke 0 byte saat dibuka. Gunakan `write_file`/`patch`/`append`, atau skrip dengan pola `.tmp` → `fsync` → `os.replace()`.
+
+---
+
+## Pra-Langkah 0: Baca `audit/INTEL.md` (Fase 0 — bila ada)
+
+Periksa keberadaan `audit/INTEL.md` (hasil Fase 0 `sc-project-intel`).
+
+- **Jika ada** → baca lebih dulu dengan `read_file`, tangkap dua hal:
+  (a) daftar repositori/kontrak **in-scope** dari link Bug Bounty (Bagian 3 INTEL) — dipakai menyelaraskan `00b-file-inventory.md`,
+  (b) daftar **laporan audit masa lalu** (Bagian 4 INTEL) — dipakai memandu pelacakan *Patch-Scar* di Langkah 2.
+- **Jika belum ada** → Fase 1 berjalan normal dari Langkah 0 tanpa berhenti (INTEL opsional, bukan gerbang keras).
 
 ---
 
@@ -60,6 +71,11 @@ Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DI
 ## Langkah 1: Environment, Production Lifecycle, & Build Sanity -> `audit/00-project-map.md`
 1. **Deteksi Bahasa, Paradigma Rantai, & Build Ringan:**
    - Identifikasi ekosistem proyek: Paradigma A (Atomic EVM/Tron/Solana), Paradigma B (Object/Move Sui/Aptos), atau Paradigma C (Async Actor TON).
+   - **Hierarki Deteksi Rantai 3-Level (WAJIB — rujuk `sc-phase2-hunt/references/ref-attacker-pov.md` Bagian 3):** jangan menyimpulkan rantai dari ekstensi berkas saja.
+     - **Level 1 — Ekstensi Berkas:** `.sol`/`.vy`/`.yul` · `.rs` · `.move` · `.fc`/`.func`/`.tact`/`.tolk`.
+     - **Level 2 — Manifes Build (wajib cek):** `foundry.toml`/`hardhat.config.*` vs `Cargo.toml` (**pastikan ada `anchor-lang`/`solana-program`/`pinocchio` sebelum menyimpulkan Solana**) vs `Move.toml` (`Sui` vs `AptosFramework`) vs `blueprint.config.ts`/`tact.config.json`.
+     - **Level 3 — Sinyal Kode Spesifik:** `msg.value`/`delegatecall` vs `#[derive(Accounts)]`/`invoke_signed` vs `UID`/`TxContext` vs `recv_internal`/`send_raw_message`.
+     - **Aturan Anti-Tebak (`CHAIN: AMBIGUOUS`):** bila berkas `.rs` **bukan** program Solana (CosmWasm, NEAR, Substrate, daemon off-chain), WAJIB tulis `CHAIN: AMBIGUOUS (<nama_runtime>)` di `00-project-map.md` dan **DILARANG** memasang tag `[LOAD: ref-chain-solana.md]`.
    - Uji kompilasi/tes awal dengan worker tunggal: FOUNDRY_JOBS=1 (forge test -j 1), CARGO_BUILD_JOBS=1, atau RAYON_NUM_THREADS=1.
    - Periksa ketersediaan konfigurasi RPC di ./rpc-env.sh / .env.rpc untuk kebutuhan simulasi *Local Fork* di Fase 3.
    - **Build lintas-arsitektur:** untuk program non-EVM (Solana SBF/eBPF), build lokal yang sah HANYA lewat `cargo-build-sbf`. `cargo build --release` menghasilkan shared object host (aarch64/x86_64) yang **tidak sebanding** dengan bytecode on-chain. Wajib cek `file` pada kedua binari sebelum membandingkan ukuran.
@@ -106,13 +122,25 @@ Gabungkan berkas yang berada dalam **satu alur transaksi** di domain yang sama m
 
 **Format wajib setiap unit:**
 ```
-## [S-n] <Nama Alur> — <Domain>
-- Berkas tercakup: <daftar path [MUST-AUDIT] lengkap>
-- LOC total: <n> | Fungsi state-changing: <n>
-- Titik masuk unprivileged: <fungsi>
-- [LOAD: ref-…md, ref-chain-…md]
+## [S-n] <Nama Alur Eksekusi> — <Domain D1..Dn>
+- Berkas tercakup: <daftar path relatif>
+- LOC total: <angka> | Fungsi state-changing: <angka>
+- Topologi Entitas: [CLASS-A | CLASS-B | CLASS-C] — Entitas Utama: <...> | Entitas Berinteraksi: <...> | Panjang Alur: <1 / 2 / >=3>
+- Titik masuk unprivileged: <daftar fungsi>
+- [LOAD: ref-method-registry.md, ref-<domain>.md, ref-chain-<paradigma>.md, ref-attacker-pov.md]
 - Status: BELUM / DIBACA / LEAD_GENERATED / ATTESTED_CLEAN
 ```
+
+**Kelas Topologi Entitas (WAJIB — tepat satu label per unit; rujuk `sc-phase2-hunt/references/ref-method-registry.md` Bagian 1):**
+
+| Label | Definisi Boundary |
+|---|---|
+| `[CLASS-A]` | **Single-Entity Flow** — satu entitas mandiri memproses state, validasi guard, kalkulasi, dan transisi alur secara tertutup tanpa ketergantungan panggilan ke entitas lain yang menjadi bagian jalur serangan. |
+| `[CLASS-B]` | **Dual-Entity Interaction** — dua entitas berinteraksi langsung dalam satu jalur/jendela eksekusi (Kontrak Hulu ↔ Hilir, Kontrak ↔ Callback, Program ↔ Target CPI, atau Akun A ↔ Akun B). |
+| `[CLASS-C]` | **Multi-Entity Long On-Chain Flow** — tiga atau lebih entitas berinteraksi berantai dalam alur on-chain panjang, lintas-domain, multi-hop (`User -> Router -> Pool -> Strategy -> Oracle/DEX/Bridge`), PTB multi-objek, atau rantai pesan asinkron. |
+
+> **CLASS-A/B/C adalah router metode berdasarkan topologi entitas, BUKAN indikator severity atau EV.**
+> Kontrak `[CLASS-A]` tunggal dapat memegang 100% TVL — label ini menentukan *paket metode* di Fase 2, bukan prioritas atau nilai uang.
 
 **Aturan agregasi:**
 1. Setiap berkas `[MUST-AUDIT]` **wajib** muncul di **tepat satu** unit — tidak boleh hilang, tidak boleh ganda. Verifikasi jumlah berkas di antrean terhadap `00b-file-inventory.md`.

@@ -71,7 +71,8 @@ Bentuk penulisan lengkap per butir ada di tabel "Aturan Jujur per Bagian" pada
 **Empat hukum penegakan:**
 
 1. **Satu alasan per ketiadaan.** `TIDAK_DITEMUKAN` tanpa alasan + sumber di Bagian 6 = INTEL **tidak jujur**.
-2. **"Gagal diakses" ≠ "tidak ada".** Tulis `TIDAK_DITEMUKAN (batas akses: 403/login/timeout)`.
+2. **"Gagal diakses" ≠ "tidak ada".** 403/429 hanya berarti bot-protection — coba `browser_exec`
+   dulu; bila tetap gagal, tulis `TIDAK_DITEMUKAN (batas akses: <penyebab>)`.
    DILARANG menyimpulkan aturan/laporan itu tidak eksis.
 3. **Bila ragu, turunkan.** Satu slot kosong yang jujur tidak merusak laporan; satu URL palsu membatalkan seluruhnya.
 4. **Konsistensi status.** `COMPLETE` hanya sah bila keenam butir di Bagian 6 = `DITEMUKAN`.
@@ -121,7 +122,7 @@ Hanya untuk slot yang **belum lengkap** dari Langkah 1. Lakukan pencarian **tera
 |---|---|
 | `200` / `30x` ke halaman relevan | terima |
 | `404` / `410` | tolak → `TIDAK_DITEMUKAN` |
-| `403` / `429` / timeout | `TIDAK_DITEMUKAN` + catat di Bagian 6 sebagai batasan akses |
+| `403` / `429` | **ADA (terblokir bot-protection)** — coba `browser_exec`, jangan tandai hilang |
 | Redirect ke beranda generik | tolak — bukan URL langsung |
 
 ```bash
@@ -166,7 +167,7 @@ boleh dimulai (lihat Gate di bawah).
 |---|---|
 | `Target Repo Path` absolut & ada | Fase 1 **tidak boleh mulai** |
 | `Audited Commit` berupa hash hasil `git rev-parse` | Fase 1 **tidak boleh mulai** |
-| Setiap URL lolos uji `curl` | URL tersebut diturunkan ke `TIDAK_DITEMUKAN` |
+| Setiap URL lolos uji `curl` atau `browser_exec` | URL tersebut diturunkan ke `TIDAK_DITEMUKAN` |
 | `Intel Status = PARTIAL` ⇒ Bagian 6 terisi | INTEL **ditolak** |
 | Tidak ada slot dikosongkan | INTEL **ditolak** |
 | `audit/INTEL.md` ≤ 40 baris | INTEL **ditolak** (kelebihan muatan) |

@@ -1,149 +1,162 @@
 ---
 name: sc-project-intel
-description: Phase 0 — Project Intelligence Recon. Isi audit/INTEL.md (identitas proyek, URL dApp/docs/repo, aturan bug bounty, laporan audit lampau, deployment terukur) SEBELUM Fase 1, dengan hukum kejujuran TIDAK_DITEMUKAN. Use when starting any new audit target or when audit/INTEL.md is missing.
-version: 1.0.0
+description: Phase 0 — Project Intelligence & Direct Reference Link Gatherer (Overview, Main UI, Specific GitHub Repo, Direct Bug Bounty Rules Link, and Direct Past Audit Report Links) into audit/INTEL.md.
+version: 6.1.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, recon, phase0, intel]
     category: security
 ---
 
-# Fase 0 — Project Intelligence Recon (`sc-project-intel`)
+# Fase 0 — Project Intelligence & Direct Reference Link Gatherer (`sc-project-intel`)
 
-Mengisi `audit/INTEL.md` memakai skema `verify/templates/INTEL.md` **sebelum** Fase 1 menyentuh kode.
-
-## Mengapa Fase 0 ada
-
-Fase 1 lama langsung menghitung `00b-file-inventory.md` dari repo lokal. Akibatnya audit bisa berjalan
-dengan asumsi yang tidak pernah dibuktikan: repo mana yang sebenarnya target, commit apa yang dipin,
-aturan bounty apa yang membatasi scope, dan laporan audit mana yang harus dibaca lebih dulu agar tidak
-menemukan ulang hal yang sudah diketahui publik. `INTEL.md` menutup empat celah itu **sebelum** biaya
-token besar dikeluarkan.
-
-**Ini bukan riset bebas.** Fase 0 hanya mengisi slot yang sudah didefinisikan skema. Tidak ada bagian
-"informasi tambahan" — bila tidak masuk slot, tidak ditulis.
+Mengumpulkan **6 informasi konteks eksternal & tautan langsung** ke dalam `audit/INTEL.md`
+**sebelum** `sc-phase1-recon` bekerja.
 
 ---
 
-## Hukum Kejujuran (mengikat, melanggar = INTEL dianggap gagal)
+## Peran & Batas Cakupan Ketat (Anti-Redundansi dengan Fase 1)
 
-1. **`TIDAK_DITEMUKAN` adalah hasil sah.** Setiap slot yang tidak dapat dipenuhi **wajib** ditulis
-   `TIDAK_DITEMUKAN`, bukan dikosongkan, bukan diisi tebakan.
-2. **DILARANG mengarang URL.** Setiap URL harus berasal dari hasil pencarian/ekstraksi nyata pada sesi
-   ini, dan wajib dibuktikan hidup (`curl -sI` atau `web_extract`).
-3. **DILARANG mengarang nama auditor, tanggal, atau nomor commit.** Commit diambil dari
-   `git rev-parse`, bukan dari ingatan.
-4. **"Tidak ketemu" ≠ "tidak ada".** Bila pencarian gagal karena alat/akses (mis. situs memblokir,
-   halaman butuh login), tulis `TIDAK_DITEMUKAN` **dan** jelaskan di Bagian 6 bahwa penyebabnya
-   adalah batasan akses — bukan menyimpulkan bahwa laporan/aturan itu tidak eksis.
-5. **Dilarang melanjutkan ke Fase 1** bila `Intel Status = PARTIAL` tanpa mengisi Bagian 6.
-   Bagian 6 adalah yang mencegah klaim berlebih di Fase 4.
+Fase 0 adalah **pengumpul tautan**, bukan penganalisis kode. Semua pekerjaan struktural milik Fase 1.
+
+### 6 Data Wajib yang Dicari (maksimal — tidak lebih)
+
+| # | Data | Bentuk yang diterima |
+|---|---|---|
+| 1 | **Project** | Nama proyek & organisasi resmi |
+| 2 | **Overview Singkat** | 1–3 kalimat fungsi utama protokol |
+| 3 | **Situs Utama (UI Interaksi / dApp)** | Link langsung tempat pengguna berinteraksi + link docs resmi |
+| 4 | **Repository GitHub Spesifik** | Link langsung ke repo target + branch & commit HEAD lokal |
+| 5 | **Bug Bounty Spesifik (Direct Link)** | Link langsung ke aturan/cakupan bug bounty proyek — halaman di dokumentasi resmi **atau** platform pihak ketiga (Immunefi, Cantina, Sherlock, Code4rena, CodeHawks, dll.) |
+| 6 | **File Laporan Auditor Sebelumnya (Direct Links)** | Link langsung ke file PDF, folder `audits/` di repo, atau halaman laporan audit terdahulu |
+
+Berhenti setelah keenamnya terisi (atau ditandai `TIDAK_DITEMUKAN`). **Dilarang menambah bagian ke-7.**
+
+### Larangan Keras di Fase 0 (tetap menjadi tugas `sc-phase1-recon`)
+
+- **DILARANG** melakukan enumerasi berkas kontrak, menghitung LOC, atau membuat `00b-file-inventory.md`.
+- **DILARANG** memetakan 3 Kasta Aset, Core Invariants, atau State-Mutation Matrix (`00`, `01`, `02`, `03`).
+- **DILARANG** menyalin seluruh isi tabel bug bounty atau isi laporan audit panjang lebar ke dalam
+  `audit/INTEL.md`. Jaga `audit/INTEL.md` **≤ 40 baris** agar hemat token. Cukup: link + 1–2 baris kualifikasi.
+- **DILARANG** mengarang URL (**No Hallucinated Links**). Setiap URL wajib berasal dari:
+  - berkas repo lokal: `README*`, `package.json`, `foundry.toml`, `Cargo.toml`, `Move.toml`, `Anchor.toml`,
+    folder `docs/`, folder `audits/`, `SECURITY.md`, atau `git remote -v`; **atau**
+  - hasil pencarian eksternal yang **terverifikasi**.
+
+  Bila sudah dicari maksimal namun tidak ada → tulis `TIDAK_DITEMUKAN`.
+
+> **Hukum kejujuran:** `TIDAK_DITEMUKAN` adalah hasil yang sah dan tidak menurunkan kualitas audit.
+> URL karangan menghancurkan seluruh laporan. "Tidak ketemu" ≠ "tidak ada" — bila gagal karena blokir
+> situs/login, tulis `TIDAK_DITEMUKAN` **dan** sebutkan penyebabnya.
 
 ---
 
-## Prosedur
+## Prosedur Eksekusi 3 Langkah
 
-### Langkah 0 — Resolusi Target (tanpa jaringan)
+### Langkah 1 — Ekstraksi Fakta Lokal Cepat
 
-```bash
-# 1. Path absolut + apakah ini repo git
-cd <path-proyek> && pwd && git rev-parse --is-inside-work-tree
-
-# 2. Commit yang dipin (WAJIB hash, bukan "latest")
-git rev-parse HEAD && git rev-parse --abbrev-ref HEAD
-git remote -v
-
-# 3. Remote URL -> identitas repo (owner/nama)
-```
-
-Bila bukan repo git → `Specific GitHub Repo : TIDAK_DITEMUKAN` dan `Audited Commit : TIDAK_DITEMUKAN`
-(lalu jelaskan di Bagian 6). Jangan menebak repo dari nama folder.
-
-### Langkah 1 — Identitas Proyek
-
-Sumber berurutan: `README.md` repo → file `package.json`/`foundry.toml`/`Anchor.toml` →
-`git remote -v`. `Brief Overview` maksimal 3 kalimat, hanya mekanisme inti yang bisa dibuktikan dari
-berkas yang dibaca (sebut sumbernya di `Diverifikasi Oleh`).
-
-### Langkah 2 — URL Referensi (wajibkan pembuktian hidup)
+Periksa berkas berikut di dalam repo target (urutan ini, berhenti saat 6 data lengkap):
 
 ```bash
-# Untuk setiap kandidat URL:
-curl -s -o /dev/null -w '%{http_code} %{url_effective}\n' -L "<url>"
+git remote -v                    # -> Repository GitHub Spesifik
+git rev-parse HEAD               # -> commit pin (wajib hash, bukan "latest")
+git rev-parse --abbrev-ref HEAD  # -> branch
+ls README* SECURITY.md docs/ audits/ 2>/dev/null
 ```
 
-Aturan penerimaan:
+| Berkas | Yang dicari |
+|---|---|
+| `git remote -v` | URL repo (owner/nama) |
+| `git rev-parse HEAD` + `--abbrev-ref` | branch @ commit |
+| `README*` | Nama proyek, overview, link UI/docs/bounty |
+| `SECURITY.md`, `.github/SECURITY.md` | Halaman bounty / kontak keamanan |
+| `package.json`, `foundry.toml`, `Cargo.toml`, `Move.toml`, `Anchor.toml` | Homepage, repository, URL docs |
+| `docs/` | Halaman aturan bounty / arsitektur |
+| `audits/` | PDF / laporan auditor terdahulu |
 
-| Hasil | Tindakan |
+Tangkap URL resmi, link UI, link bounty, dan file PDF audit yang **sudah tersedia di repo**.
+Bila bukan repo git → `Repository GitHub Spesifik : TIDAK_DITEMUKAN` dan commit `TIDAK_DITEMUKAN`
+(jelaskan di Bagian 6). Jangan menebak repo dari nama folder.
+
+### Langkah 2 — Pencarian Link Eksternal Spesifik
+
+Hanya untuk slot yang **belum lengkap** dari Langkah 1. Lakukan pencarian **terarah**:
+
+1. **Direct link ke halaman bug bounty proyek** — cek dokumentasi resmi (`/security`, `/auditors`,
+   `/bug-bounty`) lalu platform (Immunefi / Cantina / Sherlock / Code4rena / CodeHawks).
+2. **Direct link ke file/halaman laporan auditor terdahulu** — situs auditor, halaman docs "Security",
+   atau repo terpisah `audits`.
+
+**Saring sebelum menerima** (wajib):
+
+| Hasil uji | Tindakan |
 |---|---|
 | `200` / `30x` ke halaman relevan | terima |
 | `404` / `410` | tolak → `TIDAK_DITEMUKAN` |
 | `403` / `429` / timeout | `TIDAK_DITEMUKAN` + catat di Bagian 6 sebagai batasan akses |
 | Redirect ke beranda generik | tolak — bukan URL langsung |
 
-**DILARANG** menulis URL hasil pencarian (`google.com/search?...`, `duckduckgo.com/?q=...`).
-**DILARANG** menulis domain akar bila halaman spesifiknya sudah diketahui.
-
-### Langkah 3 — Aturan Bug Bounty
-
-Cari di urutan: docs resmi proyek (halaman `security`/`auditors`/`bug-bounty`) → platform
-(Immunefi/Cantina/Sherlock/Code4rena/CodeHawks) → repo (`SECURITY.md`, `.github/SECURITY.md`).
-
-Yang wajib dicatat di `High-Level Scope Note` **hanya bila tertulis eksplisit di halaman itu**:
-repo/commit yang di-scope, chain yang berlaku, kelas temuan yang dikecualikan (mis. known issues,
-centralization risk, oracle failure). **Jangan menyimpulkan scope** dari praktik umum.
-
-### Langkah 4 — Laporan Audit Lampau
-
-Cari di: folder `/audits` repo, situs auditor, halaman docs "Security". Untuk tiap laporan:
-nama auditor + tahun + **URL langsung ke berkas/halaman** + fokus/versi yang di-audit.
-
-Bila repo hanya **menyebut** audit tanpa tautan → Bagian 4 = `TIDAK_DITEMUKAN`, dan klaim tak
-terverifikasi itu dicatat di Bagian 6. Jangan menaikkan klaim menjadi laporan.
-
-### Langkah 5 — Deployment Terukur (bukan asumsi)
-
 ```bash
-# Bukti kode benar-benar ter-deploy pada chain target
-cast code <alamat> --rpc-url <rpc>   | wc -c     # 0x / 2 karakter = tidak ada kode
-cast call <alamat> "owner()(address)" --rpc-url <rpc>
+curl -s -o /dev/null -w '%{http_code} %{url_effective}\n' -L "<url>"
 ```
 
-Daftar alamat diambil dari sumber resmi (`broadcast/deployed-addresses.json`,
-`deployments/*.json`, docs). DILARANG menulis alamat dari ingatan.
+**DILARANG** menulis URL mesin pencari (`google.com/search?...`, `duckduckgo.com/?q=...`).
+**DILARANG** menulis domain akar bila halaman spesifiknya sudah diketahui.
+**DILARANG** menyimpulkan scope bounty dari praktik umum — scope hanya sah bila **tertulis** di halaman itu
+(repo/commit yang di-scope, chain yang berlaku, kelas temuan yang dikecualikan).
 
-> **Catatan metode:** `cast call` pada endpoint publik dapat mengembalikan `revert data "0x"`
-> untuk selector yang **ada** maupun **tidak ada**. Jangan pakai itu sebagai bukti ketiadaan —
-> pakai scan dispatcher `eth_getCode` (`PUSH4..EQ`). Lihat `VERDICT.md` Langkah 0.
+### Langkah 3 — Penulisan Atomik `audit/INTEL.md`
+
+1. Pastikan direktori `audit/` ada (`mkdir -p audit`).
+2. Tulis mengikuti skema `verify/templates/INTEL.md` — **jangan mengubah strukturnya**.
+3. Gunakan `write_file` untuk penulisan awal; gunakan `patch`/`append` bila hanya memperbarui field.
+4. **DILARANG** memakai `open(path, "w")` atau shell `>` (lihat `workspace/AGENTS.md` Pasal 1.3).
+   Bila menulis lewat skrip: `.tmp` → `f.flush()` → `os.fsync()` → `os.replace()`.
+5. Verifikasi pasca-tulis: ukuran ≠ 0, keenam heading bagian masih ada, total **≤ 40 baris**.
 
 ---
 
-## Keluaran
+## Cara Konsumsi oleh Hilir (`sc-phase1-recon` & `sc-autopilot`)
 
-Tulis **hanya** `audit/INTEL.md`, memakai template `verify/templates/INTEL.md` apa adanya.
-Panjang target 35–40 baris saat terisi.
+`audit/INTEL.md` **dibaca oleh `sc-phase1-recon` pada awal Fase 1** untuk dua hal:
+
+1. **(a) Sinkronisasi scope** — memastikan daftar kontrak in-scope di `00b-file-inventory.md`
+   selaras dengan apa yang disebut oleh **link Bug Bounty** (Bagian 3 `INTEL.md`). Kontrak yang
+   tidak masuk cakupan bounty tidak boleh dihitung sebagai permukaan serang yang dapat dibayar.
+2. **(b) Petunjuk Patch-Scar** — menggunakan **daftar laporan audit sebelumnya** (Bagian 4) sebagai
+   petunjuk awal saat melacak *Patch-Scar* di `01-threat-and-env.md`. Temuan auditor terdahulu
+   menandakan area yang pernah ditambal — di situlah jalur sampingan paling sering luput.
+
+`sc-autopilot` membaca `audit/INTEL.md` pada Tahap Orkestrasi 0 untuk menentukan apakah Fase 1
+boleh dimulai (lihat Gate di bawah).
+
+---
+
+## Gate Keluar Fase 0
+
+| Syarat | Gagal berarti |
+|---|---|
+| `Target Repo Path` absolut & ada | Fase 1 **tidak boleh mulai** |
+| `Audited Commit` berupa hash hasil `git rev-parse` | Fase 1 **tidak boleh mulai** |
+| Setiap URL lolos uji `curl` | URL tersebut diturunkan ke `TIDAK_DITEMUKAN` |
+| `Intel Status = PARTIAL` ⇒ Bagian 6 terisi | INTEL **ditolak** |
+| Tidak ada slot dikosongkan | INTEL **ditolak** |
+| `audit/INTEL.md` ≤ 40 baris | INTEL **ditolak** (kelebihan muatan) |
 
 **DILARANG** menulis ke `00`, `00b`, `01`, `02`, `03`, `STATE.md`, atau `04`–`09` dari fase ini.
 Fase 0 berhenti setelah `INTEL.md` terisi dan `Intel Status` ditetapkan.
 
-Protokol penulisan: ikuti `workspace/AGENTS.md` Pasal 1.3 (`.tmp` → `fsync` → `os.replace()`;
-dilarang `open("w")` / `>`).
-
-## Gate keluar Fase 0
-
-| Syarat | Gagal berarti |
-|---|---|
-| `Target Repo Path` absolut & ada | Fase 1 tidak boleh mulai |
-| `Audited Commit` berupa hash hasil `git rev-parse` | Fase 1 tidak boleh mulai |
-| Setiap URL lolos uji `curl` | URL tersebut diturunkan ke `TIDAK_DITEMUKAN` |
-| `Intel Status = PARTIAL` ⇒ Bagian 6 terisi | INTEL ditolak |
-| Tidak ada slot yang dikosongkan | INTEL ditolak |
+---
 
 ## Pitfalls yang sudah terbukti
 
 - **Menulis "latest" sebagai commit** — Fase 4 tidak bisa merekonsiliasi deployment tanpa hash pasti.
-- **Mengisi laporan audit dari ingatan model.** Ini kesalahan paling berbahaya: nama auditor terdengar
-  meyakinkan tapi tidak dapat ditunjuk. Selalu butuh URL.
+- **Mengisi laporan audit dari ingatan model.** Nama auditor terdengar meyakinkan tapi tak dapat
+  ditunjuk. Selalu butuh URL.
 - **Menyimpulkan scope bounty** dari deskripsi umum platform. Scope hanya sah bila tertulis.
 - **Menghitung URL mati sebagai "ada".** Cek status HTTP, jangan asumsikan 200.
+- **Menyalin tabel bounty utuh** ke `INTEL.md` — melanggar batas 40 baris dan menduplikasi pekerjaan
+  Fase 1.
+- **Melanjutkan ke enumerasi kontrak** karena "sekalian" — itu tugas `sc-phase1-recon`, dan
+  menggandakannya membuat dua sumber kebenaran yang saling bertentangan.
 - **Menulis alamat kontrak tanpa `cast code`.** Alamat salah = seluruh Fase 3 menembak target kosong.

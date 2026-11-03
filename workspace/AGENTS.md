@@ -112,6 +112,8 @@ Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token ba
    - **Append lalu ubah status** (`04`, `05`, `07`): saat menambah entri baru gunakan `append`; saat mengubah status entri (mis. `BELUM` -> `DITEMBUS`/`TETAP_AMAN` di `04`, atau update status di `05`/`07`) **wajib** gunakan `patch` pada blok entri tersebut.
    - **Edit tabel/kursor baris** (`03`, `STATE.md`): wajib gunakan `patch` baris spesifik (cari nomor baris via `grep -n` bila perlu; ~40 token vs ~5.300 token baca-tulis penuh). Khusus `STATE.md` **hanya boleh di-`patch` oleh Parent Orchestrator**.
 
+---
+
 ## 3. Corong Penyaringan 3 Lapis
 1. Lapis 1 — Fase 2 (Hunter Kreatif Tanpa Penghakiman Prematur): Bedah fungsi dengan *First-Principles* (Backward Sink-to-Source) + Analogi Referensi & Katalog *Attacker POV*. Hanya cegah halusinasi sifat Token Kasta 1 dan pemanggilan langsung onlyOwner. Jangan membuang anomali kecil/DoS di Fase 2 agar tetap bisa dirangkai (*chained*) di Putaran 2! Pisahkan output murni ke 04-code-guarded.md atau 05-raw-leads.md.
 2. Lapis 2 — Fase 3 (Saringan Fakta Pra-PoC & Kejujuran Lab Fork): Sebelum menulis PoC, buang ke 06-refuted-invalid.md jika lead mengasumsikan LP/Share token punya *Fee-on-Transfer*/USDT-quirk, menyerang initialize()/kolam kosong yang sudah *live*, atau menuntut aksi Admin jahat. Saat menulis PoC, dilarang menggunakan *Fantasy Mock* atau Cheatcode (vm.store, vm.etch, vm.prank(admin)), dan wajib coba amplifikasi dampak pada Fork produksi.

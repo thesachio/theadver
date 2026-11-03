@@ -6,7 +6,7 @@ version: 6.0.0
 
 # Phase 4: Final Verdict Judging & Pure 6-File Audit Reporting (04–09)
 
-Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan standar /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md terhadap seluruh hasil Fase 3, lalu menyusun keenam file hasil (audit/04 s/d audit/09) secara bersih tanpa mencampur domain.
+Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan standar `verify/VERDICT.md` terhadap seluruh hasil Fase 3, lalu menyusun keenam file hasil (audit/04 s/d audit/09) secara bersih tanpa mencampur domain.
 
 **GERBANG TULIS (WAJIB):** sebelum memindahkan/mengedit entri di `audit/04`–`09`, baca **`workspace/AGENTS.md` Pasal 1.3 (Protokol Anti-Truncate & Metode Write)**. `open(path,"w")` dan `>` shell **DILARANG** untuk seluruh `audit/*.md` — memotong file ke 0 byte saat dibuka. Pemindahan entri antar wadah wajib memakai `append` (entri baru) + `patch` (ubah status), dan diverifikasi dengan `grep -c '^## \['` sebelum & sesudah.
 
@@ -77,8 +77,8 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
 
 ---
 
-## Langkah 1: Eksekusi Vonis Akhir dengan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md
-1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
+## Langkah 1: Eksekusi Vonis Akhir dengan `verify/VERDICT.md`
+1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `verify/VERDICT.md`.
 2. **Jalankan Langkah 0 VERDICT.md lebih dulu — Rekonsiliasi Identitas Deployment (wajib, sebelum menilai apa pun):**
    Cocokkan kode yang dikutip dengan sumber terverifikasi explorer / `sha256`. Klaim yang hanya berlaku di HEAD — bukan di deployment produksi — wajib ditandai `HEAD-only` dan **maksimal berada di `07`**, tidak boleh diadili sebagai temuan.
 3. **Adili Setiap Kandidat** di `audit/09-confirmed-findings.md` dan `audit/05-raw-leads.md`:

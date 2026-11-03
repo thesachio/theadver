@@ -1,8 +1,8 @@
 # WORKSPACE CONSTITUTION — Smart Contract Security Auditor (adv)
 
-Workspace Root (CWD): /home/ubuntu/.hermes/profiles/adv/workspace
-Lokasi Proyek Target: /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/
-Hakim Akhir: /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md
+Workspace Root (CWD): `./workspace`
+Lokasi Proyek Target: `workspace/projects/<nama-proyek>/`
+Hakim Akhir: `verify/VERDICT.md`
 
 Aturan di dalam file ini adalah Konstitusi Operasional Keras yang mengikat Parent Agent maupun seluruh Subagent (delegate_task).
 
@@ -89,7 +89,7 @@ Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token ba
 - `06-refuted-invalid.md` (Output Fase 3 & 4 — Gugur Permanen): Murni hipotesis yang mati permanen karena gagal *Pre-PoC Fact Gate*, PoC gagal/revert di state nyata, atau melanggar **Pernyataan Ketat Mutlak (#1–#6)** di `verify/VERDICT.md` — yaitu kelas: `REJECTED_FANTASY_MOCK`, `REJECTED_UNPROVEN_DEPLOYMENT`, `REJECTED_GENESIS_MIRAGE`, `REJECTED_NO_VICTIM`, `REJECTED_NEGATIVE_EV`, `REJECTED_CHEATCODE`, `REJECTED_PRIVILEGED_FANTASY`, `REJECTED_NON_LIVE_INIT`, `REJECTED_DUST`, `REJECTED_BY_DESIGN`, `REJECTED_MISMATCH`, `REJECTED_POC_FAILS`.
 - `07-needs-next-step.md` (Output Fase 3 & 4 — Belum Selesai Diuji): Murni kandidat yang secara logika kode kuat, tetapi belum tuntas dibuktikan karena berada dalam batasan eksplorasi/tooling: (1) NEXT_EXPLORE (butuh Stateful Fuzzing, SMT Halmos, atau multi-step chaining), (2) NEXT_MAINNET (butuh verifikasi storage/parameter on-chain mainnet), atau (3) TOOL_BLOCKED (terhalang ketersediaan RPC/tooling). Termasuk klaim yang masih berstatus `HEAD-only` (gagal Pernyataan #2). **Setiap entri WAJIB memuat `Disposition:` dan blok `PERCOBAAN:` berisi perintah + keluaran nyata** (lihat `verify/templates/07-needs-next-step.md`). Entri tanpa keduanya → `LAZY_BAILOUT_DETECTED` (Pernyataan #11) → laporan DITOLAK. **Target akhir `07` = 0 entri.**
 - `08-valid-not-eligible.md` (Output Fase 4 via `VERDICT.md` — Valid dalam Batasan / Low): Murni temuan yang PoC-nya terbukti jalan secara mekanis tanpa curang, tetapi berada dalam Batasan Toleransi `VERDICT.md`: berdampak *"Annoying but not financially dangerous"* (*DoS with no fund loss*, *minor capped economic damage*, *nuisance griefing* — Severity Low/S4), merupakan *admin-only bug* tanpa jalur eksploitasi eksternal, atau fitur belum *live* di produksi.
-- `09-confirmed-findings.md` (Output Fase 3 -> Disahkan Fase 4 — Bounty-Ready): HANYA berisi temuan berstatus VALID_ELIGIBLE: terbukti 100% lewat PoC pada fork state produksi nyata (Mode Uji: FORK), tanpa *Fantasy Mock*/Cheatcode, berdampak bahaya finansial nyata (Critical/High/Medium), dan lolos seluruh **11 Pernyataan Wajib** di `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md` (termasuk Langkah 4a Gate Cakupan + Pernyataan #11 `LAZY_BAILOUT_DETECTED`).
+- `09-confirmed-findings.md` (Output Fase 3 -> Disahkan Fase 4 — Bounty-Ready): HANYA berisi temuan berstatus VALID_ELIGIBLE: terbukti 100% lewat PoC pada fork state produksi nyata (Mode Uji: FORK), tanpa *Fantasy Mock*/Cheatcode, berdampak bahaya finansial nyata (Critical/High/Medium), dan lolos seluruh **11 Pernyataan Wajib** di `verify/VERDICT.md` (termasuk Langkah 4a Gate Cakupan + Pernyataan #11 `LAZY_BAILOUT_DETECTED`).
 
 ---
 
@@ -117,7 +117,7 @@ Setiap file di dalam audit/ mewakili tepat satu domain murni agar hemat token ba
 ## 3. Corong Penyaringan 3 Lapis
 1. Lapis 1 — Fase 2 (Hunter Kreatif Tanpa Penghakiman Prematur): Bedah fungsi dengan *First-Principles* (Backward Sink-to-Source) + Analogi Referensi & Katalog *Attacker POV*. Hanya cegah halusinasi sifat Token Kasta 1 dan pemanggilan langsung onlyOwner. Jangan membuang anomali kecil/DoS di Fase 2 agar tetap bisa dirangkai (*chained*) di Putaran 2! Pisahkan output murni ke 04-code-guarded.md atau 05-raw-leads.md.
 2. Lapis 2 — Fase 3 (Saringan Fakta Pra-PoC & Kejujuran Lab Fork): Sebelum menulis PoC, buang ke 06-refuted-invalid.md jika lead mengasumsikan LP/Share token punya *Fee-on-Transfer*/USDT-quirk, menyerang initialize()/kolam kosong yang sudah *live*, atau menuntut aksi Admin jahat. Saat menulis PoC, dilarang menggunakan *Fantasy Mock* atau Cheatcode (vm.store, vm.etch, vm.prank(admin)), dan wajib coba amplifikasi dampak pada Fork produksi.
-3. Lapis 3 — Fase 4 (Hakim Akhir via `verify/VERDICT.md`): Wajib membaca dan menerapkan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md untuk memisahkan hasil ke 06-refuted-invalid.md (Ketat Mutlak), 07-needs-next-step.md, 08-valid-not-eligible.md (Dalam Batasan/Low), dan 09-confirmed-findings.md (Valid Eligible).
+3. Lapis 3 — Fase 4 (Hakim Akhir via `verify/VERDICT.md`): Wajib membaca dan menerapkan `verify/VERDICT.md` untuk memisahkan hasil ke 06-refuted-invalid.md (Ketat Mutlak), 07-needs-next-step.md, 08-valid-not-eligible.md (Dalam Batasan/Low), dan 09-confirmed-findings.md (Valid Eligible).
 
 ---
 

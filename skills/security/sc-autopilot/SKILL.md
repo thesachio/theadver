@@ -12,7 +12,7 @@ metadata:
 # Autonomous Whitehat Adversarial Audit Orchestrator (sc-autopilot)
 
 ## When to Use
-Gunakan skill ini saat pengguna meminta eksekusi audit whitehat adversarial menyeluruh dari awal hingga akhir tanpa intervensi manual (*Full Autopilot*), mengorkestrasi Fase 1 s/d Fase 4 menggunakan struktur 10 file murni (audit/00 s/d audit/09) dan standar hakim /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md.
+Gunakan skill ini saat pengguna meminta eksekusi audit whitehat adversarial menyeluruh dari awal hingga akhir tanpa intervensi manual (*Full Autopilot*), mengorkestrasi Fase 1 s/d Fase 4 menggunakan struktur 10 file murni (audit/00 s/d audit/09) dan standar hakim `verify/VERDICT.md.`
 
 ---
 
@@ -76,14 +76,14 @@ Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` 
   * `07-needs-next-step.md` -> Murni kandidat *unproven* (`NEXT_EXPLORE` / `NEXT_MAINNET` / `TOOL_BLOCKED`), termasuk klaim `HEAD-only` (gagal Pernyataan #2).
   * `08-valid-not-eligible.md` -> Murni temuan valid dalam batasan toleransi (`LOW_NUISANCE`: *DoS no fund loss*, *minor capped damage*, *griefing* — #10b; `ADMIN_ONLY` — #8b; atau `PRE_LIVE_SCOPE` — #7b).
   * `09-confirmed-findings.md` -> Murni `VALID_ELIGIBLE` (Simulasi Local Fork PASS + Bahaya Finansial Nyata + Lolos 11 Pernyataan `verify/VERDICT.md`).
-- WAJIB JALANKAN TAHAP 4 (`VERDICT.md` GATE): Orchestrator DILARANG melaporkan temuan sebagai Confirmed sebelum Tahap 4 mengadilinya dengan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md.
+- WAJIB JALANKAN TAHAP 4 (`VERDICT.md` GATE): Orchestrator DILARANG melaporkan temuan sebagai Confirmed sebelum Tahap 4 mengadilinya dengan `verify/VERDICT.md.`
 - DILARANG MEMANGGIL `skill_manage` ATAU `memory`.
 
 ---
 
 ## Procedure (Autonomous 4-Stage Adversarial Pipeline)
 
-Saat pengguna memicu eksekusi otonom pada /home/ubuntu/.hermes/profiles/adv/workspace/projects/<nama-proyek>/, jalankan 4 tahapan orkestrasi berikut secara berurutan — **diawali Tahap Orkestrasi 0 yang wajib dan tidak boleh dilewati**.
+Saat pengguna memicu eksekusi otonom pada `workspace/projects/<nama-proyek>/`, jalankan 4 tahapan orkestrasi berikut secara berurutan — **diawali Tahap Orkestrasi 0 yang wajib dan tidak boleh dilewati**.
 
 ### Tahap Orkestrasi 0: Pre-Flight Checkpoint & Auto-Resume Gate (WAJIB PALING AWAL)
 
@@ -96,7 +96,7 @@ Sebelum menjalankan Tahap 1, 2, 3, atau 4, Parent Orchestrator **WAJIB** memerik
 - Saat memanggil `delegate_task` untuk melanjutkan, **sertakan isi `Working Memory Scratchpad` dan daftar `Do-Not-Reopen List`** ke dalam Context Wajib Subagent. Subagent tidak boleh menebak konteks unit aktif.
 
 #### 2. `audit/STATE.md` BELUM ADA — Mode Fresh Start
-- Buat `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, menyalin skema dari `/home/ubuntu/.hermes/profiles/adv/verify/templates/STATE.md`.
+- Buat `audit/STATE.md` dengan `Active Phase: PHASE_1_RECON` dan `CURRENT_ACTIVE_ITEM: STEP_0_INVENTORY`, menyalin skema dari `verify/templates/STATE.md`.
 - Baru setelah itu mulai dari Tahap Orkestrasi 1.
 
 #### 3. Kewajiban Update Kursor Setiap Selesai 1 `delegate_task`
@@ -181,7 +181,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
    - **(i) Coverage Gate (Langkah 0a butir 1-3):** bandingkan `00b-file-inventory.md` dengan tabel cakupan `03-attack-surface-queue.md`. Bila cakupan `[MUST-AUDIT]` **< 80%** ATAU ada domain **0%** ATAU berkas terbesar per domain masih `BELUM` -> `AUDIT_INCOMPLETE_COVERAGE_BIAS`: **TOLAK laporan**, kembalikan ke Fase 1/2. Temuan lama disimpan sebagai hasil sementara.
    - **(ii) LAZY_BAILOUT Gate (Langkah 0a butir 3b / Pernyataan #11):** periksa **SETIAP** entri `07`. `TOOL_BLOCKED` tanpa log 3-Step Self-Healing, `NEXT_MAINNET` padahal RPC tersedia, atau `NEXT_EXPLORE` tanpa log fuzzer yang mentok timeout -> `LAZY_BAILOUT_DETECTED`: **TOLAK laporan**, kembalikan entri ke Fase 3 sampai menjadi `09`/`08`/`06`. Label basi (judul sudah pindah tapi label lama masih ada) juga dihitung tidak sah. **Target akhir `07` = 0 entri.**
 1. **WAJIB jalankan Hakim Akhir (`verify/VERDICT.md`) sebelum melapor:**
-   Panggil delegate_task dengan instruksi: "Wajib panggil skill_view('sc-phase4-report') dan baca /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md serta `audit/STATE.md`. Jalankan **Langkah 0 (Rekonsiliasi Identitas Deployment)** lebih dulu: cocokkan kode yang dikutip dengan source terverifikasi explorer / `sha256`; klaim yang hanya berlaku di HEAD wajib ditandai `HEAD-only` dan maksimal berada di 07. Lalu adili setiap kandidat di audit/09-confirmed-findings.md dengan **11 Pernyataan Wajib VERDICT.md** (termasuk Langkah 4a Gate Cakupan + **#11 `LAZY_BAILOUT_DETECTED`**): (a) CABUT kandidat yang melanggar Pernyataan Ketat Mutlak #1–#6 beserta sub-kasus #7a/#8a/#9a/#10a lalu pindahkan ke 06-refuted-invalid.md; (b) CABUT kandidat yang masuk Pernyataan Berbatas Toleransi #10b (DoS with no fund loss, minor capped economic damage, nuisance griefing), #8b (admin-only bug tanpa jalur eksternal), atau #7b (belum live) lalu pindahkan ke 08-valid-not-eligible.md; (c) Untuk kandidat #9b: **DILARANG memarkir ke 07 tanpa bukti percobaan** — periksa apakah `07` memuat blok `PERCOBAAN:` (perintah + keluaran) untuk `NEXT_EXPLORE`/`TOOL_BLOCKED`, dan bukti rantai tanpa RPC untuk `NEXT_MAINNET`. Bila tidak ada: jalankan sendiri `cast call`/`cast storage` bila RPC tersedia, atau kembalikan ke Fase 3. Setiap entri `07` tanpa bukti = `LAZY_BAILOUT_DETECTED`; (d) Setiap vonis wajib memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan format keenam file (04 s/d 09), laporkan jumlah entri `07`, dan kembalikan maksimal 12 baris."
+   Panggil delegate_task dengan instruksi: "Wajib panggil skill_view('sc-phase4-report') dan baca `verify/VERDICT.md` serta `audit/STATE.md`. Jalankan **Langkah 0 (Rekonsiliasi Identitas Deployment)** lebih dulu: cocokkan kode yang dikutip dengan source terverifikasi explorer / `sha256`; klaim yang hanya berlaku di HEAD wajib ditandai `HEAD-only` dan maksimal berada di 07. Lalu adili setiap kandidat di audit/09-confirmed-findings.md dengan **11 Pernyataan Wajib VERDICT.md** (termasuk Langkah 4a Gate Cakupan + **#11 `LAZY_BAILOUT_DETECTED`**): (a) CABUT kandidat yang melanggar Pernyataan Ketat Mutlak #1–#6 beserta sub-kasus #7a/#8a/#9a/#10a lalu pindahkan ke 06-refuted-invalid.md; (b) CABUT kandidat yang masuk Pernyataan Berbatas Toleransi #10b (DoS with no fund loss, minor capped economic damage, nuisance griefing), #8b (admin-only bug tanpa jalur eksternal), atau #7b (belum live) lalu pindahkan ke 08-valid-not-eligible.md; (c) Untuk kandidat #9b: **DILARANG memarkir ke 07 tanpa bukti percobaan** — periksa apakah `07` memuat blok `PERCOBAAN:` (perintah + keluaran) untuk `NEXT_EXPLORE`/`TOOL_BLOCKED`, dan bukti rantai tanpa RPC untuk `NEXT_MAINNET`. Bila tidak ada: jalankan sendiri `cast call`/`cast storage` bila RPC tersedia, atau kembalikan ke Fase 3. Setiap entri `07` tanpa bukti = `LAZY_BAILOUT_DETECTED`; (d) Setiap vonis wajib memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan format keenam file (04 s/d 09), laporkan jumlah entri `07`, dan kembalikan maksimal 12 baris."
 2. Baca hasil akhir di 09, 08, 07, 06, dan 04, lalu sajikan laporan eksekutif kepada pengguna — **wajib menyertakan baris `COVERAGE:` dan `LAZY_BAILOUT:`** beserta jumlah entri `07`.
 
 ---

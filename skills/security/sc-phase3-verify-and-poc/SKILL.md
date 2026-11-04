@@ -218,31 +218,41 @@ Panggil skill_view pada modul referensi pengujian sesuai rantai di 00-project-ma
 - **Jalur Deterministic** (Tier 1 Sequence, Tier 4 Local Fork, Tier 5 Symbolic Halmos/Kani): Gunakan untuk membuktikan urutan langkah pasti dari 05-raw-leads.md atau mencari *counterexample* matematis eksak (`halmos --function check_*`).
 - **Jalur Nondeterministic** (Tier 2 Handler Stateful Invariant Fuzzing, Tier 3 Round-Trip/Differential Fuzzing): Gunakan untuk mengeksplorasi kandidat `NEXT_EXPLORE` di 07-needs-next-step.md atau menguji Metode 7 (Split-vs-Bulk). Begitu fuzzer menemukan *counterexample*, WAJIB konversikan menjadi tes Deterministic Local Fork (Tier 4)!
 
-**Aturan mutlak penulisan simulasi:**
-1. **Larangan Fantasy Mock:** Gunakan kontrak LP/Share/Sistem asli dari repositori. Jika menggunakan MockERC20 untuk aset eksternal pada simulasi lokal, perilakunya WAJIB 100% IDENTIK dengan aset nyata yang diizinkan protokol di produksi.
-2. **Inisialisasi Setara Produksi:** Setup awal di dalam setUp() wajib mencerminkan keadaan produksi nyata (sudah terinisialisasi dengan parameter normal dan memiliki likuiditas awal yang wajar).
-3. **Larangan Cheatcode Curang:** Hanya gunakan `vm.prank(attacker)` (pengguna eksternal tak berizin). DILARANG menggunakan `vm.prank(admin/owner)`, `vm.store`, `vm.etch`, atau `deal` pada kontrak protokol untuk memalsukan state internal.
-4. **Upaya Amplifikasi Dampak:** Jika dampak satu kali transaksi terlihat kecil, simulasikan apakah serangan dapat diulang dalam satu transaksi (*looping / flashloan amplification*) atau dirangkai dengan fungsi lain hingga menghasilkan bahaya finansial nyata.
+**Aturan mutlak penulisan simulasi (Protokol *Realistic State & Victim Seeding*):**
 
-### Langkah 2b: Simulasi pada Local Fork Produksi (Syarat Mutlak Masuk 09)
-`09-confirmed-findings.md` mengklaim bukti terhadap state PRODUKSI nyata. Karena itu:
-1. **Simulasi Local Fork WAJIB** bila chain target memiliki RPC publik: Jalankan simulasi transaksi PoC dengan menyalin state blok produksi (`forge test -j 1 --fork-url <RPC> --fork-block-number <N>`, gunakan `./rpc-env.sh`, tanpa `--broadcast`).
-2. Di dalam fork tersebut, attacker bebas mengeksekusi transaksi serangan penuh terhadap kontrak target, namun hanya boleh didanai lewat `deal` pada dompet attacker **SENDIRI** atau lewat flashloan nyata. DILARANG mengubah storage protokol dengan `vm.store` atau `vm.etch`.
-3. Jika RPC chain target tidak tersedia atau kontrak belum dapat dijangkau fork, temuan DILARANG masuk `09` — simpan ke `audit/07-needs-next-step.md` dengan label `NEXT_MAINNET` atau `TOOL_BLOCKED` **setelah menaiki seluruh Tangga Self-Healing (Langkah 0c)** dan melampirkan log ketiga usaha.
-4. Jika simulasi fork berjalan namun transaksi eksploitasi revert terhadap state nyata = gugur ke `audit/06-refuted-invalid.md`.
-5. Setiap entri di `09` dan `07` WAJIB mencantumkan baris `Mode Uji: FORK (chain, block, RPC)` atau `Mode Uji: LOKAL (alasan fork belum dilakukan)`.
-6. **Identitas deployment (rujuk `verify/VERDICT.md` Langkah 0):** sebelum entri masuk `09`, pastikan kode yang diserang = kode yang berjalan (source terverifikasi explorer / `sha256` sama). Jika berbeda, entri wajib ditandai `HEAD-only` dan hanya boleh berada di `07`.
+1. **Larangan Fantasy Mock:** Gunakan kontrak asli dari repositori. Jika berinteraksi dengan token/pool eksternal (USDC, USDT, WETH, Chainlink, Uniswap, Aave), utamakan menjalankannya di atas Local Fork rantai target agar berinteraksi dengan kontrak eksternal asli.
+2. **WAJIB *Realistic Victim Lifecycle Seeding* (Jangan Tembak Ruang Hampa!):**
+   Banyak kerentanan nyata gagal (`revert`) saat diuji hanya karena di blok fork saat ini kebetulan belum ada posisi pengguna yang sedang berada pada tahap siklus hidup tersebut (misal: belum ada order gantung, belum ada permintaan `requestWithdraw`, belum ada pinjaman di dekat batas LTV, atau belum ada pengguna yang baru `approve` ke Router).
+   - **Hukum Seeding Korban:** Sebelum menyimpulkan sebuah PoC gagal/`revert`, Anda **WAJIB** menyimulasikan 1–2 aktor pengguna normal (`address victim = makeAddr("victim")`, didanai secara wajar dengan `deal`) yang menjalankan aksi sah sesuai alur protokol (`deposit`, `borrow`, `stake`, `requestWithdraw`, `createOrder`, `approve`) menggunakan `vm.prank(victim)`.
+   - Setelah posisi victim terbentuk secara sah (dan waktu/blok digeser secara wajar bila fitur memiliki *cooldown/epoch* normal), barulah eksekusi transaksi serangan menggunakan `vm.prank(attacker)`!
+   - Menyimulasikan transaksi pengguna normal (`vm.prank(victim)`) **BUKAN cheatcode** — itu adalah standar pembuktian eksploitasi dunia nyata.
+3. **Larangan Cheatcode Curang pada State Internal:** DILARANG menggunakan `vm.prank(admin/owner)` untuk memasukkan konfigurasi jahat di luar rentang sah, dan DILARANG menggunakan `vm.store`, `vm.etch`, atau `deal` langsung ke alamat kontrak protokol yang merusak akuntansi internal tanpa melewati fungsi kontrak.
+4. **Upaya Amplifikasi Dampak & Fuzzing:** Selalu uji dengan *3-Way EV Amplification* (Flashloan, Single-Tx Looping, Cross-Lead Chaining) dan jalankan `testFuzz_` (Strike 3) sebelum menyatakan sebuah anomali tidak menguntungkan.
+
+### Langkah 2b: Protokol Dual-Mode Fork (FORK_LIVE & FORK_DEPLOYED_HEAD) — Tidak Ada Bailout Karena Stage Repo!
+
+Repositori GitHub sering kali memuat campuran kontrak yang sudah *live* di mainnet dan kontrak baru/versi HEAD yang belum di-deploy atau berbeda dari on-chain. Ketidakpastian stage deployment di GitHub **DILARANG** dijadikan alasan untuk tidak menulis PoC Fork atau memarkir lead ke `07`/`08`!
+
+Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi):
+
+1. **`Mode Uji: FORK_LIVE (chain, block, RPC)`** — Gunakan bila alamat kontrak target di mainnet sudah diketahui **dan** fungsi yang diserang sudah ada pada bytecode on-chain tersebut. Jalankan `forge test -j 1 --fork-url $RPC_URL --fork-block-number <N>` (gunakan `./rpc-env.sh`), lakukan *Victim Seeding* bila perlu, dan tembak langsung kontrak produksi.
+2. **`Mode Uji: FORK_DEPLOYED_HEAD (chain, block, RPC)`** — Gunakan bila kontrak di repositori GitHub belum di-deploy ke mainnet, alamatnya belum diketahui, atau kode di HEAD lebih baru daripada bytecode on-chain.
+   - **Prosedur:** Tetap nyalakan Local Fork rantai target (`vm.createSelectFork` / `--fork-url`) agar seluruh ekosistem pendukung (USDC, USDT, WETH, Oracle Chainlink, Pool Uniswap/Aave) menggunakan state mainnet asli, lalu **deploy kontrak dari kode repositori** (`src/`/`contracts/`) di atas fork tersebut dengan parameter inisialisasi standar proyek!
+   - Selama PoC berhasil membuktikan eksploitasi (`[PASS]`) di atas `FORK_DEPLOYED_HEAD`, temuan tersebut **wajib didorong ke staging sebagai kandidat `09`** (nanti Hakim Fase 4 yang akan menilai status deployment-nya).
+3. **`Mode Uji: LOKAL (alasan fork tidak tersedia)`** — Gunakan untuk rantai non-EVM (`cargo test` Solana, `sui move test` / `aptos move test`, TON `@ton/sandbox`) atau bila rantai target benar-benar tidak memiliki RPC publik setelah Usaha 3 Langkah 0c ditempuh. Deploy seluruh kontrak asli repositori, lakukan *Victim Seeding* realistis, dan buktikan patahnya invarian secara deterministik.
+
+> **Hapus beban cek `sha256` explorer dari Fase 3:** Subagent Fase 3 **TIDAK PERLU** berhenti untuk membandingkan `sha256` source explorer atau menurunkan temuan HEAD-only ke `07`/`08`. Tugas tunggal Fase 3 adalah **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
 
 ---
 
-## Langkah 3: Distribusi Hasil Simulasi ke 3 Wadah Murni (06, 07, atau 09)
-1. **Simulasi Fork PASS + Membuktikan Dampak Nyata:**
-   Tulis entri lengkap ke **`audit/notes/staging-<lead>.md`** (bukan ke `09` langsung) dengan kode PoC utuh, baris `Mode Uji: FORK (...)`, perhitungan dampak/profit, dan log terminal (untuk selanjutnya diadili oleh Hakim `VERDICT.md` di Fase 4).
-2. **Secara Logika Kode Kuat namun Belum Selesai Dibuktikan:**
-   Tulis entri lengkap ke **`audit/notes/staging-<lead>.md`** (bukan ke `07` langsung) dengan salah satu label disposisi berikut — **masing-masing tunduk pada Langkah 0c dan 0d**:
-   - `Disposition: NEXT_EXPLORE` -> **hanya sah bila Tier 2/3/5 sudah dijalankan** (multi-step chaining, differential, handler fuzzing, halmos) dan mencapai timeout komputasi tanpa konklusi. Wajib lampirkan blok `PERCOBAAN: <perintah> + <keluaran>`. Alasan "butuh multi-step chaining" tanpa percobaan = pelanggaran.
-   - `Disposition: NEXT_MAINNET` -> **hanya sah bila** kontrak belum di-deploy atau rantai benar-benar tanpa RPC/explorer publik (Usaha 3 Langkah 0c gagal dengan log). Bila RPC tersedia, DILARANG parkir di sini — jalankan `cast call`/`cast storage`/`cast implementation` saat itu juga dan tuntaskan ke `09` atau `06`.
-   - `Disposition: TOOL_BLOCKED` -> **HANYA setelah Tangga Self-Healing Langkah 0c ditempuh penuh** (Usaha 1: flag/remapping/toolchain; Usaha 2: standalone interface-only / minimal harness; Usaha 3: fallback RPC & rekonstruksi off-chain) **dengan log terminal kegagalan ketiganya dilampirkan di entri `07`**. Tanpa lampiran, label ini tidak sah.
-3. **Gagal di Langkah 0/1 ATAU Simulasi PoC Gagal (`revert`) di State Nyata:**
-   Tulis entri lengkap ke **`audit/notes/staging-<lead>.md`** (bukan ke `06` langsung) beserta alasan teknisnya (sertakan `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` sesuai template `06`), dan hapus file test sementara yang gagal agar folder test/ tetap bersih.
-4. **3-Stage Breaker (Langkah 0b):** lead hanya boleh masuk `06` `REJECTED_POC_FAILS` setelah **Strike 1 (Manual) + Strike 2 (Manual/Amplifikasi) + Strike 3 (Fuzz `testFuzz_`/`proptest`/`halmos`)** ketiganya gagal — dan ketiga log dilampirkan. `07` hanya sah untuk lead yang **belum** menuntaskan ketiga tahap itu, dan wajib memuat blok `PERCOBAAN:`.
+## Langkah 3: Distribusi Hasil Simulasi ke 3 Wadah Murni (06, 07, atau 09 — TANPA 08!)
+
+Subagent Fase 3 **DILARANG** mendistribusikan atau menandai entri sebagai `08-valid-not-eligible.md`. Seluruh hasil Fase 3 ditulis lengkap ke `audit/notes/staging-<id>.md` menuju **tepat salah satu** dari 3 wadah berikut:
+
+1. **Simulasi Eksploitasi `PASS`** (`FORK_LIVE`, `FORK_DEPLOYED_HEAD`, atau `LOKAL` Non-EVM) **& Invarian Terbukti Patah:**
+   Tulis entri lengkap ke `audit/notes/staging-<id>.md` sebagai kandidat **`09-confirmed-findings.md`** lengkap dengan: kode PoC utuh, baris `Mode Uji: FORK_LIVE (...)` / `FORK_DEPLOYED_HEAD (...)` / `LOKAL (...)`, angka kuantitatif dampak/profit dari log terminal, dan patch perbaikan (diff). *(Hakim `VERDICT.md` di Fase 4 yang nantinya akan memisahkan mana yang bertahan di `09` dan mana yang bergeser ke `08` karena faktor pre-live/low/admin.)*
+2. **Gagal Setelah *Victim Seeding* + *3-Way Amplification* + *3-Stage Escalation (2 Manual + 1 Fuzz)*:**
+   Tulis entri lengkap ke `audit/notes/staging-<id>.md` sebagai kandidat **`06-refuted-invalid.md`** (`REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, `REJECTED_DUST`, dll.).
+   - **SYARAT SAH MASUK `06` (Anti-Paper-Refutation):** Kecuali untuk kesalahan baca statis literal di Langkah 1c, setiap entri `06` **WAJIB** memuat blok `BUKTI_SIMULASI:` berisi perintah test yang dijalankan (termasuk Strike 3 `testFuzz_`) beserta output log terminal yang membuktikan invarian tetap bertahan. Entri `06` tanpa bukti eksekusi test akan ditolak di Fase 4 (**`PAPER_REFUTATION_DETECTED`**). Hapus file test sementara setelah log dicatat agar folder `test/` tetap bersih.
+3. **Secara Logika Kode Kuat Namun Terhalang Batas Komputasi/Alat (`07-needs-next-step.md`):**
+   Tulis entri lengkap ke `audit/notes/staging-<id>.md` dengan **tepat satu** Disposition (`NEXT_EXPLORE` | `NEXT_MAINNET` | `TOOL_BLOCKED`) dan blok wajib `PERCOBAAN:` berisi perintah `$ ...` + keluaran nyata sesuai Langkah 0c dan 0d.

@@ -13,28 +13,26 @@ Mekanisme **nyata dan terbukti** lewat eksekusi simulasi PoC (`[PASS]`), tetapi 
 ## Field wajib per entri
 
 ```
-ID                 : <L-xx / LEAD-xxx>
+ID                 :
 VERDICT            : VALID_NOT_ELIGIBLE
-LOW_CLASS          : PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN) | ADMIN_ONLY | LOW_NUISANCE
+LOW_CLASS          : <PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN) | ADMIN_ONLY | LOW_NUISANCE>
 TARGET_FILE        : 08-valid-not-eligible.md
-TANGGA_BUKTI       : A-HEAD | B          (A -> seharusnya 09; C/D tidak sah di sini)
-DEPLOYMENT_MATCH   : LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED
-Mode Uji           : FORK_LIVE (chain, block, RPC) | FORK_DEPLOYED_HEAD (chain, block, RPC) | LOKAL (alasan)
-BUKTI MEKANISME    : <PoC [PASS] — file test + nama fungsi test, bukan dugaan>
-DAMPAK KUANTITATIF : <angka dari log: dana hilang/beku/gas, bukan kategori kualitatif>
-ALASAN             : <mengapa masuk batas toleransi, rujuk #2/#7b/#8b/#10b>
+ALASAN             :
+BUKTI MEKANISME    : <Kode PoC utuh + perintah test + log [PASS]>
+TANGGA_BUKTI       : <A-HEAD | B | A (bila live namun dampak Low/Admin)>  (D tidak sah di sini)
+DEPLOYMENT_MATCH   : <HEAD-only (PROVEN_ON_REPO_HEAD) | LIVE_MATCH (untuk Low/Admin) | tidak terverifikasi>
+Mode Uji           : <FORK_DEPLOYED_HEAD (chain, block, RPC) | FORK_LIVE (...) | LOKAL (...)>
+DAMPAK KUANTITATIF : <Angka profit / dana beku / selisih state terukur dari log PoC>
 ```
 
-**`BUKTI MEKANISME` dan `DAMPAK KUANTITATIF` wajib berisi angka atau hasil eksekusi.** Menulis *"dampaknya kecil"* tanpa angka = entri ditolak dan lead kembali ke `07`.
-
-**Khusus `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`:** kode PoC **utuh** + log `[PASS]` + perhitungan dampak **wajib dipertahankan** di dalam entri. DILARANG dipangkas, DILARANG dipindah ke `07`.
+**`BUKTI MEKANISME` dan `DAMPAK KUANTITATIF` wajib berisi hasil eksekusi PoC dan angka terukur.** Khusus untuk `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`, **kode PoC dan patch perbaikan wajib disertakan secara utuh** karena temuan ini bernilai tinggi bagi tim pengembang sebelum mereka melakukan deployment/upgrade ke mainnet. Menulis *"dampaknya kecil"* tanpa angka = entri ditolak dan lead kembali ke `07`.
 
 ## Kelas yang sah
 
 | `LOW_CLASS` | Arti | Pernyataan |
 |---|---|---|
-| `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` | PoC `[PASS]` di `FORK_DEPLOYED_HEAD`/`LOKAL`, tetapi kontrak belum live, berbeda dari bytecode produksi, atau di luar daftar alamat bounty | #2, #7b |
+| `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` | Eksploitasi terbukti `[PASS]` di atas kode repo (`FORK_DEPLOYED_HEAD`/`LOKAL`), namun kontrak/fitur masih pre-live, paused, HEAD-only, atau di luar daftar alamat bounty aktif | #2 & #7b |
 | `ADMIN_ONLY` | Bug mekanis nyata pada fungsi khusus admin, tanpa jalur eksploitasi eksternal | #8b |
 | `LOW_NUISANCE` | DoS tanpa kehilangan dana, kerugian kecil terbatas, atau griefing non-finansial | #10b |
 
-**Bukan kelas yang sah di sini:** hipotesis yang gagal diuji (→ `07` dengan `PERCOBAAN:`), hipotesis gugur mutlak (→ `06`), dan temuan berdampak finansial nyata yang sudah live (`LIVE_MATCH`) (→ `09`).
+**Bukan kelas yang sah di sini:** hipotesis yang gagal diuji (→ `07` dengan `PERCOBAAN:`), hipotesis gugur mutlak (→ `06` dengan `BUKTI_SIMULASI:`), dan temuan berdampak finansial nyata pada kontrak produksi aktif (→ `09`).

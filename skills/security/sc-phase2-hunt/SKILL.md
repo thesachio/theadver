@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
-version: 6.2.4
+version: 6.2.5
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -62,7 +62,7 @@ Jika dijalankan melalui delegasi, berikan paket tugas berisi:
 3. Pembagian Putaran Eksplorasi:
    - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + metode sesuai kelas topologi unit (lihat `references/ref-method-registry.md`) -> Tahap B (Symptom Router & Lazy-Load POV) -> Tahap C (klasifikasi `04` vs `05`).
    - **Tahap C — Keluaran:** tulis entri lengkap ke `audit/notes/staging-<unit>.md` (**bukan** ke `04`/`05` langsung). Format entri wajib sudah final agar Parent hanya menyalin: untuk `04` sertakan File:Baris, Ekspresi Guard, Variabel Pembentuk; untuk `05` sertakan Metode Pencarian (`M-001..M-NNN` dan/atau `[POV-XX]`) dan Delta State. Ringkasan ke Parent cukup manifes: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris per entri.
-   - Putaran 2 (Makro Lintas-Jalur & Guard-Inversion): Jalankan metode makro (`M-004`, `M-005`, `M-008`, `M-009`, `M-010`) menggunakan `02-state-and-var-matrix.md`, `05-raw-leads.md`, dan daftar guard di `04-code-guarded.md`.
+   - **Putaran 2 (Sintesis Makro Lintas-Unit & Pembongkaran `04`):** Setelah seluruh metode `M-001..M-010` dijalankan **penuh di tingkat unit** pada Putaran 1, rangkai sintesis lintas-unit (`M-004`, `M-005`, `M-008`, `M-009`, `M-010`) menggunakan `02-state-and-var-matrix.md`, `05-raw-leads.md`, dan **bongkar setiap guard di `04-code-guarded.md` terhadap 5 Jalur Permissionless.**
 
 ### Pengunci Anti-Low-Rate Reasoning (WAJIB)
 

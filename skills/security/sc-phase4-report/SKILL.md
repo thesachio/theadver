@@ -1,7 +1,7 @@
 ---
 name: sc-phase4-report
 description: Phase 4 — Final Verdict Judging (via verify/VERDICT.md), Deployment Eligibility Gate (09 Live vs 08 Pre-Live/HEAD-Only), Anti-Paper-Refutation Check (#11e), and Pure 6-File Audit Reporting (04 to 09).
-version: 6.2.4
+version: 6.2.5
 ---
 
 # Phase 4: Final Verdict Judging & Pure 6-File Audit Reporting (04–09)

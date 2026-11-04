@@ -6,11 +6,12 @@ Periksa setiap pembacaan harga, perhitungan bunga, dan penyitaan agunan terhadap
    - Apakah protokol menghitung nilai agunan, harga aset, atau rasio pencetakan menggunakan saldo/cadangan instan dari pool AMM saat ini (`getReserves`, `slot0`, atau rasio saldo pool) tanpa rata-rata waktu (TWAP)?
    - Semua harga *spot* on-chain dapat dimanipulasi secara ekstrem dalam satu transaksi atomik menggunakan *Flash Loan*.
 
-2. **Validasi Oracle Eksternal yang Cacat (Chainlink / Pyth / TWAP):**
-   - Jika membaca data Oracle (seperti `latestRoundData` atau Pyth price feed), pastikan kode memvalidasi:
-     *(a)* Harga `> 0` dan interval kepercayaan (*confidence interval* pada Pyth) tidak terlalu lebar.
-     *(b)* Kesegaran data: `updatedAt >= currentTime - MAX_STALENESS` (pastikan nilai *heartbeat* sesuai dengan feed asetnya).
-     *(c)* Jika di jaringan Layer-2 EVM: apakah memeriksa status **L2 Sequencer Uptime Feed** beserta masa tenggang (*grace period*) setelah sequencer pulih?
+- **Validasi & Konversi Desimal Oracle Eksternal yang Cacat (Chainlink / Pyth / TWAP):**
+  Jika membaca data Oracle (seperti `latestRoundData` atau Pyth price feed), pastikan kode memvalidasi:
+  - (a) Harga > 0 dan interval kepercayaan (*confidence interval* pada Pyth) tidak terlalu lebar.
+  - (b) Kesegaran data: `updatedAt >= currentTime - MAX_STALENESS` (pastikan nilai heartbeat sesuai dengan feed asetnya, bukan satu angka konstan yang terlalu longgar/sempit).
+  - (c) Jika di jaringan Layer-2 EVM: apakah memeriksa status **L2 Sequencer Uptime Feed** beserta masa tenggang (*grace period*) setelah sequencer pulih?
+  - (d) **Kesalahan Normalisasi Desimal Silang (Oracle & Token Decimal Scaling Flaw):** Ketika Oracle mengembalikan harga yang **100% jujur dan segar**, apakah rumus konversi antara desimal feed oracle (`priceFeed.decimals()` mis. 8 atau 18, atau eksponen `expo` pada Pyth) dan desimal token agunan vs token utang (mis. 6 desimal USDC vs 18 desimal WETH, atau rumus `10**(36 - decimals)`) mengalami salah kali/bagi, pemotongan presisi ke nol, atau overflow yang mendistorsi valuasi LTV/likuidasi?
 
 3. **Ketiadaan Slippage & Deadline yang Efektif (MEV Sandwich Attack):**
    - Jika kontrak mengeksekusi pertukaran (*swap*) atau menambah/menarik likuiditas di DEX secara otomatis:

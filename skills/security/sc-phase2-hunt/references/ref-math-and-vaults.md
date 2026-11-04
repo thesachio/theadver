@@ -15,9 +15,10 @@ Periksa setiap operasi aritmatika dan pencetakan/pembakaran hak (*shares/LP*) te
 3. **Pembagian Sebelum Perkalian (Divide Before Multiply):**
    - Cari pola `(a / b) * c` di mana hasil pembagian integer dipotong sebelum dikalikan kembali, yang merusak presisi perhitungan bunga atau distribusi hadiah.
 
-4. **Inflasi Pendeposit Pertama / Manipulasi Donasi (Vault Share Inflation):**
-   - Saat total saham (`totalSupply` / `totalShares`) bernilai `0` atau sangat kecil, apakah rumus pencetakan saham menggunakan rasio `amount * totalShares / totalAssets` tanpa proteksi *virtual shares/offset* atau *dead shares*?
-   - Apakah `totalAssets` membaca saldo token kontrak secara langsung (`balanceOf`) sehingga dapat dimanipulasi lewat transfer langsung (*donation*) untuk membuat pendeposit berikutnya menerima `0 shares` akibat pembulatan ke bawah?
+- **Inflasi Pendeposit Pertama & Manipulasi Donasi / `balanceOf` Skew (Pool Kosong maupun Pool Aktif `totalSupply > 0`):**
+  - Saat total saham (`totalSupply` / `totalShares`) bernilai 0 atau sangat kecil (termasuk pada vault yang bisa dibuat lewat Factory atau ditarik kembali ke 0), apakah rumus pencetakan saham menggunakan rasio `amount * totalShares / totalAssets` tanpa proteksi *virtual shares/offset* atau *dead shares*?
+  - Apakah `totalAssets` membaca saldo token kontrak secara langsung (`balanceOf`) sehingga dapat dimanipulasi lewat transfer langsung (*donation*) untuk membuat pendeposit berikutnya menerima 0 shares akibat pembulatan ke bawah?
+  - **Donasi Penyerang pada Pool Aktif (`totalSupply > 0`):** Apakah pengiriman token langsung (`ERC20.transfer` / donasi oleh penyerang di luar fungsi deposit) dapat: (a) mematahkan asersi kesamaan ketat (`require(token.balanceOf(address(this)) == internalBalance)`) hingga memicu DoS permanen, (b) menyela alur *push-then-sync* (`mint`/`skim`/`sync` atau distribusi reward) untuk mencuri selisih saldo sebelum disinkronkan, atau (c) mendistorsi harga share/indeks akrual? **(Ingat: donasi oleh PENYERANG adalah vektor *permissionless* yang 100% VALID, bukan kesalahan korban!)**
 
 5. **Penyempitan Tipe Integer & Blok Tak Terperiksa (Unsafe Downcasting & Unchecked):**
    - Cari konversi tipe yang menyempit (`uint128(x)`, `uint96(x)`, `u64`, atau konversi `uint256` ke `int256`) tanpa pemeriksaan batas maksimum. Jika nilai melampaui batas tipe target, angka akan terpotong (*silent truncation*) dan merusak pencatatan utang/likuiditas.

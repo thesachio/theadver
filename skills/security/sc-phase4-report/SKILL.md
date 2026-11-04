@@ -54,34 +54,38 @@ Bila status `AUDIT_INCOMPLETE_COVERAGE_BIAS`: **tolak** penyelesaian laporan, tu
 
 ### 3b. Audit Kejujuran Usaha pada `07` — Gate Anti-Lazy-Bailout (Pernyataan #11)
 
-**Jalankan validator mekanis** (bukan periksa manual):
+**Pernyataan #11 — `LAZY_BAILOUT_DETECTED`.** `07` bukan tempat membuang lead yang belum dikerjakan. Hakim **WAJIB** memeriksa **setiap** entri di `audit/07-needs-next-step.md` sebelum menerima laporan.
+
+Jalankan validator mekanis lebih dulu:
 ```bash
 python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py audit/07-needs-next-step.md
 ```
-Exit code ≠ 0 ATAU ada entri dilaporkan gagal -> **`LAZY_BAILOUT_DETECTED`**, laporan **DITOLAK**, entri dikembalikan ke Fase 3. **Target akhir `07` = 0 entri.**
 
-| Label | Yang wajib ada di entri | Tanpa bukti |
+| Label | Yang wajib diperiksa Hakim | Vonis bila gagal |
 |---|---|---|
-| `TOOL_BLOCKED` | Log terminal **ketiga** anak tangga Self-Healing (`sc-phase3` Langkah 0c): (1) flag/remapping/toolchain, (2) Standalone Interface-Only Harness, (3) fallback RPC | `LAZY_BAILOUT_DETECTED` |
-| `NEXT_MAINNET` | Bukti rantai **benar-benar** tanpa RPC/explorer publik. Bila RPC tersedia, Hakim menjalankan sendiri `cast call`/`cast storage`/`cast implementation` **pada sesi itu** | `LAZY_BAILOUT_DETECTED` |
-| `NEXT_EXPLORE` | Log Tier 2/3/5 (handler fuzzing, differential, halmos) yang **mentok timeout** + statistik waktu | `LAZY_BAILOUT_DETECTED` |
+| `TOOL_BLOCKED` | Log terminal **ketiga** usaha Tangga Self-Healing (`sc-phase3` Langkah 0c): (1) flag/remapping, (2) **Standalone Interface-Only Harness**, (3) fallback RPC. | `LAZY_BAILOUT_DETECTED` |
+| `NEXT_MAINNET` | Bukti bahwa rantai **benar-benar** tanpa RPC/explorer publik. Bila RPC tersedia, Hakim **wajib menjalankan sendiri** `cast call` / `cast storage` / `cast code` **pada sesi itu** dan menuntaskan vonis ke `09`, `08`, atau `06`. | `LAZY_BAILOUT_DETECTED` |
+| `NEXT_EXPLORE` | Log eksekusi fuzzer/chaining/halmos yang **mentok timeout komputasi**, bukan sekadar alasan teks. | `LAZY_BAILOUT_DETECTED` |
 
-**Label basi tidak sah.** Judul entri sudah menyatakan `DIPINDAHKAN KE 06`/`09` tetapi label lama (`NEXT_EXPLORE`/`NEXT_MAINNET`) masih tertinggal -> dihitung sebagai pelanggaran #11 dan wajib dibersihkan.
+**Target akhir `07` = 0 entri.** Bila `verify07.py` mengembalikan **exit code 1** atau ada entri tanpa bukti komputasi nyata -> jatuhkan **`LAZY_BAILOUT_DETECTED`** dan kembalikan ke Fase 3.
 
-### 3c. Audit Bukti Simulasi pada `06` — Gate Anti-Paper-Refutation (Pernyataan #11e)
+**Label basi tidak sah.** Judul entri sudah menyatakan `DIPINDAHKAN KE 06`/`09` tetapi label lama (`NEXT_EXPLORE`/`NEXT_MAINNET`) masih tertinggal -> dihitung sebagai pelanggaran #11.
 
-**`PAPER_REFUTATION_DETECTED`.** Hakim **WAJIB** memeriksa setiap entri `06` yang menyandang vonis `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, atau `REJECTED_DUST`:
+### 3c. Audit Kejujuran Penolakan pada `06` — Gate Anti-Paper-Refutation (Pernyataan #11e — BARU)
 
-| Yang wajib ada di entri `06` | Vonis bila gagal |
-|---|---|
-| Blok `BUKTI_SIMULASI:` berisi perintah test yang benar-benar dijalankan + log terminal | `PAPER_REFUTATION_DETECTED` |
-| Bukti *Victim Seeding* (`vm.prank(victim)` / setup korban non-EVM) tercatat di log | `PAPER_REFUTATION_DETECTED` |
-| Minimal **1× eksekusi Fuzzing** (`testFuzz_` / `proptest` / `halmos`) pada Strike 3 + jumlah runs | `PAPER_REFUTATION_DETECTED` |
-| Bukti **3-Way EV Amplification** (flashloan, single-tx loop, cross-lead chaining) untuk `NEGATIVE_EV`/`DUST` | `PAPER_REFUTATION_DETECTED` |
+`06-refuted-invalid.md` **BUKAN** tempat membuang lead secara malas hanya dengan karangan teks!
 
-**Pengecualian sah (boleh tanpa kode test):** hanya 4 Kemustahilan Statis Sempit — `REJECTED_FANTASY_MOCK`, `REJECTED_GENESIS_MIRAGE` (pool tunggal terkunci), `REJECTED_NON_LIVE_INIT` (terkunci rapat + `_disableInitializers()`), `REJECTED_PRIVILEGED_FANTASY`, serta `REJECTED_MISMATCH` / `REJECTED_BY_DESIGN`.
+Hakim **WAJIB** memeriksa seluruh entri di `audit/06-refuted-invalid.md` yang menyandang vonis:
+`REJECTED_POC_FAILS` · `REJECTED_NEGATIVE_EV` · `REJECTED_DUST`
 
-**Vonis:** `PAPER_REFUTATION_DETECTED` -> **laporan DITOLAK**, entri `06` bermasalah dikembalikan ke **Fase 3** untuk dibuatkan simulasi PoC/Fuzz. Temuan lain tetap disimpan sebagai hasil sementara dan **DILARANG dihapus**.
+**Syarat Sah:** ketiga jenis vonis di atas **WAJIB** memuat blok `BUKTI_SIMULASI:` berisi perintah test yang benar-benar dieksekusi (`forge test` / `cargo test` / `sui move test`) beserta keluaran log terminalnya, yang menunjukkan bahwa:
+1. Sudah dilakukan **Victim Lifecycle Seeding** (bila menyerang state dinamis/antrean/allowance), **DAN**
+2. Sudah ditempuh protokol **3-Stage Escalation (2 Manual + 1 Mandatory Fuzz `testFuzz_`/`proptest`/`halmos`)**.
+
+**Vonis Hakim:** apabila ditemukan entri `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, atau `REJECTED_DUST` di `06` yang hanya berisi hitungan kertas / klaim teks **tanpa log eksekusi test dan fuzz**, Hakim **WAJIB** menjatuhkan **`PAPER_REFUTATION_DETECTED`**, menolak laporan final, dan mengembalikan lead tersebut ke **Fase 3** untuk diuji di simulator!
+
+**Pengecualian sah (boleh tanpa kode test):** hanya 4 Kemustahilan Statis Sempit — `REJECTED_FANTASY_MOCK` (#1), `REJECTED_GENESIS_MIRAGE` pada pool tunggal terkunci (#3), `REJECTED_NON_LIVE_INIT` yang terkunci rapat + `_disableInitializers()` (#7a), `REJECTED_PRIVILEGED_FANTASY` di luar batas validasi (#8a), serta `REJECTED_MISMATCH` (#6) dan `REJECTED_BY_DESIGN` (#6).
+
 
 ### 4. Format Wajib di Ringkasan Eksekutif
 Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`Total | LEAD | ATTESTED | BELUM | % | Gate`) beserta baris status akhir: `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, plus baris `LAZY_BAILOUT: PASS|DETECTED` dan `PAPER_REFUTATION: PASS|DETECTED`. Laporan tanpa ketiganya dianggap belum lengkap.
@@ -90,45 +94,58 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
 
 ---
 
-## Langkah 1: Eksekusi Vonis Akhir dengan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md
+## Langkah 1: Eksekusi Vonis Akhir & Pemisahan Deployment dengan `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`
+
 1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
-2. **Jalankan Langkah 0 VERDICT.md lebih dulu — Rekonsiliasi Identitas Deployment (wajib, sebelum menilai apa pun):**
-   Cocokkan kode yang dikutip dengan sumber terverifikasi explorer / `cast code` + scan `PUSH4 <selector>` (jangan pakai `revert 0x` sebagai bukti fungsi absen). Hasil rekonsiliasi memberi label per kandidat:
-   - `DEPLOYMENT_MATCH: LIVE_MATCH` — kode yang diserang = bytecode produksi aktif.
-   - `DEPLOYMENT_MATCH: HEAD-only (PROVEN_ON_REPO_HEAD)` — kode repo berbeda dari produksi / belum di-deploy. **Temuan seperti ini tetap diadili**, bukan dikembalikan ke `07`.
-   **Rekonsiliasi cakupan identitas:** rujuk `audit/INTEL.md` (bila ada) Bagian 3 (alamat/repo in-scope) dan Bagian 4 (laporan audit lampau) bersama `00-project-map.md` + `00b-file-inventory.md`.
-3. **Adili Setiap Kandidat** di `audit/09-confirmed-findings.md` dan `audit/05-raw-leads.md`:
-   Uji setiap kandidat terhadap 11 Pernyataan Wajib di VERDICT.md (termasuk Langkah 4a Gate Cakupan):
-   - **Lolos Seluruh 11 Pernyataan + `LIVE_MATCH` (`VALID_ELIGIBLE`):** Terbukti lewat simulasi PoC pada `FORK_LIVE` terhadap bytecode produksi, tanpa *Fantasy Mock*/Cheatcode, dan membuktikan bahaya finansial nyata (pencurian dana, insolvensi, pembekuan aset permanen, atau sabotase repay/liquidate) -> Disahkan tetap di `audit/09-confirmed-findings.md`.
-   - **PoC `[PASS]` tapi `HEAD-only` / Pre-Live / di luar daftar alamat bounty (`VALID_NOT_ELIGIBLE` — #2, #7b):** PoC terbukti `[PASS]` di `FORK_DEPLOYED_HEAD` / `LOKAL` dengan dampak finansial nyata, **tetapi** kontrak belum di-deploy, berbeda dari bytecode produksi, paused, atau belum masuk daftar bounty -> **WAJIB PINDAHKAN `09` -> `audit/08-valid-not-eligible.md`** dengan kelas `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`, **mempertahankan kode PoC utuh + log `[PASS]` + perhitungan dampak**. **DILARANG** membuangnya ke `07` (agar `07` tetap bersih 0 entri). *(Yang benar-benar belum teruji tetap `07`; yang sudah terbukti tapi belum live adalah `08`.)*
-   - **Berada Dalam Batasan Toleransi / Low (`VALID_NOT_ELIGIBLE` — Pernyataan #8b, #10b):** Simulasi PoC jalan secara mekanis tanpa curang, tetapi dampaknya tergolong *"Annoying but not financially dangerous"* (`LOW_NUISANCE`), atau merupakan *admin-only bug* tanpa jalur eksploitasi eksternal (#8b) -> **WAJIB CABUT dari 09** dan pindahkan ke `audit/08-valid-not-eligible.md`!
-   - **Berada Dalam Batasan Eksplorasi / Kendala RPC (`NEEDS_NEXT_STEP` — Pernyataan #9b):** Logika kode kuat namun butuh metode eksplorasi lanjut (`NEXT_EXPLORE`), butuh cek state mainnet (`NEXT_MAINNET`), atau belum diuji karena kendala RPC/tooling (`TOOL_BLOCKED`) -> **WAJIB CABUT dari 09** dan pindahkan ke `audit/07-needs-next-step.md`!
-     **Syarat sah masuk `07`:** setiap entri wajib memuat blok `PERCOBAAN:` (perintah + keluaran) untuk label `NEXT_EXPLORE`/`TOOL_BLOCKED`, dan bukti bahwa RPC benar-benar tidak tersedia untuk `NEXT_MAINNET`. Entri tanpa bukti percobaan **ditolak Hakim** dan lead dikembalikan ke Fase 3 untuk dikerjakan sekarang — bukan diloloskan sebagai `07`.
-     **`07` BUKAN penampung HEAD-only.** Bila PoC sudah `[PASS]` tetapi kodenya belum live, wadahnya `08` (`PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`), bukan `07`.
-   - **Melanggar Pernyataan Ketat Mutlak (`REJECTED_*` — Pernyataan #1–#6 beserta sub-kasus ketat #7a, #8a, #9a, #10a):** Memakai *Fantasy Mock* (#1), klaim produksi tanpa bukti kesetiaan deployment (#2), mengasumsikan `totalSupply == 0` pada pool *live* (#3), tidak ada korban rasional (#4), *Negative-EV* (#5), perilaku by-design / baris kode meleset (#6), menyerang `initialize()` terkunci (#7a), *privileged fantasy* (#8a), cheatcode / PoC gagal di state nyata (#9a), atau debu tanpa amplifikasi (#10a) -> **WAJIB CABUT dari 09** dan buang ke `audit/06-refuted-invalid.md`!
-4. **Setiap vonis wajib memakai Format Keluaran `VERDICT.md`** (`ID`, `VERDICT`, `TARGET_FILE`, `ALASAN`, `BUKTI`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `BIAYA-BACA`). Verdict tanpa `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` dianggap belum sah.
-5. **3-Stage Breaker:** lead yang berstatus `REJECTED_POC_FAILS` di `06` (setelah Strike 1 Manual + Strike 2 Manual/Amplifikasi + **Strike 3 Fuzz** gagal di Fase 3) **DILARANG** dipindahkan kembali ke `07`. Kunci breaker bersifat final sampai seluruh lead lain selesai diuji.
+
+2. **Jalankan Langkah 0 VERDICT.md — Rekonsiliasi Identitas Deployment (Gerbang Pemisahan `09` vs `08`):**
+   - Periksa setiap kandidat di `audit/09-confirmed-findings.md` (atau staging Fase 3).
+   - Gunakan `cast code` / `cast implementation` (untuk proxy EIP-1967) dan source explorer untuk mengecek apakah fungsi/kontrak yang berhasil dijebol PoC sudah aktif di deployment produksi (**`LIVE_MATCH`**) atau masih berada di kode repositori HEAD / belum ter-deploy (**`HEAD-only` / `REPO_STAGED`**).
+   - **Ingat:** Jangan gunakan `revert 0x` pada `eth_call` sebagai bukti fungsi tidak ada; periksa keberadaan selector `PUSH4 <selector>` di bytecode on-chain!
+
+3. **Adili Setiap Kandidat dengan 11 Pernyataan Wajib `VERDICT.md`:**
+
+   **a. Lolos Seluruh 11 Pernyataan + Terbukti Aktif di Produksi (`VALID_ELIGIBLE` -> `09-confirmed-findings.md`)**
+   Simulasi PoC `[PASS]` (`FORK_LIVE`, atau `FORK_DEPLOYED_HEAD` yang kodenya cocok dengan bytecode live `LIVE_MATCH`), tanpa *Fantasy Mock*/Cheatcode, dan membuktikan bahaya finansial nyata (Critical/High/Medium) -> **Disahkan di `audit/09-confirmed-findings.md`**.
+
+   **b. PoC Eksploitasi Terbukti `[PASS]` & Berbahaya Finansial, TETAPI Kode Masih HEAD-only / Belum Live (`VALID_NOT_ELIGIBLE [PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN]` -> `08-valid-not-eligible.md`)**
+   Simulasi PoC pada kode repo berhasil membuktikan eksploitasi (`FORK_DEPLOYED_HEAD` atau `LOKAL` `[PASS]`, `TANGGA_BUKTI: A-HEAD` atau `B`), namun kontrak belum di-deploy di mainnet, berada di luar daftar alamat bounty saat ini, atau fungsi yang rentan hanya ada di commit HEAD terbaru -> **Pindahkan dari `09` ke `audit/08-valid-not-eligible.md`** dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`!
+   **Wajib pertahankan kode PoC utuh dan angka kuantitatif dampaknya di dalam `08`** (jangan dipangkas, dan **JANGAN** dimasukkan ke `07`!).
+
+   **c. Berada Dalam Batasan Toleransi / Low Lainnya (`VALID_NOT_ELIGIBLE` — Pernyataan #8b, #10b -> `08-valid-not-eligible.md`)**
+   Simulasi PoC jalan secara mekanis tanpa curang, tetapi dampaknya tergolong *"Annoying but not financially dangerous"* (`LOW_NUISANCE`), atau merupakan *admin-only bug* tanpa jalur eksploitasi eksternal (`ADMIN_ONLY`) -> **Pindahkan dari `09` ke `audit/08-valid-not-eligible.md`**.
+
+   **d. Kendala Komputasi/RPC Ekstrem yang Sudah Dibuktikan dengan Log Usaha (`NEEDS_NEXT_STEP` — Pernyataan #9b -> `07-needs-next-step.md`)**
+   **Hanya** untuk kandidat yang benar-benar belum bisa diselesaikan setelah melewati **3-Step Self-Healing** atau **mentok timeout fuzzer/SMT**, dan **lulus validasi `verify07.py`**.
+
+   **e. Melanggar Pernyataan Ketat Mutlak atau Gagal setelah 3-Stage Escalation (`REJECTED_*` -> `06-refuted-invalid.md`)**
+   Memakai *Fantasy Mock* (#1), mengasumsikan `totalSupply == 0` pada pool live yang permanen terisi (#3), tidak ada korban rasional (#4), *Negative-EV* yang sudah dibuktikan gagal lewat test+fuzz (#5), by-design / baris kode meleset (#6), menyerang `initialize()` terkunci (#7a), *privileged fantasy* (#8a), cheatcode / PoC tetap gagal setelah *Victim Seeding* + Strike 3 Fuzz (#9a), atau debu tanpa amplifikasi setelah di-fuzz (#10a) -> **Buang ke `audit/06-refuted-invalid.md`** (wajib disertai log simulasi untuk #5, #9a, #10a).
+
+4. **Setiap vonis wajib memakai Format Keluaran `VERDICT.md`** (`ID`, `VERDICT`, `TARGET_FILE`, `ALASAN`, `BUKTI`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `BIAYA-BACA`).
+
+5. **Kunci 3-Stage Escalation (2 Manual + 1 Fuzz):** lead yang berstatus `REJECTED_POC_FAILS` di `06` (setelah lulus bukti 2 Manual + 1 Fuzz di Fase 3) **DILARANG** dipindahkan kembali ke `07`.
 
 ---
 
 ## Langkah 2: Standarisasi Format Keenam File Murni (04 s/d 09)
 
-1. `audit/09-confirmed-findings.md` (Murni `VALID_ELIGIBLE` — Siap Kirim Bounty):
-   Memuat: Judul & Keparahan (CRITICAL/HIGH/MEDIUM), `Verdict: VALID_ELIGIBLE`, `Deployment: LIVE_MATCH`, `Mode Uji: FORK_LIVE (chain, block, RPC)`, Lokasi Kode & Invarian, Validasi Realitas Produksi, Akar Masalah & Dampak Finansial Kuantitatif, Kode PoC Utuh, Log Output, dan Patch Perbaikan (diff).
-2. `audit/08-valid-not-eligible.md` (Murni `VALID_NOT_ELIGIBLE` — Valid dalam Batasan / Low / Pre-Live):
-   Memuat: ID, Lokasi, Sub-Kategori (`LOW_NUISANCE` | `ADMIN_ONLY` | `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`), Bukti Simulasi PoC **utuh** (`[PASS]` + log), dan alasan teknis mengapa masuk batas toleransi 08 (bukan 09). Untuk `PRE_LIVE_SCOPE`, wajib mencantumkan `Deployment: HEAD-only (PROVEN_ON_REPO_HEAD)` + `Mode Uji: FORK_DEPLOYED_HEAD / LOKAL`.
-3. `audit/07-needs-next-step.md` (Murni `NEEDS_NEXT_STEP` — Belum Selesai Diuji):
-   Memuat: ID, Lokasi, Label Disposisi (`NEXT_EXPLORE` | `NEXT_MAINNET` | `TOOL_BLOCKED`), ringkasan apa yang sudah diuji di Fase 3, dan langkah konkret selanjutnya.
-4. `audit/06-refuted-invalid.md` (Murni `REJECTED_*` — Gugur Permanen di Fase 3/4):
-   Memuat: ID, Asal Lead, Kelas Vonis (`REJECTED_FANTASY_MOCK`, `REJECTED_POC_FAILS`, dll.), nomor Pernyataan `VERDICT.md` yang dilanggar, **blok `BUKTI_SIMULASI:`** (perintah + log + Strike 3 Fuzz), dan bukti penolakannya.
-5. `audit/05-raw-leads.md` (Rekonsiliasi Status Antrean):
+1. `audit/09-confirmed-findings.md` (**Murni `VALID_ELIGIBLE` — Live Production & Siap Kirim Bounty**):
+   Memuat: Judul & Keparahan (CRITICAL/HIGH/MEDIUM), `Verdict: VALID_ELIGIBLE`, `Mode Uji: FORK_LIVE (...)`, `DEPLOYMENT_MATCH: LIVE_MATCH`, Lokasi Kode & Invarian, Validasi Realitas Produksi, Akar Masalah & Dampak Finansial Kuantitatif, Kode PoC Utuh, Log Output, dan Patch Perbaikan (diff).
+2. `audit/08-valid-not-eligible.md` (**Murni `VALID_NOT_ELIGIBLE` — `PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`, `ADMIN_ONLY`, `LOW_NUISANCE`**):
+   Memuat: ID, Lokasi, `LOW_CLASS`, `TANGGA_BUKTI` (`A-HEAD` atau `B`), `DEPLOYMENT_MATCH`, Bukti Simulasi PoC (**wajib kode PoC utuh untuk `HEAD_ONLY_PROVEN`**), Dampak Kuantitatif, dan alasan teknis mengapa masuk `08`.
+3. `audit/07-needs-next-step.md` (**Murni `NEEDS_NEXT_STEP` — Target Akhir: 0 Entri**):
+   Memuat: ID, Lokasi, `Disposition:` (`NEXT_EXPLORE` | `NEXT_MAINNET` | `TOOL_BLOCKED`), blok `PERCOBAAN:` berisi perintah `$ ...` dan output nyata, serta `Langkah Konkret Berikutnya:`.
+4. `audit/06-refuted-invalid.md` (**Murni `REJECTED_*` — Gugur Permanen + Wajib Log Simulasi untuk `POC_FAILS`/`NEGATIVE_EV`/`DUST`**):
+   Memuat: ID, Asal Lead, Kelas Vonis, nomor Pernyataan `VERDICT.md` yang dilanggar, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, dan blok `BUKTI_SIMULASI:` (log eksekusi test + Strike 3 Fuzz untuk klaim kegagalan PoC/EV/Dust).
+5. `audit/05-raw-leads.md` (**Rekonsiliasi Status Antrean**):
    Pastikan setiap `LEAD-XXX` memiliki penanda hasil akhirnya: `[STATUS -> 09]`, `[STATUS -> 08]`, `[STATUS -> 07]`, atau `[STATUS -> 06]`.
-6. `audit/04-code-guarded.md` (Arsip Guard Kode dari Fase 2):
-   Daftar hipotesis Fase 2 yang dihentikan oleh `require` / `if (...) revert` beserta status apakah berhasil ditembus di Putaran 2 atau tetap tertahan guard.
+6. `audit/04-code-guarded.md` (**Arsip Guard Statis dari Fase 2**):
+   Daftar hipotesis Fase 2 yang dihentikan oleh guard statis beserta status Putaran 2.
 
 ---
+
 
 ## Langkah 3: Ringkasan Eksekutif ke Pengguna
 Tampilkan tabel ringkasan akhir kepada pengguna yang merinci jumlah item di masing-masing file (04, 05, 06, 07, 08, dan 09), beserta daftar kandidat yang dipindahkan oleh Hakim `VERDICT.md` dari 09 ke 08, 07, atau 06.
 
-**Wajib disertai:** (a) tabel cakupan per domain dari Langkah 0a, (b) baris `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, dan (c) baris `07: <n> entri` + `LAZY_BAILOUT: PASS|DETECTED`. Bila status pembatalan aktif (`COVERAGE` atau `LAZY_BAILOUT`), ringkasan **DILARANG** disajikan sebagai laporan final — sajikan sebagai laporan sementara beserta daftar domain/lead yang wajib dikerjakan ulang.
+**Wajib disertai:** (a) tabel cakupan per domain dari Langkah 0a, (b) baris `COVERAGE: PASS` atau `COVERAGE: AUDIT_INCOMPLETE_COVERAGE_BIAS`, (c) baris `07: <n> entri` + `LAZY_BAILOUT: PASS|DETECTED`, dan (d) baris `PAPER_REFUTATION: PASS|DETECTED`. Bila status pembatalan aktif (`COVERAGE`, `LAZY_BAILOUT`, atau `PAPER_REFUTATION`), ringkasan **DILARANG** disajikan sebagai laporan final — sajikan sebagai laporan sementara beserta daftar domain/lead yang wajib dikerjakan ulang. Sertakan **pemisahan eksplisit** antara temuan `09` (Live Production) dan `08` (`PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`).

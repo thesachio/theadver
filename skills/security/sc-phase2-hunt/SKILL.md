@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
-version: 6.2.5
+version: 6.2.6
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -128,12 +128,16 @@ Agen **DILARANG** pindah ke Fase 3 sebelum **100% berkas `[MUST-AUDIT]` di SETIA
 |---|---|
 | Berkas `[MUST-AUDIT]` berjejak (`LEAD_GENERATED` / `ATTESTED_CLEAN`) per domain | **= 100%** (setiap domain, tanpa kecuali) |
 | Berkas `[MUST-AUDIT]` berstatus `BELUM` atau `DIBACA` gantung di domain mana pun | **0** |
+| **Entri `04-code-guarded.md` berstatus `BELUM`** (guard belum diuji 5 Jalur) | **0** — setiap guard wajib `TERSANGKAL` atau `TEMBUS` |
+| **Entri `04` berstatus `TEMBUS` tanpa ID kembar di `05-raw-leads.md`** | **0** — `TEMBUS` wajib dipromosikan, bukan ditinggal |
+
+> **Gate `04` (sejak v6.2.6).** Guard yang berhenti di `04` adalah lead yang **tidak pernah lahir**. Karena itu `04` tidak boleh menjadi tempat parkir: setiap entri wajib berstatus final `TERSANGKAL` (lolos 5 Jalur di Putaran 2, dengan `File:Baris` hasil uji) atau `TEMBUS` (dan **wajib muncul** sebagai entri `05` dengan ID yang sama). Entri `BELUM` memblokir Gate Keluar Fase 2 persis seperti berkas `BELUM` pada tabel cakupan.
 
 **DILARANG memakai kuota "minimal N lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu; *Negative Attestation* yang jujur justru bukti cakupan yang sah.
 
 Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
 
-**Pencatat status:** hasil atestasi ditulis ke `audit/03-attack-surface-queue.md` sebagai tabel cakupan per domain, direkonsiliasi dengan `audit/00b-file-inventory.md`. Status sah: `BELUM` / `DIBACA` / `LEAD_GENERATED` / `ATTESTED_CLEAN`.
+**Pencatat status:** hasil atestasi ditulis ke `audit/03-attack-surface-queue.md` sebagai tabel cakupan per domain, direkonsiliasi dengan `audit/00b-file-inventory.md`. Status sah: `LEAD_GENERATED` / `ATTESTED_CLEAN` (dan `BELUM` sebagai penanda yang memblokir gate). **`DIBACA` BUKAN status akhir yang sah** — berkas yang baru dibaca tanpa jejak lead/atestasi tetap `BELUM` dan memblokir Gate Keluar.
 
 ---
 

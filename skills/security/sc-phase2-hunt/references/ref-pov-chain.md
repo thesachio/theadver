@@ -22,7 +22,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor menguji fungsi pembayaran secara terpisah (1 transaksi = 1 panggilan) di mana `msg.value` memang valid, dan menganggap kontrak pembungkus Multicall dari library standar sudah aman tanpa melihat efek penggabungan keduanya.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
-  - *Batas Realitas:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** fungsi pembungkus batch **tidak `payable`** DAN kontrak tidak memakai *Transient Storage*/`TSTORE`, serta melacak total pemakaian pembayaran dalam akumulator per-transaksi.
+  - *Batas Realitas:* **DILARANG gugur tanpa test.** Pembacaan statis "tidak `payable` dan tidak memakai `TSTORE`" **BUKAN** bukti sah. Gugur (`REJECTED_POC_FAILS`) **hanya setelah simulator membuktikan** bahwa `msg.value` per sub-call **identik** dengan eksekusi tunggalnya dan slot transient bersih pada setiap iterasi — buktikan dengan **PoC batch 1 transaksi `N` sub-call** + **Strike 3 Fuzz** atas `N` dan nilai `msg.value`.
   - *Routing Simulasi Fase 3:* Jika fungsi batch `payable` dan memakai `delegatecall` (atau loop internal yang membaca `msg.value`), atau tidak me-reset slot transient `TSTORE` -> **DILARANG menggugurkan di atas kertas** — WAJIB tulis PoC simulasi batch 1 transaksi dengan $N$ sub-call dan verifikasi penggandaan saldo!
 
 ---
@@ -44,7 +44,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor melihat deklarasi tipe `Account<'info, ...>` di Anchor sudah memeriksa pemilik dan diskriminator tipe, sehingga berasumsi dua variabel parameter dengan nama berbeda pasti menunjuk ke dua akun berbeda dan nilainya selalu mutakhir sepanjang fungsi.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
-  - *Batas Realitas:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** constraint `key() !=` terpasang pada **seluruh** pasangan akun `mut`/`remaining_accounts` **DAN** `.reload()?` dipanggil setiap kali data akun dibaca ulang pasca-CPI.
+  - *Batas Realitas:* **DILARANG gugur tanpa test.** Keberadaan `key() !=` dan `.reload()?` **BUKAN** bukti sah — `.reload()` bisa dipanggil **terlalu awal** (sebelum CPI kedua) atau constraint hanya menutup sebagian pasangan. Gugur (`REJECTED_POC_FAILS`) **hanya setelah `cargo test`/LiteSVM/Bankrun** mengirim akun kembar `[A, A]` dan membaca ulang pasca-CPI **tanpa** menemukan data stale — plus **Strike 3 Fuzz** atas urutan akun dan jumlah CPI berantai.
   - *Routing Simulasi Fase 3:* Jika constraint `key() !=` **belum** terpasang pada pasangan akun `mut`/`remaining_accounts` **ATAU** `.reload()?` tidak dipanggil pasca-CPI sebelum akun dibaca/ditulis ulang -> **DILARANG menggugurkan di atas kertas** — WAJIB tulis tes simulasi (`cargo test` / LiteSVM / Bankrun) yang mengirim akun kembar `[A, A]` atau memicu CPI!
 
 ---
@@ -66,7 +66,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor mengandalkan jaminan keamanan tipe Move (`has key`, linear *Hot Potato*, dan *auto-overflow check* pada `+`/`*`), tanpa menyadari bahwa tipe yang sama bisa berasal dari instansi objek yang berbeda dan operator `<<` di Move dapat memangkas bit tinggi secara diam-diam.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
-  - *Batas Realitas:* Untuk poin (1) **Cross-Object Aliasing**, gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** `assert!(receipt.pool_id == object::id(pool))` tertulis eksplisit **tanpa syarat** di **setiap** fungsi penerima objek. Untuk poin (2) **Operasi Geser Bit (`<<`) & Matematika Kustom**, **DILARANG KERAS menggugurkan di atas kertas!**
+  - *Batas Realitas:* **DILARANG KERAS menggugurkan di atas kertas** untuk poin (1) maupun (2). Keberadaan `assert!(receipt.pool_id == object::id(pool))` **BUKAN** bukti sah — `assert!` yang dipasang **setelah** mutasi objek tidak melindungi apa pun, dan urutan hanya terlihat saat dieksekusi. Gugur (`REJECTED_POC_FAILS`) **hanya setelah `sui move test`/`aptos move test`** menjalankan PoC multi-PTB lintas objek **dan** unit test batas bit tinggi, lalu melampirkan log `[PASS]`/`revert`-nya.
   - *Routing Simulasi Fase 3:* Jika pemeriksaan `object::id` absen pada **salah satu** fungsi publik -> wajib tulis PoC multi-PTB (`sui move test` / `aptos move test`). Jika kontrak memakai operasi geser bit `<<` pada matematika kustom -> **WAJIB tulis unit test/fuzz** di simulator dengan nilai batas bit tinggi (`(1u128 << 64) + 1` / batas mask) **sebelum boleh menyatakannya aman!**
 
 ---

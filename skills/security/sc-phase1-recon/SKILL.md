@@ -1,7 +1,7 @@
 ---
 name: sc-phase1-recon
-description: Phase 0 & 1 — Domain-Agnostic Recon, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
-version: 6.1.0
+description: Phase 0 & 1 — Domain-Agnostic Recon, 100% Physical Repo Population Inventory, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
+version: 6.2.0
 ---
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
@@ -18,23 +18,24 @@ Buat direktori `audit/notes/` dan hasilkan 5 file fondasi di `audit/` (`00`, `00
 Periksa keberadaan `audit/INTEL.md` (hasil Fase 0 `sc-project-intel`).
 
 - **Jika ada** → baca lebih dulu dengan `read_file`, tangkap dua hal:
-  (a) daftar repositori/kontrak **in-scope** dari link Bug Bounty (Bagian 3 INTEL) — dipakai menyelaraskan `00b-file-inventory.md`,
+  (a) daftar repositori/kontrak **in-scope** dari link Bug Bounty (Bagian 3 INTEL) — dipakai untuk memberi **tag metadata eligibilitas** (`[LIVE_BOUNTY]` vs `[REPO_STAGED]`) pada `00b-file-inventory.md` (**DILARANG** dipakai untuk membuang/mengecualikan kontrak repo dari `00b`!),
   (b) daftar **laporan audit masa lalu** (Bagian 4 INTEL) — dipakai memandu pelacakan *Patch-Scar* di Langkah 2.
-- **Jika belum ada** → Fase 1 berjalan normal dari Langkah 0 tanpa berhenti (INTEL opsional, bukan gerbang keras).
+- **Jika belum ada** → Fase 1 berjalan normal dari Langkah 0 tanpa berhenti (INTEL opsional, bukan gerbang pemangkas).
 
 ---
 
-## Langkah 0: Enumerasi Fisik & Partisi Domain (WAJIB SEBELUM LANGKAH 1)
+## Langkah 0: Enumerasi Fisik 100% Populasi Repo & Partisi Domain (WAJIB SEBELUM LANGKAH 1)
 
-**Gerbang keras:** DILARANG memilih sampel, merumuskan hipotesis, atau menulis `03-attack-surface-queue.md` sebelum seluruh peta fisik repositori tertulis di `audit/00b-file-inventory.md`. Jika berkas itu belum ada, pekerjaan Fase 1 berhenti di sini.
+**Gerbang keras:** DILARANG memilih sampel, mengecualikan kontrak karena "belum ada di halaman bounty", merumuskan hipotesis, atau menulis `03-attack-surface-queue.md` sebelum **100% peta fisik repositori** tertulis di `audit/00b-file-inventory.md`. Jika berkas itu belum ada, pekerjaan Fase 1 berhenti di sini.
 
-### 1. Hitung Populasi Penuh
-Jalankan enumerasi seluruh berkas kontrak di dalam scope. Abaikan `test/`, `mock/`, `script/`. Untuk setiap berkas ukur:
-- **LOC** efektif (baris bukan kosong/komentar)
+### 1. Hitung Populasi Penuh (100% Kontrak Fisik Repo)
+Jalankan enumerasi **seluruh** berkas kontrak di dalam repositori target. Hanya abaikan folder pengujian/skrip murni (`test/`, `tests/`, `mock/`, `mocks/`, `script/`, `scripts/`, `lib/` pihak ketiga standar). Untuk setiap berkas kontrak di repositori, ukur:
+- **LOC efektif** (baris bukan kosong/komentar)
 - **Jumlah fungsi eksternal/publik yang mengubah state**
 - **Path relatif** terhadap akar repo
+- **Tag Status Deployment/Bounty (Metadata Fase 4):** `[LIVE_BOUNTY]` (bila terkonfirmasi aktif di produksi/bounty) atau `[REPO_STAGED]` (bila belum ada di daftar bounty / masih HEAD-only). **Ingat: baik `[LIVE_BOUNTY]` maupun `[REPO_STAGED]` tetap dihitung penuh di dalam populasi!**
 
-Wajib mencetak TOTAL populasi di kepala berkas: `N berkas | M LOC | K fungsi state-changing`. Angka ini menjadi pembanding tetap untuk seluruh fase berikutnya.
+Wajib mencetak TOTAL populasi di kepala berkas: `N berkas | M LOC | K fungsi state-changing`. Angka ini menjadi **penyebut tetap** untuk seluruh fase berikutnya.
 
 **Deduplikasi wajib:** salinan terverifikasi (`verified-deployed/`, `spoke-verified/`, `v5-verified/`) yang SHA-256-nya identik dengan berkas kanonik **dihitung sekali**. Tanpa dedup, populasi membengkak puluhan persen dengan kode yang sama.
 
@@ -52,7 +53,7 @@ Pecah hasil enumerasi ke dalam domain/modul. Penamaan mengikuti arsitektur proye
 
 ### 3. Klasifikasi Status Cakupan per Berkas
 Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DILARANG memakai ambang baris kaku** (mis. ">200 LOC") sebagai penentu: router/adapter tipis 60 baris yang merutekan dana sama kritisnya dengan kontrak 900 baris.
-- `[MUST-AUDIT]` — **salah satu** terpenuhi: mengubah state, memegang/merutekan dana, memvalidasi pesan lintas-rantai, mengeksekusi alur (router/adapter/executor/handler), atau melakukan panggilan eksternal/CPI. **Penentunya perilaku, bukan ukuran.**
+- `[MUST-AUDIT]` — **salah satu** terpenuhi: mengubah state, memegang/merutekan dana, memvalidasi pesan lintas-rantai, mengeksekusi alur (router/adapter/executor/handler), atau melakukan panggilan eksternal/CPI. **Penentunya perilaku kode, bukan ukuran LOC dan bukan apakah kontrak sudah masuk halaman Bug Bounty** (`[LIVE_BOUNTY]` maupun `[REPO_STAGED]` yang mengubah state **tetap wajib `[MUST-AUDIT]`**).
 - `[STATELESS/INTERFACE]` — murni tipe data, konstanta, `interface`/`IDL` tanpa isi, atau berkas deklarasi. Wajib diverifikasi silang bila dipanggil oleh `[MUST-AUDIT]`: berkas tanpa state yang menjadi hitungan dana (`Math`, `FixedPoint`, `SafeCast`) tetap masuk cakupan uji tidak langsung.
 
 **LOC hanya penanda prioritas relatif, bukan gerbang.** Tidak ada berkas yang lolos dari audit karena kecil.
@@ -79,9 +80,12 @@ Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DI
    - Uji kompilasi/tes awal dengan worker tunggal: FOUNDRY_JOBS=1 (forge test -j 1), CARGO_BUILD_JOBS=1, atau RAYON_NUM_THREADS=1.
    - Periksa ketersediaan konfigurasi RPC di ./rpc-env.sh / .env.rpc untuk kebutuhan simulasi *Local Fork* di Fase 3.
    - **Build lintas-arsitektur:** untuk program non-EVM (Solana SBF/eBPF), build lokal yang sah HANYA lewat `cargo-build-sbf`. `cargo build --release` menghasilkan shared object host (aarch64/x86_64) yang **tidak sebanding** dengan bytecode on-chain. Wajib cek `file` pada kedua binari sebelum membandingkan ukuran.
-2. **Pemetaan Fakta Siklus Hidup Produksi** (Data Faktual untuk Fase 3 & 4):
-   - Periksa skrip deploy/, script/, migrations/, dan konstruktor/factory.
-   - Catat secara faktual: (a) apakah fungsi `initialize()` sudah dieksekusi secara atomik saat deployment, (b) apakah kontrak mencetak *dead shares* awal atau sudah memiliki TVL *live* di produksi (sehingga `totalSupply == 0` sudah terlewati), dan (c) mana kontrak yang Aktif In-Scope, mana yang masih Pre-Live / Paused, serta mana yang *mock/deprecated*.
+2. **Pemetaan Fakta Siklus Hidup Produksi & Rencana Dual-Mode Fork** (Data Faktual untuk Fase 3 & 4):
+   - Periksa skrip `deploy/`, `script/`, `migrations/`, dan konstruktor/factory.
+   - Catat secara faktual di `00-project-map.md`:
+     (a) apakah fungsi `initialize()` sudah dieksekusi secara **atomik** saat deployment (baik pada proxy maupun implementation `_disableInitializers()`),
+     (b) apakah kontrak mencetak *dead shares* awal atau sudah memiliki TVL *live* di produksi (serta apakah ada fungsi `Factory.create*` permissionless atau jalur penarikan penuh yang memungkinkan pool kembali ke `totalSupply == 0`),
+     (c) **pemetaan alamat on-chain** untuk setiap kontrak: mana yang dapat diuji langsung dengan **`FORK_LIVE`** (kontrak aktif di mainnet) dan mana yang harus diuji di Fase 3 menggunakan **`FORK_DEPLOYED_HEAD`** (deploy kode repo HEAD di atas fork mainnet karena kontrak berstatus `[REPO_STAGED]` / HEAD-only / belum di-upgrade).
 3. **5–8 Core System Invariants (General-Deterministic):**
    - Rumuskan 5–8 hukum kekekalan nilai dan konsistensi state mutlak dari proyek ini (misal: Total Klaim <= Total Aset Riil, Keluar(Masuk(x)) <= x, atau Setiap perubahan kewajiban wajib diikuti sinkronisasi indeks).
 
@@ -161,7 +165,10 @@ Gabungkan berkas yang berada dalam **satu alur transaksi** di domain yang sama m
 ---
 
 ## Langkah 5: Inisialisasi Antrean Aktif -> `audit/05-raw-leads.md`
-Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi state, *Patch-Scar*, atau ketidaksinkronan View vs Write yang ditemukan selama Langkah 0–4 tanpa melakukan penghakiman kelayakan ekonomi terlebih dahulu.
+
+Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi state, *Patch-Scar*, ketidaksinkronan View vs Write, atau **guard aritmetika/dinamis mencurigakan** yang ditemukan selama Langkah 0–4 **tanpa melakukan penghakiman kelayakan ekonomi (EV) atau penyaringan `HEAD-only` terlebih dahulu**.
+
+> **Guard dinamis JANGAN diparkir di `04`.** Guard yang ekspresinya melibatkan aritmetika, `mulDiv`, `balanceOf`, rasio `totalAssets`/`totalSupply`, akumulator waktu/indeks, batas LTV/likuidasi, atau panjang array **wajib masuk `05`** (tag `M-005`) agar di-fuzz di Fase 3. Lihat `verify/templates/04-code-guarded.md`.
 
 **Fase 1 adalah penulis SAH `05`** — skill ini secara eksplisit melarang delegasi ("DILARANG mendelegasikan pekerjaan Fase 1 ke subagent lain"), sehingga tidak ada Subagent yang bersaing menulis. Aturan staging hanya mengikat ketika pekerjaan didelegasikan (Fase 2/3). Tetap patuhi `workspace/AGENTS.md` Pasal 1.3: `write_file` awal lalu `append`, **DILARANG** `open(path,"w")` / `>`.
 

@@ -20,12 +20,10 @@ Entri `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` tanpa log 
 ## Kelas yang sah di wadah ini
 
 **Wajib `BUKTI_SIMULASI` (Log Test + Strike 3 Fuzz):**
-`REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, `REJECTED_DUST`, **`REJECTED_MISMATCH` untuk klaim berbasis `[POV-MATH-01]` / `[POV-CALL-01]` / `[POV-EVM-01]` / `[POV-SOL-01]` / `[POV-MOVE-01]`**, **`REJECTED_BY_DESIGN`** (kecuali dokumentasi resmi menyebut eksplisit bahwa risiko spesifik itu diterima sebagai *trade-off* **dan** ada test yang membuktikan dampak finansialnya nol), dan **`REJECTED_NO_VICTIM`** (kecuali terbukti tidak ada pihak ketiga yang dirugikan **dan** tidak ada state donor/queue/allowance yang bisa dirangsang dari luar).
+`REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, `REJECTED_DUST`.
 
 **Sah dengan `BUKTI_STATIS` (Kutipan Baris Kode / Dokumen Resmi / On-Chain Bytecode):**
-`REJECTED_FANTASY_MOCK` (bukan quirk nyata Kasta 2 dan bukan *Cross-Whitelist Confusion*), `REJECTED_CHEATCODE`, `REJECTED_GENESIS_MIRAGE` (hanya bila pool tunggal live permanen terisi & tanpa factory/withdraw-all), `REJECTED_PRIVILEGED_FANTASY` (hanya bila menuntut admin/oracle berbuat jahat di luar pemicu *permissionless*), `REJECTED_NON_LIVE_INIT` (hanya bila proxy & implementation sudah terkunci), `REJECTED_UNPROVEN_DEPLOYMENT`.
-
-> **Catatan pembatas:** `REJECTED_MISMATCH` (untuk klaim berbasis 5 POV tersebut), `REJECTED_BY_DESIGN`, dan `REJECTED_NO_VICTIM` **DIPINDAHKAN ke daftar `BUKTI_SIMULASI` di atas** sejak v6.2.6. `REJECTED_MISMATCH` tetap boleh statis **hanya** bila `File:Baris` yang diklaim benar-benar tidak memuat kode yang disebut (salah petakan), **bukan** karena kode "terlihat benar".
+`REJECTED_FANTASY_MOCK` (bukan quirk nyata Kasta 2 dan bukan *Cross-Whitelist Confusion*), `REJECTED_CHEATCODE`, `REJECTED_GENESIS_MIRAGE` (hanya bila pool tunggal live permanen terisi & tanpa factory/withdraw-all), `REJECTED_PRIVILEGED_FANTASY` (hanya bila menuntut admin/oracle berbuat jahat di luar pemicu *permissionless*), `REJECTED_NON_LIVE_INIT` (hanya bila proxy & implementation sudah terkunci), `REJECTED_NO_VICTIM` (bukan *attacker donation/balance-skew*), `REJECTED_BY_DESIGN` (dilarang dipakai bila menghasilkan pencurian dana Positive-EV, insolvensi, atau pembekuan dana permanen), `REJECTED_MISMATCH`, `REJECTED_UNPROVEN_DEPLOYMENT`.
 
 ## Field wajib per entri
 

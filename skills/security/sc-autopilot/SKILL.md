@@ -1,7 +1,7 @@
 ---
 name: sc-autopilot
 description: Master Orchestrator Whitehat Adversarial Lintas-Rantai (v6.2.0 Simulation-First) - Jalankan siklus penuh (Fase 0 Intel -> Fase 1 100% Repo Recon -> Fase 2 Class-Routed Hunt & Static-vs-Dynamic Guard Split -> Fase 3 Dual-Mode Fork & 3-Stage Fuzz Lab -> Fase 4 Verdict Judge & 09-vs-08 Deployment Split) secara otonom via delegate_task
-version: 6.2.6
+version: 6.2.5
 metadata:
   hermes:
     tags: [security, web3, whitehat, adversarial, orchestrator, autopilot, delegation, multichain]

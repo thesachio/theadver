@@ -20,7 +20,7 @@ Setiap kali memulai sesi, menerima instruksi "lanjutkan/resume", atau mengalami 
 - **Langkah A** — Baca **HANYA** `audit/STATE.md` terlebih dahulu. Jangan buka file audit lain sebelum ini selesai.
 - **Langkah B** — Lihat field `CURRENT_ACTIVE_ITEM` dan `Working Memory Scratchpad`.
 - **Langkah C** — Buka file antrean relevan **hanya pada baris item aktif**: `03-attack-surface-queue.md` bila di Fase 2, `05-raw-leads.md` bila di Fase 3. Gunakan `grep -n` atau baca sebagian (`offset`/`limit`). DILARANG memuat satu file penuh.
-- **Langkah D** — **DILARANG KERAS** membaca ulang kode kontrak dari unit yang tercatat di `Completed Units`, dan **DILARANG menguji ulang** lead yang sudah ada di `06-refuted-invalid.md` (Dead-End) atau `08-valid-not-eligible.md` (Verified-Not-Eligible). Larangan ini juga berlaku untuk lead berstatus `REJECTED_POC_FAILS` yang terkunci `3-Stage Escalation Breaker`.
+- **Langkah D** — **DILARANG KERAS** membaca ulang kode kontrak dari unit yang tercatat di `Completed Units`, dan **DILARANG menguji ulang** lead yang sudah ada di `06-refuted-invalid.md` (Dead-End) atau `08-valid-not-eligible.md` (Verified-Not-Eligible). Larangan ini juga berlaku untuk lead berstatus `REJECTED_POC_FAILS` yang terkunci `3-Stage Escalation (2 Manual + 1 Fuzz)`.
 
 ### 3. Kewajiban Sinkronisasi Checkpoint (Write-Ahead Rule)
 **DILARANG** berpindah dari Unit `S-n` ke `S-(n+1)`, atau dari `LEAD-x` ke `LEAD-(x+1)`, sebelum memperbarui tiga hal di `audit/STATE.md`:

@@ -266,8 +266,6 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | `REJECTED_BY_DESIGN` | Gugur mutlak (#6) | Perilaku didokumentasikan sebagai disengaja | `06-refuted-invalid.md` |
 | `REJECTED_MISMATCH` | Gugur mutlak (#6) | Baris kode tidak mendukung klaim | `06-refuted-invalid.md` |
 | `REJECTED_UNPROVEN_DEPLOYMENT` | Gugur mutlak (#2) | Klaim produksi dipaksakan padahal kode ter-deploy tidak terbukti sama | `06-refuted-invalid.md` |
-| **`AUDIT_INCOMPLETE_COVERAGE_BIAS`** | **Pembatalan laporan (#4a)** | Domain kosong, berkas `BELUM`, cakupan < 80%, atau audit memakai sampel | **Bukan wadah** — laporan DITOLAK, kembali ke Fase 1/2 |
-| **`LAZY_BAILOUT_DETECTED`** | **Pembatalan laporan (#11)** | Entri `07` tanpa blok `PERCOBAAN:` / log Tangga Self-Healing / bukti RPC tidak tersedia | **Bukan wadah** — laporan DITOLAK, `07` dikembalikan ke Fase 3 |
 
 ---
 
@@ -278,9 +276,9 @@ ID                : <id_lead_atau_kandidat>
 VERDICT           : <kelas_verdict>
 TARGET_FILE       : <09-confirmed-findings.md | 08-valid-not-eligible.md | 07-needs-next-step.md | 06-refuted-invalid.md>
 ALASAN            : <1-2 kalimat tegas, merujuk nomor Pernyataan (1-11) dan File:Baris>
-BUKTI             : <Mode Uji FORK/LOKAL + hasil eksekusi, atau sumber on-chain>
-TANGGA_BUKTI      : <A | B | C | D>
-DEPLOYMENT_MATCH  : <sha256 sama | source explorer cocok | BEDA -> HEAD-only | tidak terverifikasi (sebut sumber yang gagal)>
+BUKTI             : <Mode Uji FORK_LIVE/FORK_DEPLOYED_HEAD/LOKAL + hasil eksekusi, atau sumber on-chain>
+TANGGA_BUKTI      : <A | A-HEAD | B | C | D>
+DEPLOYMENT_MATCH  : <LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED (sebut sumber yang gagal)>
 BIAYA-BACA        : <jumlah baris yang dibaca>
 ```
 

@@ -12,17 +12,18 @@ Mekanisme **nyata dan terbukti** lewat eksekusi simulasi PoC (`[PASS]`), tetapi 
 
 ## Field wajib per entri
 
-```
-ID                 :
-VERDICT            : VALID_NOT_ELIGIBLE
-LOW_CLASS          : <PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN) | ADMIN_ONLY | LOW_NUISANCE>
-TARGET_FILE        : 08-valid-not-eligible.md
-ALASAN             :
-BUKTI MEKANISME    : <Kode PoC utuh + perintah test + log [PASS]>
-TANGGA_BUKTI       : <A-HEAD | B | A (bila live namun dampak Low/Admin)>  (D tidak sah di sini)
-DEPLOYMENT_MATCH   : <HEAD-only (PROVEN_ON_REPO_HEAD) | LIVE_MATCH (untuk Low/Admin) | tidak terverifikasi>
-Mode Uji           : <FORK_DEPLOYED_HEAD (chain, block, RPC) | FORK_LIVE (...) | LOKAL (...)>
-DAMPAK KUANTITATIF : <Angka profit / dana beku / selisih state terukur dari log PoC>
+```markdown
+## [L-XX] Contoh Pre-Live/Low
+ID                  : L-XX
+VERDICT             : VALID_NOT_ELIGIBLE
+LOW_CLASS           : PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN) | ADMIN_ONLY | LOW_NUISANCE
+TARGET_FILE         : 08-valid-not-eligible.md
+ALASAN              : <mengapa valid secara mekanis namun masuk batas eligibilitas 08>
+BUKTI MEKANISME     : <kode PoC & log eksekusi [PASS]>
+TANGGA_BUKTI        : A-HEAD | B | A  (D tidak sah di sini)
+DEPLOYMENT_MATCH    : HEAD-only (PROVEN_ON_REPO_HEAD) | LIVE_MATCH | UNVERIFIED
+Mode Uji            : FORK_DEPLOYED_HEAD | LOKAL | FORK_LIVE
+DAMPAK KUANTITATIF  : <angka kerugian/profit terukur dari log PoC>
 ```
 
 **`BUKTI MEKANISME` dan `DAMPAK KUANTITATIF` wajib berisi hasil eksekusi PoC dan angka terukur.** Khusus untuk `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`, **kode PoC dan patch perbaikan wajib disertakan secara utuh** karena temuan ini bernilai tinggi bagi tim pengembang sebelum mereka melakukan deployment/upgrade ke mainnet. Menulis *"dampaknya kecil"* tanpa angka = entri ditolak dan lead kembali ke `07`.

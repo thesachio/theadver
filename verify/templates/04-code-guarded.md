@@ -8,13 +8,14 @@ Wadah murni untuk hipotesis Fase 2 yang berhenti di **guard izin atau struktural
 
 ## Field wajib per entri
 
-```
-ID                  : <R-001>
-File:Baris          : <path:Kontrak:Fungsi:Lbaris>
-Ekspresi Guard      : <ekspresi perbandingan apa adanya, mis. msg.sender == configuredRouter>
-Variabel Pembentuk  : <daftar variabel state di dalam ekspresi guard>
-Penulis Variabel    : <fungsi yang dapat mengubah tiap variabel — rujuk 02-state-and-var-matrix.md>
-Hipotesis Dihentikan: <apa yang ingin dilakukan penyerang dan mengapa guard statis ini menghentikannya>
+```markdown
+## [R-001] Contoh Guard Statis
+ID                  : R-001
+File:Baris          : <path/Kontrak.sol:Baris>
+Ekspresi Guard      : <require(msg.sender == router) / onlyRole(...)>
+Variabel Pembentuk  : <router / role mapping / flag>
+Penulis Variabel    : <setRouter(...) onlyOwner / konstruktor>
+Hipotesis Dihentikan: <hipotesis yang terhenti di guard ini>
 Status Putaran 2    : TERSANGKAL | TEMBUS | BELUM
 ```
 

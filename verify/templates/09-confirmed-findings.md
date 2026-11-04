@@ -8,19 +8,19 @@ Wadah murni untuk temuan berstatus `VALID_ELIGIBLE` yang lolos **kesebelas** Per
 
 ## Field wajib per entri
 
-```
-[ID] <Judul Kerentanan & Lokasi Kontrak/Fungsi>
-ID                : <ID Lead asal, mis. LEAD-001 / L-V5-1>
-SEVERITY          : <CRITICAL | HIGH | MEDIUM>
-VERDICT           : VALID_ELIGIBLE
-TARGET_FILE       : 09-confirmed-findings.md
-TANGGA_BUKTI      : A (atau B khusus non-EVM native runtime tanpa fork RPC)
-DEPLOYMENT_MATCH  : LIVE_MATCH (<sha256 source explorer cocok | selector & bytecode cocok via cast code>)
-Mode Uji          : FORK_LIVE (chain: <...>, block: <...>, RPC: <...>)
-File:Baris        : <path/ke/Kontrak.sol:BarisAwal-BarisAkhir>
-Metode / POV      : <M-00X / [POV-XX]>
-Invarian Dilanggar: <Rumus invarian dari 00-project-map.md yang patah>
-DAMPAK KUANTITATIF: <Angka eksak dari log PoC: modal awal penyerang, biaya gas, dana protokol/korban yang terkuras atau membeku permanen, profit bersih>
+```markdown
+## [LEAD-001] Judul Kerentanan & Lokasi
+ID                  : LEAD-001
+SEVERITY            : CRITICAL | HIGH | MEDIUM
+VERDICT             : VALID_ELIGIBLE
+TARGET_FILE         : 09-confirmed-findings.md
+TANGGA_BUKTI        : A (atau A-HEAD bila bytecode identik LIVE_MATCH, atau B khusus non-EVM native runtime tanpa fork RPC)
+DEPLOYMENT_MATCH    : LIVE_MATCH (<alamat kontrak & bukti kecocokan bytecode/source>)
+Mode Uji            : FORK_LIVE (chain: <...>, block: <...>, RPC: <...>)
+File:Baris          : <path/to/File.sol:Baris>
+Metode / POV        : <M-00X / [POV-XX]>
+Invarian Dilanggar  : <invarian inti dari 00-project-map.md>
+DAMPAK KUANTITATIF  : <profit bersih penyerang / kerugian protokol dalam angka eksak>
 ```
 
 ## Bagian Naratif & Bukti Teknis Wajib (di bawah blok metadata tiap entri)

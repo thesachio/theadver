@@ -1,8 +1,11 @@
 # 07 — Needs Next Step
 
-Mekanisme nyata & PoC jujur, tetapi **belum dapat diputuskan** karena: butuh fork produksi,
-RPC/tooling terblokir, verifikasi mainnet lanjutan, atau klaim masih `HEAD-only`
-(gagal Pernyataan #2/#9b). **Bukan** tempat untuk temuan ber-dampak Low (itu `08`).
+Mekanisme nyata & PoC jujur, tetapi **belum dapat diputuskan** karena: butuh fork produksi, RPC/tooling terblokir, verifikasi mainnet lanjutan, atau **kendala komputasi/RPC ekstrem setelah 3-Step Self-Healing**. *(Catatan: temuan `HEAD-only` yang PoC-nya sudah `[PASS]` wajib masuk `08` sebagai `PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`, **bukan** `07`; dan temuan berdampak Low juga masuk `08`.)*
+
+> **GARIS PEMISAH `07` vs `08` — WAJIB DIBACA SEBELUM MENGISI ENTRI:**
+> - **HEAD-only yang BELUM DIUJI** (RPC mati, tooling gagal, fork belum sempat dinyalakan) **tetap boleh** dicatat sebagai pekerjaan tertunda di `07` — asalkan pengujiannya memang **belum selesai** dan blok `PERCOBAAN:` membuktikan usaha yang sudah ditempuh.
+> - **HEAD-only yang PoC-nya sudah `[PASS]` WAJIB masuk `08`** sebagai `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — lengkap dengan kode PoC utuh dan dampak kuantitatifnya. Temuan yang sudah terbukti **tidak boleh** diparkir di `07`.
+> - **`07` DILARANG** dipakai untuk menyembunyikan temuan yang sudah terbukti, atau untuk menghindari kewajiban menyimpan PoC di `08`.
 
 > **Target akhir `07` = 0 entri.** Setiap sisa wajib dipertahankan dengan log komputasi, bukan kalimat.
 > Entri tanpa `Disposition:` **atau** tanpa blok `PERCOBAAN:` → `LAZY_BAILOUT_DETECTED`
@@ -14,19 +17,18 @@ RPC/tooling terblokir, verifikasi mainnet lanjutan, atau klaim masih `HEAD-only`
 
 Salin kerangka ini apa adanya. Semua field wajib terisi — `Disposition:` dan `PERCOBAAN:` **tidak boleh dihilangkan**.
 
-```
-ID                : <LEAD/L-xx, mis. L3-03>
-VERDICT           : NEEDS_NEXT_STEP
-Disposition       : <NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED>   <- WAJIB, pilih tepat satu
-TARGET_FILE       : 07-needs-next-step.md
-ALASAN            : <1-2 kalimat: mengapa belum tuntas, rujuk Pernyataan #9b>
-BUKTI             : <apa yang sudah terbukti sejauh ini>
-TANGGA_BUKTI      : <B | C>   (A tidak sah di sini — A sudah bisa ke 09)
-DEPLOYMENT_MATCH  : <sha256 sama | source explorer cocok | BEDA -> HEAD-only | tidak terverifikasi (sebut sumber yang gagal)>
+```text
+ID                 : <id>
+VERDICT            : NEEDS_NEXT_STEP
+Disposition        : NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED   <- WAJIB, pilih tepat satu
+TARGET_FILE        : 07-needs-next-step.md
+ALASAN             : <1-2 kalimat: mengapa belum tuntas, rujuk Pernyataan #9b>
+BUKTI              : <ringkasan mekanisme & titik terhenti>
+TANGGA_BUKTI       : B | C   *(A / A-HEAD yang sudah PASS tidak sah di sini — wajib ke 09 atau 08)*
+DEPLOYMENT_MATCH   : LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED (<sebut sumber yang gagal>)
 PERCOBAAN:
-  $ <perintah terminal yang BENAR-BENAR dijalankan>
-  <keluaran / error / log — potongan apa adanya, bukan parafrase>
-LANGKAH BERIKUTNYA : <aksi konkret & spesifik, bukan "perlu investigasi lebih lanjut">
+  $ <perintah nyata yang dijalankan beserta log keluarannya>
+LANGKAH BERIKUTNYA : <aksi konkret untuk menuntaskan pengujian>
 ```
 
 **`PERCOBAAN:` bukan rencana.** Isinya perintah yang sudah dijalankan **beserta keluarannya**.
@@ -41,18 +43,17 @@ Keduanya wajib memuat himpunan field yang **sama persis**. Hakim menerima keduan
 sebagian field dari satu bentuk dan sebagian dari bentuk lain tidak sah.
 
 ```markdown
-## [<ID-LEAD>] Judul Singkat Hipotesis
+## [ID-LEAD] Judul Singkat Hipotesis
 - VERDICT: NEEDS_NEXT_STEP
 - Disposition: NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED
-- File & Baris: <PathFile:Baris>
+- File & Baris: <path:baris>
 - TANGGA_BUKTI: B | C
-- DEPLOYMENT_MATCH: MATCH | HEAD-only | UNVERIFIED (<sumber gagal>)
-- Ringkasan Mekanisme & Alasan Belum Tuntas: <penjelasan singkat>
+- DEPLOYMENT_MATCH: LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED (<sumber gagal>)
+- Ringkasan Mekanisme & Alasan Belum Tuntas: <...>
 - PERCOBAAN:
-  - Perintah yang dijalankan: <perintah lengkap forge / cargo / halmos / cast>
-  - Hasil / Log keluaran: <ringkasan presisi log terminal: jumlah runs/timeout fuzzer,
-    atau log 3 usaha self-healing, atau bukti ketiadaan RPC>
-- Langkah Konkret Berikutnya: <apa yang diperlukan untuk menuntaskan ke 09 atau 06>
+  - Perintah yang dijalankan: $ ...
+  - Hasil / Log keluaran: <...>
+- Langkah Konkret Berikutnya: <...>
 ```
 
 **Validasi cepat (dijalankan Hakim / Parent sebelum menerima entri):**
@@ -96,7 +97,7 @@ ALASAN            : Kode di HEAD memperlihatkan jalur, tetapi bytecode ter-deplo
 BUKTI             : Source HEAD memuat instruksi yang tidak ada di program ter-deploy;
                     tidak bisa disimpulkan sebagai bug produksi.
 TANGGA_BUKTI      : C
-DEPLOYMENT_MATCH  : BEDA -> HEAD-only (sha256 repo != program on-chain)
+DEPLOYMENT_MATCH  : HEAD-only (PROVEN_ON_REPO_HEAD) — sha256 repo != program on-chain
 PERCOBAAN:
   $ FOUNDRY_JOBS=1 forge test --match-path test/U9_X.t.sol --via-ir -j 1
   Error: Compiler run failed: Error (8936): Identifier-start is not allowed at end of a number.

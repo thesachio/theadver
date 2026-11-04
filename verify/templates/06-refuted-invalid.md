@@ -1,7 +1,7 @@
 # 06 — Refuted / Invalid (Gugur Permanen)
 
-Temuan yang **gugur mutlak** per `verify/VERDICT.md`. Setiap entri wajib memuat:
-`ID`, `VERDICT`, `Pernyataan yang dilanggar (#1-#10)`, `File:Baris`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `Mode Uji`, dan **`BUKTI_SIMULASI`** (atau **`BUKTI_STATIS`** khusus untuk salah baca kode literal).
+Temuan yang **gugur mutlak** per `verify/VERDICT.md`. Setiap entri wajib **diawali heading `## [ID] Judul`** dan memuat:
+`ID`, `VERDICT`, `Pernyataan Dilanggar (#1-#10)`, `File:Baris`, `TANGGA_BUKTI`, `DEPLOYMENT_MATCH`, `Mode Uji`, dan **`BUKTI_SIMULASI`** (atau **`BUKTI_STATIS`** khusus untuk salah baca kode literal).
 
 (`TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` wajib ada meski vonisnya gugur — tanpa keduanya, vonis dianggap belum sah dan entri harus dikembalikan ke penulisnya.)
 
@@ -27,18 +27,18 @@ Entri `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` tanpa log 
 
 ## Field wajib per entri
 
-```
-ID                  : <L-xx / LEAD-xxx>
-VERDICT             : <REJECTED_*>
+```markdown
+## [L-XX] Contoh Penolakan
+ID                  : L-XX
+VERDICT             : REJECTED_POC_FAILS | REJECTED_NEGATIVE_EV | REJECTED_DUST | REJECTED_MISMATCH | ...
 Pernyataan Dilanggar: <#1-#6, #7a/#8a/#9a/#10a bila relevan>
-File:Baris          : <path:Kontrak:Fungsi:Lbaris>
+File:Baris          : <path/Kontrak.sol:Baris>
 TANGGA_BUKTI        : A | A-HEAD | B | C | D
 DEPLOYMENT_MATCH    : LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED
 Mode Uji            : FORK_LIVE | FORK_DEPLOYED_HEAD | LOKAL | STRUKTURAL
 BUKTI_SIMULASI / BUKTI_STATIS:
-  $ <perintah yang benar-benar dijalankan>
-  <keluaran log: runs, hasil test, error revert>
-ALASAN              : <mengapa gugur, rujuk nomor Pernyataan>
+  $ <perintah test & log hasil Strike 1-3 + testFuzz_..., atau kutipan baris kode statis>
+ALASAN              : <1-2 kalimat tegas>
 ```
 
 ---

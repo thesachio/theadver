@@ -10,7 +10,7 @@ DILARANG memakai "append selalu". Tiap file punya pola mutasi berbeda.
 
 | Karakteristik | File | Metode | Alasan |
 |---|---|---|---|
-| Tulis sekali | `00`, `01`, `02` | `write_file` awal; tambahan → `append` | Isi hampir tidak berubah |
+| Tulis sekali | `INTEL.md`, `00`, `01`, `02` | `write_file` awal; tambahan → `append` | Isi hampir tidak berubah |
 | Generate massal | `00b` | **script** (`phase0_inventory.py`); verifikasi `grep -n` | 260 baris; baca penuh ≈9k token tidak perlu |
 | Append-murni | `06`, `08`, `09` | `append` | Entri tidak diubah setelah ditulis |
 | Append lalu ubah status | `04`, `05`, `07` | entri baru → `append`; status → `patch` | Append saja membuat status basi |

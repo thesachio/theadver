@@ -17,6 +17,10 @@ Yang diperiksa skrip ini (nol token LLM):
 
 Output: tabel ringkas + verify/queue.json (hanya klaim MECH-OK).
 
+Versi skema: 6.2.4
+  - vocab impact/victim/actor diperluas (v6.2.1) agar klaim sah tidak dibuang
+    saringan mekanis sebelum sampai ke Hakim Fase 4.
+
 Pakai:
   python3 ingest.py <url-atau-path> [--dest DIR]
   python3 ingest.py --selftest        # uji internal, tanpa jaringan

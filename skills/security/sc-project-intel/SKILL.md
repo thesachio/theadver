@@ -1,7 +1,7 @@
 ---
 name: sc-project-intel
 description: Phase 0 — Project Intelligence & Direct Reference Link Gatherer (Overview, Main UI, Specific GitHub Repo, Direct Bug Bounty Rules Link, and Direct Past Audit Report Links) into audit/INTEL.md.
-version: 6.2.0
+version: 6.2.4
 metadata:
   hermes:
     tags: [security, web3, whitehat, recon, phase0, intel]

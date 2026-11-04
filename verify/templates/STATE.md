@@ -9,7 +9,7 @@
 - Last Completed Item: S-07 (Domain: spoke-pools) -> Hasil: ATTESTED_CLEAN + LEAD-09
 - CURRENT_ACTIVE_ITEM: S-08 (Domain: chain-adapters)
 - Active Files in Scope: WormholeAdapter.sol, BridgeRelay.sol
-- Active Strike Count (Fase 3): 0/2 (Kosongkan jika masih di Fase 2)
+- Active Strike Count (Fase 3): 0/3 (2 Manual + 1 Mandatory Fuzz; kosongkan jika masih di Fase 2)
 
 ## 2. Domain Coverage Meter (Syarat Gate >= 80%)
 | Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
@@ -37,4 +37,4 @@
 - **Working Memory Scratchpad** — maksimal 10 baris, hanya untuk unit aktif. Temuan yang sudah final pindah ke `05-raw-leads.md`, bukan ditinggal di sini.
 - **Do-Not-Reopen List** — tulis ID saja beserta kelas vonisnya. Alasannya ada di `06` / `08`; jangan diduplikasi di sini.
 - **Write-Ahead Rule** — perbarui file ini SEBELUM memulai item berikutnya, bukan sesudah selesai.
-- **Bila Fase 3** — `Active Strike Count` wajib diisi; bila mencapai 2/2 maka lead pindah ke `06` sebagai `REJECTED_POC_FAILS` dan masuk Do-Not-Reopen.
+- **Bila Fase 3** — `Active Strike Count` **wajib diisi** (`0/3`, `1/3`, `2/3`, `3/3`); sebuah lead **DILARANG** dipindah ke `06` sebagai `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` sebelum mencapai **3/3** (**Strike 1** Manual + *Victim Seeding*, **Strike 2** Perbaikan Urutan + *3-Way Amplification*, dan **Strike 3** Mandatory Fuzzing `testFuzz_`/`proptest`/`halmos`) beserta lampiran log di `BUKTI_SIMULASI:` (#11e).

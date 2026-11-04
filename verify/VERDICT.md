@@ -119,9 +119,9 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 > *"Seluruh token, LP token, share/receipt token, dan kontrak yang berinteraksi di dalam PoC memakai kode asli repositori, atau tiruan yang perilakunya 100% identik dengan aset produksi (tidak mengarang Fee-on-Transfer/Rebase/USDT-quirk pada token standar, dan tidak menyuntikkan kontrak jahat ke parameter yang dikunci Factory/Whitelist)."*
 → `REJECTED_FANTASY_MOCK`
 
-**2. Kesetiaan Deployment & Provenance Kode (Deployment Fidelity)** — *baru*
-> *"Kode yang dikutip terbukti identik dengan yang berjalan di produksi (`DEPLOYMENT_MATCH: LIVE_MATCH` via source terverifikasi explorer / selector-scan bytecode / sha256 yang sama), **atau** klaim ditandai `HEAD-only (PROVEN_ON_REPO_HEAD)` dan ditempatkan di `08-valid-not-eligible.md` kelas `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — **bukan** diparkir di `07`."*
-> → Pelanggaran: `REJECTED_UNPROVEN_DEPLOYMENT` → `06-refuted-invalid.md` (bila klaim dipaksakan sebagai produksi **tanpa** PoC PASS).
+**2. Kesetiaan Deployment & Pemisahan Live vs Repo-HEAD (Deployment Fidelity)**
+> *"Untuk masuk ke `09-confirmed-findings.md`, kode yang diserang wajib terbukti eksis dan aktif pada deployment produksi (`LIVE_MATCH`). Apabila PoC eksploitasi berhasil (`[PASS]`) membuktikan kerentanan nyata pada kode repositori (`FORK_DEPLOYED_HEAD` / `LOKAL`), namun kontrak/fitur tersebut masih berstatus `HEAD-only` (belum di-deploy ke mainnet atau berbeda dari bytecode produksi aktif), temuan tersebut **WAJIB disimpan secara utuh** di `08-valid-not-eligible.md` dengan kelas `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — bukan dipaksakan ke `09` dan bukan diparkir di `07`."*
+→ Pelanggaran (memaksakan kode HEAD-only sebagai `09` produksi aktif tanpa cek deployment): `REJECTED_UNPROVEN_DEPLOYMENT` — atau turunkan dari `09` ke `08` [`PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`] bila PoC-nya valid.
 
 **3. Keadaan Likuiditas Nyata (No Empty-Pool Mirage)**
 > *"Eksploitasi terbukti berhasil pada keadaan TVL dan likuiditas nyata di produksi, bukan mengandalkan `totalSupply == 0` / First Depositor Attack pada pool yang sudah live atau sudah mencetak dead shares saat deploy — kecuali PoC membuktikan penyerang mampu membuat pool resmi baru secara permissionless atau menguras TVL ke nol lebih dulu."*
@@ -142,9 +142,9 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 ### B. EMPAT PERNYATAAN HIBRIDA & BERBATAS (Bounded Threshold — memisahkan 06, 07, 08, 09)
 
 **7. Status Live Produksi & Siklus Hidup Inisialisasi (Scope & Lifecycle)**
-> *"Kontrak dan cabang fitur yang diserang termasuk cakupan resmi, aktif di produksi, dan tidak menyerang `initialize()` sekali-pakai yang sudah terkunci."*
-- Menyerang `initialize()` yang sudah dieksekusi saat deploy → **[KETAT]** `REJECTED_NON_LIVE_INIT` → `06-refuted-invalid.md`
-- Mekanisme nyata tetapi kontrak/fitur **pre-live**, **paused**, atau di luar scope utama → **`VALID_NOT_ELIGIBLE [PRE_LIVE_SCOPE]`** → `08-valid-not-eligible.md`
+> *"Kontrak dan cabang fitur yang diserang termasuk cakupan aktif di produksi, dan tidak menyerang `initialize()` sekali-pakai yang sudah terkunci rapat tanpa jalur re-inisialisasi."*
+- Menyerang `initialize()` yang sudah dieksekusi dan dikunci di produksi (dan kontrak implementation juga sudah dikunci `_disableInitializers()`) → **[KETAT]** `REJECTED_NON_LIVE_INIT` → `06-refuted-invalid.md`
+- Mekanisme eksploitasi nyata dan PoC terbukti `[PASS]` (`FORK_DEPLOYED_HEAD` / `LOKAL`), tetapi kontrak/fitur masih pre-live (`HEAD-only`), paused, atau berada di repositori namun belum masuk daftar alamat halaman bounty → **`VALID_NOT_ELIGIBLE [PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN]`** → `08-valid-not-eligible.md` *(wajib menyertakan kode PoC utuh & log `[PASS]`)*.
 
 **8. Kemurnian Aktor Eksternal (Unprivileged External Path)**
 > *"Seluruh langkah eksploitasi dapat dijalankan penyerang tak berizin dari awal hingga akhir, tanpa mengandalkan tindakan jahat/bodoh Admin/Owner/DAO/Keeper, dan bukan bug khusus fungsi admin tanpa jalur eksternal."*
@@ -152,7 +152,7 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 - Bug mekanis nyata pada fungsi **khusus admin** tanpa jalur eksploitasi eksternal (`admin-only bug with no external exploit path`) → **`VALID_NOT_ELIGIBLE [ADMIN_ONLY]`** → `08` *(bukan `06` — ini Low, bukan gugur)*
 
 **9. Kejujuran Sandbox & Bukti Fork Produksi (Sandbox & Fork Integrity)**
-> *"PoC dapat direproduksi dan menghasilkan `[PASS]` pada fork state produksi nyata (`Mode Uji: FORK`) tanpa memalsukan storage internal, dan mematuhi fisika gas/mempool rantai target."*
+> *"PoC dapat direproduksi dan menghasilkan `[PASS]` pada `FORK_LIVE`, `FORK_DEPLOYED_HEAD`, atau `LOKAL` (non-EVM / rantai tanpa RPC) tanpa memalsukan storage internal, dan mematuhi fisika gas/mempool rantai target."*
 - `vm.store`, `vm.etch` state protokol, `vm.prank(admin/pool)`, `deal` ke protokol, atau revert di state nyata → **[KETAT]** `REJECTED_CHEATCODE` / `REJECTED_POC_FAILS` → `06`
 - **Logika kode + PoC lokal jujur tetapi belum dapat diuji pada fork produksi → `NEEDS_NEXT_STEP` → `07-needs-next-step.md`, HANYA BILA memenuhi ketiga syarat berikut:**
   1. **Blok `PERCOBAAN:` wajib** — entri `07` harus memuat perintah yang benar-benar dijalankan **beserta keluarannya** (bukan rencana). `NEXT_EXPLORE` wajib melampirkan log Tier 2/3/5 (handler fuzzing, differential, multi-step chaining, halmos) yang **mentok timeout komputasi**; `TOOL_BLOCKED` wajib melampirkan log **ketiga** usaha Tangga Self-Healing (flag/toolchain → standalone interface-only → fallback RPC); `NEXT_MAINNET` wajib bukti rantai benar-benar tanpa RPC/explorer — bila RPC tersedia, DILARANG parkir di sini, jalankan `cast call`/`cast storage` saat itu juga.
@@ -211,7 +211,13 @@ Hakim **WAJIB** menghitung sendiri dari `00b-file-inventory.md` × `03-attack-su
 
 **Target akhir `07` = 0 entri.** Setiap sisa wajib dipertahankan dengan log komputasi, bukan kalimat.
 
-**Hubungan dengan Aturan Anti-False-Negative:** #11 adalah cermin dari aturan tersebut. Anti-false-negative melarang menyimpulkan *"aman"* dari data kosong; #11 melarang menyimpulkan *"belum bisa diuji"* tanpa percobaan. Keduanya menolak kesimpulan yang lebih murah daripada pekerjaannya.
+**11e. Larangan Penolakan Kertas Tanpa Bukti Simulasi (`PAPER_REFUTATION_DETECTED`) — laporan DITOLAK, dikembalikan ke Fase 3**
+
+> *"Setiap entri di `06-refuted-invalid.md` yang menyandang vonis `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, atau `REJECTED_DUST` **WAJIB** memuat blok `BUKTI_SIMULASI:` berisi perintah test yang benar-benar dijalankan beserta log terminalnya — termasuk bukti telah dilakukannya *Victim Seeding* dan minimal 1× eksekusi Fuzzing (`testFuzz_` / `proptest` / `halmos`) pada Strike 3. Penolakan tanpa kode test hanya diizinkan untuk 4 Kemustahilan Statis Sempit (`REJECTED_FANTASY_MOCK`, `REJECTED_GENESIS_MIRAGE` pada pool tunggal terkunci, `REJECTED_NON_LIVE_INIT` yang terkunci, `REJECTED_PRIVILEGED_FANTASY` di luar batas validasi, `REJECTED_MISMATCH`, dan `REJECTED_BY_DESIGN`)."*
+
+→ Pelanggaran: **`PAPER_REFUTATION_DETECTED`** → **laporan DITOLAK**, entri `06` yang bermasalah dikembalikan ke Fase 3 untuk dibuatkan simulasi PoC/Fuzz-nya.
+
+**Hubungan dengan Aturan Anti-False-Negative:** #11 adalah cermin dari aturan tersebut. Anti-false-negative melarang menyimpulkan *"aman"* dari data kosong; #11 melarang menyimpulkan *"belum bisa diuji"* tanpa percobaan; #11e melarang menyimpulkan *"gugur"* tanpa eksekusi. Ketiganya menolak kesimpulan yang lebih murah daripada pekerjaannya.
 
 ---
 
@@ -230,10 +236,11 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 
 | Tingkat | Jenis bukti | Boleh menopang |
 |---|---|---|
-| **A** | `Mode Uji: FORK` terhadap bytecode ter-deploy, tanpa cheatcode, output `[PASS]` | hingga `09` |
-| **B** | `Mode Uji: LOKAL` dengan kontrak asli (fork tidak mungkin, alasan dinamai) | hingga `08` |
-| **C** | Bukti **struktural** (baca kode + `eth_call`), atau **mock pihak ketiga** | hingga `07` |
-| **D** | Asumsi/analogi tanpa eksekusi | `06` (bukan temuan) |
+| **A** | `Mode Uji: FORK_LIVE` terhadap bytecode produksi ter-deploy, tanpa cheatcode, output `[PASS]` | hingga `09` |
+| **A-HEAD** | `Mode Uji: FORK_DEPLOYED_HEAD` (kontrak repo di-deploy di atas fork mainnet nyata, `[PASS]`, tanpa cheatcode) | `09` (bila kode identik dgn live) atau `08` [`PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN`] (bila kode belum live) |
+| **B** | `Mode Uji: LOKAL` dengan kontrak asli (khusus non-EVM `cargo test`/`sui move test`/`@ton/sandbox`, atau rantai tanpa RPC) | hingga `09` (non-EVM kode cocok live) atau `08` (EVM tanpa RPC / HEAD-only) |
+| **C** | Bukti **struktural** (baca kode + `eth_call`), atau **mock pihak ketiga** | maksimal `07` (dengan `PERCOBAAN:`) atau `06` (untuk salah baca statis) |
+| **D** | Asumsi/hitungan kertas **tanpa eksekusi test** | **TIDAK SAH** untuk `09`/`08`/`07` maupun untuk `06` (`POC_FAILS`/`NEGATIVE_EV`/`DUST`) → memicu `PAPER_REFUTATION_DETECTED` |
 
 ---
 

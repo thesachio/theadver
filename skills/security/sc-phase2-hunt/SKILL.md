@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
-description: Phase 2 — Counter-Auditor Adversarial Hunting (Class-Routed Dynamic Registry M-001..M-NNN + First-Principles Foundation + Generalized Attacker POV) with Pure Code-Guard Separation (04 vs 05).
-version: 6.1.0
+description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
+version: 6.2.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -177,12 +177,36 @@ Tahap B **modular dan lazy-load**. Jangan memuat seluruh katalog sekaligus.
 ---
 
 
-## TAHAP C: Pemisahan Murni (04-code-guarded.md vs 05-raw-leads.md)
-Di Fase 2, Anda adalah Pemburu (Hunter), bukan Hakim Ekonomi. Jangan membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasinya di simulasi Fase 3):
-1. **Dua Larangan Fakta Dasar Kode:** Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang bisa memanggil fungsi onlyOwner secara langsung.
-2. **Jika Ditemukan Anomali yang Tidak Dihentikan Guard** (atau Guard Bisa Ditembus via `M-005` Guard-Inversion):
-   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/05-raw-leads.md` lengkap dengan: Metode Pencarian (`M-001..M-NNN` dari `ref-method-registry.md` dan/atau `[POV-XX]`), File:Kontrak:Fungsi (Baris), Delta State (Expected vs Actual), Urutan Eksploitasi, dan Potensi Rantai Serangan (Chaining). **DILARANG menulis ke `05-raw-leads.md` langsung** — `05` hanya ditulis Parent saat merge.
-3. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Kode** (`require` / `if (...) revert` / `assert!`):
-   Tulis entri lengkap ke **`audit/notes/staging-<unit>.md`** sesuai template `verify/templates/04-code-guarded.md` lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk 02-state-and-var-matrix.md), Hipotesis yang Dihentikan, dan Status Putaran 2: `BELUM`. **DILARANG menulis ke `04-code-guarded.md` langsung.**
-4. Tandai kelompok fungsi di audit/03-attack-surface-queue.md menjadi `[HUNTED]`.
-5. **Wajib tulis status jejak** pada tabel cakupan: `LEAD_GENERATED` (butir 2) atau `ATTESTED_CLEAN` (butir 3, dengan 4 unsur atestasi lengkap). Kelompok tanpa keduanya tetap `BELUM` dan **memblokir Gate Keluar Fase 2**.
+## TAHAP C: Pemisahan Murni & Gerbang Guard Statis vs Dinamis (04-code-guarded.md vs 05-raw-leads.md)
+
+Di Fase 2, Anda adalah **Pemburu (Hunter)**, bukan Hakim Ekonomi dan bukan Hakim Cakupan Bounty.
+- **DILARANG** membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasi 3-Jalurnya di simulator Fase 3).
+- **DILARANG** melewati atau menurunkan prioritas berkas hanya karena berlabel `[REPO_STAGED]` / HEAD-only.
+
+### 1. Dua Larangan Fakta Dasar Kode (Satu-satunya Filter di Fase 2)
+Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token internal = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang tak berizin bisa memanggil fungsi `onlyOwner` secara langsung tanpa celah kontrol akses.
+
+### 2. GERBANG PEMISAHAN GUARD STATIS VS DINAMIS (WAJIB DIPATUHI!)
+
+Kesalahan terbesar auditor adalah menganggap adanya `require(...)` atau `if (...) revert` sebagai bukti bahwa suatu fungsi sudah aman, lalu memarkirnya di `04-code-guarded.md` **tanpa pernah diuji secara mekanis**. Mulai v6.2.0, pisahkan dengan aturan keras berikut:
+
+| Jenis Guard di Kode | Kriteria Eksplisit | Wadah Tujuan Wajib | Alasan |
+|---|---|---|---|
+| **A. Guard Statis / Struktural** | Pemeriksaan otorisasi tetap (`onlyOwner`, `onlyRole`, `msg.sender == router`), mutex reentrancy (`nonReentrant`), status pause boolean (`whenNotPaused`), atau cek alamat nol (`addr != address(0)`). | **`04-code-guarded.md`** (via `staging-<unit>.md`) | Hanya bisa ditembus bila ada jalur lain di Putaran 2 yang mengubah variabel konfigurasi/role tersebut (`M-005`). |
+| **B. Guard Dinamis / Matematis / State-Dependent** | Pemeriksaan yang melibatkan aritmetika, pembulatan (`mulDiv`, bagi-kali), rasio pool (`totalAssets`, `totalSupply`), saldo token (`balanceOf`), akumulator waktu/bunga (`block.timestamp`, `index`), batas kesehatan/LTV/likuidasi, slippage/fee dinamis, atau indeks/panjang array. | **`05-raw-leads.md`** (via `staging-<unit>.md`, beri tag `M-005` / `M-007`) | **DILARANG masuk `04`!** Guard dinamis sering kali tampak aman di atas kertas tetapi bocor pada kondisi batas, *rounding direction*, *dust splitting*, atau *flashloan skew* — wajib diuji dengan Fuzzer (`testFuzz_`/`proptest`/`halmos`) di Fase 3! |
+
+### 3. Prosedur Penulisan ke `audit/notes/staging-<unit>.md`
+
+1. **Jika Ditemukan Anomali Tanpa Guard, Guard Bisa Ditembus (`M-005`), ATAU Dijaga oleh Guard Dinamis/Matematis (Kategori B di atas):**
+   Tulis entri lengkap ke `audit/notes/staging-<unit>.md` dengan target **`05-raw-leads.md`** sesuai template `verify/templates/05-raw-leads.md`, lengkap dengan:
+   - **Kelas Topologi** (`[CLASS-A]` | `[CLASS-B]` | `[CLASS-C]`),
+   - **Metode Pencarian** (`M-001..M-NNN` dari `ref-method-registry.md` dan/atau `[POV-XX]`),
+   - **File:Kontrak:Fungsi (Baris)** (presisi sampai baris),
+   - **Delta State** (Expected vs Actual) — **serta ekspresi Guard Dinamis yang ingin ditembus lewat fuzzer/amplifikasi**,
+   - **Urutan Eksploitasi** (chain-neutral), dan
+   - **Potensi Rantai Serangan (Chaining)**.
+   **DILARANG** menulis ke `05-raw-leads.md` langsung — `05` hanya ditulis Parent saat merge.
+2. **Jika Hipotesis Benar-Benar Dihentikan oleh Guard Statis / Struktural Murni (Kategori A di atas):**
+   Tulis entri lengkap ke `audit/notes/staging-<unit>.md` dengan target **`04-code-guarded.md`** sesuai template `verify/templates/04-code-guarded.md`, lengkap dengan: File:Baris, Ekspresi Guard, Variabel Pembentuk, Penulis Variabel (rujuk `02-state-and-var-matrix.md`), Hipotesis yang Dihentikan, dan **Status Putaran 2: `BELUM`**. **DILARANG** menulis ke `04-code-guarded.md` langsung.
+3. Tandai kelompok fungsi di `audit/03-attack-surface-queue.md` menjadi `[HUNTED]`.
+4. **Wajib tulis status jejak** pada tabel cakupan: `LEAD_GENERATED` atau `ATTESTED_CLEAN` (dengan 4 unsur atestasi lengkap + kutipan `File:Baris` konkret sesuai §2b). Kelompok tanpa keduanya tetap `BELUM` dan memblokir Gate Keluar Fase 2.

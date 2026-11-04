@@ -182,8 +182,9 @@ Di Fase 2, Anda adalah **Pemburu (Hunter)**, bukan Hakim Ekonomi dan bukan Hakim
 - **DILARANG** membuang anomali hanya karena terlihat kecil sendirian (karena akan dirangkai menjadi *attack chain* di Putaran 2 atau diuji amplifikasi 3-Jalurnya di simulator Fase 3).
 - **DILARANG** melewati atau menurunkan prioritas berkas hanya karena berlabel `[REPO_STAGED]` / HEAD-only.
 
-### 1. Dua Larangan Fakta Dasar Kode (Satu-satunya Filter di Fase 2)
+### 1. Dua Larangan Fakta Dasar Kode (Satu-satunya Filter di Fase 2 — Jangan Diperluas!)
 Jangan mengarang sifat palsu pada Token Kasta 1 (LP/Share token internal = ERC-20 standar, bukan *Fee-on-Transfer*/USDT) dan jangan mengasumsikan penyerang tak berizin bisa memanggil fungsi `onlyOwner` secara langsung tanpa celah kontrol akses.
+- **PERINGATAN ANTI-OVERFILTERING:** Larangan ini **TIDAK BERLAKU** untuk: **(a) Cross-Whitelist Confusion** (memasukkan kontrak/token/pool yang sah ada di whitelist tetapi untuk pasangan aset/konteks yang salah karena ketiadaan cek ikatan ID/aset), **(b) Callback Initiator Spoofing** (memicu Pool/Vault/Endpoint resmi secara *permissionless* agar memanggil fungsi callback kontrak target ketika parameter `initiator`/`sender` tidak divalidasi), dan **(c) Oracle Scaling/Staleness Flaw** (harga oracle 100% jujur, tetapi kontrak salah menghitung desimal/batas waktu). Ketiganya adalah kerentanan *permissionless* murni dan **WAJIB masuk `05-raw-leads.md`!**
 
 ### 2. GERBANG PEMISAHAN GUARD STATIS VS DINAMIS (WAJIB DIPATUHI!)
 

@@ -23,7 +23,7 @@ Entri `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` tanpa log 
 `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, `REJECTED_DUST`.
 
 **Sah dengan `BUKTI_STATIS` (Kutipan Baris Kode / Dokumen Resmi / On-Chain Bytecode):**
-`REJECTED_FANTASY_MOCK`, `REJECTED_CHEATCODE`, `REJECTED_GENESIS_MIRAGE` (hanya bila pool tunggal live permanen terisi & tanpa factory/withdraw-all), `REJECTED_PRIVILEGED_FANTASY` (hanya bila di luar batas `require` parameter sah), `REJECTED_NON_LIVE_INIT` (hanya bila proxy & implementation sudah terkunci), `REJECTED_NO_VICTIM`, `REJECTED_BY_DESIGN`, `REJECTED_MISMATCH`, `REJECTED_UNPROVEN_DEPLOYMENT`.
+`REJECTED_FANTASY_MOCK` (bukan quirk nyata Kasta 2 dan bukan *Cross-Whitelist Confusion*), `REJECTED_CHEATCODE`, `REJECTED_GENESIS_MIRAGE` (hanya bila pool tunggal live permanen terisi & tanpa factory/withdraw-all), `REJECTED_PRIVILEGED_FANTASY` (hanya bila menuntut admin/oracle berbuat jahat di luar pemicu *permissionless*), `REJECTED_NON_LIVE_INIT` (hanya bila proxy & implementation sudah terkunci), `REJECTED_NO_VICTIM` (bukan *attacker donation/balance-skew*), `REJECTED_BY_DESIGN` (dilarang dipakai bila menghasilkan pencurian dana Positive-EV, insolvensi, atau pembekuan dana permanen), `REJECTED_MISMATCH`, `REJECTED_UNPROVEN_DEPLOYMENT`.
 
 ## Field wajib per entri
 

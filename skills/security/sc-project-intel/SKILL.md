@@ -1,7 +1,7 @@
 ---
 name: sc-project-intel
 description: Phase 0 — Project Intelligence & Direct Reference Link Gatherer (Overview, Main UI, Specific GitHub Repo, Direct Bug Bounty Rules Link, and Direct Past Audit Report Links) into audit/INTEL.md.
-version: 6.1.0
+version: 6.2.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, recon, phase0, intel]
@@ -145,19 +145,17 @@ curl -s -o /dev/null -w '%{http_code} %{url_effective}\n' -L "<url>"
 
 ---
 
-## Cara Konsumsi oleh Hilir (`sc-phase1-recon` & `sc-autopilot`)
+## Cara Konsumsi oleh Hilir (`sc-phase1-recon`, `sc-phase4-report`, & `sc-autopilot`)
 
-`audit/INTEL.md` **dibaca oleh `sc-phase1-recon` pada awal Fase 1** untuk dua hal:
+`audit/INTEL.md` adalah **Pemberi Konteks & Penanda Eligibilitas Non-Destruktif**, **BUKAN** pemangkas populasi kode repositori! Ia dibaca oleh hilir dengan aturan ketat berikut:
 
-1. **(a) Sinkronisasi scope** — memastikan daftar kontrak in-scope di `00b-file-inventory.md`
-   selaras dengan apa yang disebut oleh **link Bug Bounty** (Bagian 3 `INTEL.md`). Kontrak yang
-   tidak masuk cakupan bounty tidak boleh dihitung sebagai permukaan serang yang dapat dibayar.
-2. **(b) Petunjuk Patch-Scar** — menggunakan **daftar laporan audit sebelumnya** (Bagian 4) sebagai
-   petunjuk awal saat melacak *Patch-Scar* di `01-threat-and-env.md`. Temuan auditor terdahulu
-   menandakan area yang pernah ditambal — di situlah jalur sampingan paling sering luput.
+1. **(a) Tagging Eligibilitas di `00b` & Pemisahan Akhir di Fase 4 (`[LIVE_BOUNTY]` vs `[REPO_STAGED]`):**
+   - `sc-phase1-recon` membaca **Bagian 3 `INTEL.md`** (link Bug Bounty & alamat deployment) untuk memberi label informasi pada setiap berkas di `00b-file-inventory.md`: **`[LIVE_BOUNTY]`** (terdaftar eksplisit di halaman bounty / ter-deploy aktif) atau **`[REPO_STAGED]`** (ada di repositori fisik namun belum terdaftar di halaman bounty atau masih HEAD-only).
+   - **LARANGAN KERAS PEMANGKASAN HULU:** Kontrak yang berlabel `[REPO_STAGED]` atau yang tidak tercantum di halaman bounty **DILARANG dihapus dari `00b-file-inventory.md`**, **DILARANG dilewati di Fase 2**, dan **DILARANG dibatalkan pengujian PoC-nya di Fase 3**! Seluruh kontrak `[MUST-AUDIT]` di repositori tetap diaudit dan disimulasikan **100%**; pemisahan eligibilitasnya hanya dilakukan oleh **Hakim Fase 4** (`09-confirmed-findings.md` untuk `[LIVE_BOUNTY]` vs `08-valid-not-eligible.md` kelas `PRE_LIVE_SCOPE / HEAD_ONLY_PROVEN` untuk `[REPO_STAGED]`).
+2. **(b) Petunjuk Patch-Scar & Anti-Blindspot:**
+   - Menggunakan daftar laporan audit sebelumnya (**Bagian 4 `INTEL.md`**) sebagai petunjuk awal saat melacak *Patch-Scar* di `01-threat-and-env.md`. Temuan auditor terdahulu menandakan area yang pernah ditambal secara kustom — di situlah regresi atau ketidaksinkronan fungsi pasangan paling sering luput (**Metode `M-004`**). Area yang pernah diaudit pihak lain **tetap wajib berjejak** di Fase 2 (`LEAD_GENERATED` / `ATTESTED_CLEAN`).
 
-`sc-autopilot` membaca `audit/INTEL.md` pada Tahap Orkestrasi 0 untuk menentukan apakah Fase 1
-boleh dimulai (lihat Gate di bawah).
+`sc-autopilot` membaca `audit/INTEL.md` pada Tahap Orkestrasi 0 untuk menentukan apakah Fase 1 boleh dimulai (lihat Gate di bawah).
 
 ---
 

@@ -23,27 +23,30 @@ Artefak legacy tetap sah dibaca dengan penomoran lamanya. Jangan mencampur penom
 
 ---
 
-## LANGKAH 0 — Rekonsiliasi Identitas Deployment (wajib, sebelum menilai apa pun)
+## LANGKAH 0 — Rekonsiliasi Identitas Deployment (Gerbang Eksklusif Fase 4)
 
-Tujuan: memastikan **kode yang dikutip adalah kode yang berjalan**.
+Tujuan: memisahkan temuan yang sudah terbukti secara mekanis di Fase 3 menjadi dua jalur akhir: **Produksi Aktif** (`09-confirmed-findings.md`) vs **Kode Repo Pre-Live / `HEAD-only`** (`08-valid-not-eligible.md`).
 
-1. Kumpulkan seluruh alamat kontrak yang diklaim (`In-Scope`).
-2. Untuk setiap alamat: ambil source terverifikasi dari explorer (`module=contract&action=getsourcecode`).
-   - Proxy (UUPS/ERC1967): baca slot `0x360894a1…2bbc` untuk mendapat **implementation**, lalu ambil source implementation — bukan proxy-nya.
-3. Bandingkan dengan kode repo yang dikutip:
-   - `sha256` berkas kontrak utama **sama** → klaim boleh disebut berlaku di **produksi**.
-   - **berbeda** → klaim wajib ditandai **`HEAD-only`**, dan verdict tidak boleh melebihi `07-needs-next-step.md`.
-4. Jika explorer tidak dapat diakses atau kontrak tidak terverifikasi, catat **nama sumber yang gagal** (`Sourcify`, `Blockscout`, `Etherscan`, RPC mana). Kegagalan sumber **bukan** bukti bahwa kode sesuai maupun tidak sesuai.
+> **Penting:** Pengecekan ini adalah **wewenang eksklusif Hakim Fase 4**. Fase 3 **dilarang** menghentikan penulisan PoC hanya karena kontrak belum *live* atau `sha256` berbeda.
 
-> **Dilarang** menyatakan sebuah klaim "blocked / butuh repo privat" sebelum langkah ini dijalankan.
+1. Kumpulkan seluruh alamat kontrak produksi yang relevan dari `audit/INTEL.md`, `00-project-map.md`, atau skrip deployment repo.
+2. Untuk setiap alamat kontrak yang diklaim: ambil source/bytecode terverifikasi dari explorer atau RPC (`cast code` / `cast implementation` pada slot EIP-1967 `0x360894a1…2bbc`).
+   - **Peringatan RPC:** Jangan gunakan `eth_call` yang menghasilkan `revert 0x` sebagai bukti fungsi tidak ada di produksi; gunakan **pencocokan selector pada bytecode** (`cast code` + scan `PUSH4 <selector>`) atau verifikasi source explorer.
+3. Bandingkan dengan kode repositori yang diuji pada PoC:
+   - Kode fungsi/kontrak cocok dengan bytecode produksi aktif (`LIVE_MATCH`) dan PoC lulus (`Mode Uji: FORK_LIVE` atau `FORK_DEPLOYED_HEAD` yang identik dengan bytecode live) → klaim sah menyandang `DEPLOYMENT_MATCH: LIVE_MATCH` dan berhak masuk **`09-confirmed-findings.md`**.
+   - Kontrak **belum di-deploy** di mainnet, berada **di luar daftar alamat bounty** saat ini, atau kode di `HEAD` berbeda dari bytecode produksi (`HEAD-only` / `REPO_STAGED`), **TETAPI** PoC eksploitasi pada kode repo tersebut terbukti `PASS` (`FORK_DEPLOYED_HEAD` atau `LOKAL`) dengan dampak finansial nyata → klaim ditandai `DEPLOYMENT_MATCH: HEAD-only (PROVEN_ON_REPO_HEAD)` dan ditempatkan di **`08-valid-not-eligible.md`** dengan kelas `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`!
+   - **DILARANG** membuang temuan HEAD-only yang PoC-nya sudah PASS ke `07-needs-next-step.md` (agar `07` tetap murni untuk kendala pengujian yang belum tuntas, dengan target `07` = 0 entri).
+4. Jika explorer tidak dapat diakses atau kontrak tidak terverifikasi, catat **nama sumber yang gagal** (`Sourcify`, `Blockscout`, `Etherscan`, RPC) dan periksa eksistensi bytecode/selector secara langsung via `cast code`.
 
 ---
 
-## LANGKAH 1 — Jalankan & Periksa Bukti PoC
+## LANGKAH 1 — Jalankan & Periksa Bukti Simulasi PoC (baik untuk `09`, `08`, maupun `06`)
 
-- PoC gagal kompilasi, atau **revert terhadap state nyata** → `REJECTED_POC_FAILS` → `06-refuted-invalid.md`.
-- Rantai target punya RPC publik, tetapi PoC hanya dijalankan lokal tanpa fork state produksi (atau terhalang RPC/tooling, atau masih butuh verifikasi mainnet lanjutan) → `NEEDS_NEXT_STEP` → `07-needs-next-step.md`.
-- **Output test kosong bukan kegagalan.** Pastikan pola pencarian benar (`--match-contract` memakai **nama kontrak**, bukan nama berkas; jalankan `forge test --list` lebih dulu). Baru setelah itu boleh menyimpulkan gagal.
+- Untuk kandidat **`09` & `08`**: PoC wajib dapat dikompilasi dan menghasilkan `[PASS]` (membuktikan invarian patah) pada `FORK_LIVE`, `FORK_DEPLOYED_HEAD`, atau `LOKAL` (khusus non-EVM / rantai tanpa RPC).
+- Untuk entri penolakan di **`06`** (`REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, `REJECTED_DUST`):
+  - PoC hanya sah dinyatakan gagal (`REJECTED_POC_FAILS`) atau merugi (`REJECTED_NEGATIVE_EV` / `REJECTED_DUST`) apabila di dalam entri `06` dilampirkan **bukti eksekusi simulasi nyata** (log terminal yang menjalankan *Victim Seeding* + *3-Way Amplification* + Strike 3 Fuzzing `testFuzz_`/`proptest`/`halmos`).
+  - Menolak lead ke `06` hanya dengan hitungan/argumen teks di atas kertas tanpa log eksekusi test adalah pelanggaran **`PAPER_REFUTATION_DETECTED`** (Pernyataan #11e) → **laporan DITOLAK** dan lead dikembalikan ke Fase 3!
+- **Output test kosong bukan bukti kegagalan maupun keamanan.** Pastikan pola pencarian benar (`--match-contract` memakai **nama kontrak**, bukan nama berkas; jalankan `forge test --list` lebih dulu).
 
 ---
 
@@ -117,8 +120,8 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 → `REJECTED_FANTASY_MOCK`
 
 **2. Kesetiaan Deployment & Provenance Kode (Deployment Fidelity)** — *baru*
-> *"Kode yang dikutip terbukti identik dengan yang berjalan di produksi (source terverifikasi explorer, atau sha256 yang sama), **atau** klaim secara eksplisit ditandai `HEAD-only` dan verdict-nya tidak melebihi `07-needs-next-step.md`."*
-→ Pelanggaran: `REJECTED_UNPROVEN_DEPLOYMENT` → `06-refuted-invalid.md` (bila klaim dipaksakan sebagai produksi).
+> *"Kode yang dikutip terbukti identik dengan yang berjalan di produksi (`DEPLOYMENT_MATCH: LIVE_MATCH` via source terverifikasi explorer / selector-scan bytecode / sha256 yang sama), **atau** klaim ditandai `HEAD-only (PROVEN_ON_REPO_HEAD)` dan ditempatkan di `08-valid-not-eligible.md` kelas `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — **bukan** diparkir di `07`."*
+> → Pelanggaran: `REJECTED_UNPROVEN_DEPLOYMENT` → `06-refuted-invalid.md` (bila klaim dipaksakan sebagai produksi **tanpa** PoC PASS).
 
 **3. Keadaan Likuiditas Nyata (No Empty-Pool Mirage)**
 > *"Eksploitasi terbukti berhasil pada keadaan TVL dan likuiditas nyata di produksi, bukan mengandalkan `totalSupply == 0` / First Depositor Attack pada pool yang sudah live atau sudah mencetak dead shares saat deploy — kecuali PoC membuktikan penyerang mampu membuat pool resmi baru secara permissionless atau menguras TVL ke nol lebih dulu."*
@@ -239,8 +242,9 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | Verdict | Ketegasan | Kriteria | Wadah |
 |---|---|---|---|
 | `VALID_ELIGIBLE` | Lolos 11 pernyataan | Fork PASS + tanpa curang + bahaya finansial nyata (Critical/High/Medium) | `09-confirmed-findings.md` |
-| `VALID_NOT_ELIGIBLE` | Dalam batasan (#7b, #8b, #10b) | Mekanisme nyata, dampak Low/annoying, admin-only, atau belum live | `08-valid-not-eligible.md` |
-| `NEEDS_NEXT_STEP` | Dalam batasan eksplorasi (#9b) | Logika kuat, butuh fork/verifikasi mainnet/RPC; atau klaim `HEAD-only` — **wajib `Disposition:` + blok `PERCOBAAN:`** | `07-needs-next-step.md` |
+| `VALID_NOT_ELIGIBLE` | Dalam batasan (#7b, #8b, #10b) | Mekanisme nyata & PoC PASS, dampak Low/annoying, admin-only, atau `HEAD_ONLY_PROVEN` | `08-valid-not-eligible.md` |
+| `NEEDS_NEXT_STEP` | Dalam batasan eksplorasi (#9b) | Logika kuat tetapi pengujian **belum tuntas** — **wajib `Disposition:` + blok `PERCOBAAN:`** | `07-needs-next-step.md` |
+| `PAPER_REFUTATION_DETECTED` | **Penolakan laporan (#11e)** | Entri `06` (`REJECTED_POC_FAILS`/`REJECTED_NEGATIVE_EV`/`REJECTED_DUST`) tanpa log eksekusi test + Strike 3 Fuzz | **DITOLAK** → kembali ke Fase 3 |
 | `LAZY_BAILOUT_DETECTED` | **Penolakan laporan (#11)** | Entri `07` tanpa bukti usaha: `TOOL_BLOCKED` tanpa log 3-Step Self-Healing, `NEXT_MAINNET` padahal RPC tersedia, `NEXT_EXPLORE` tanpa log fuzzer/halmos mentok timeout, atau label basi | **DITOLAK** → kembali ke Fase 3 |
 | `AUDIT_INCOMPLETE_COVERAGE_BIAS` | **Penolakan laporan (#11d)** | Cakupan `[MUST-AUDIT]` < 80% di domain mana pun, berkas terbesar per domain `BELUM`, domain 0%, gate pemetaan < 100%, atau `ATTESTED_CLEAN` tanpa `File:Baris` | **DITOLAK** → kembali ke Fase 1/2 |
 | `REJECTED_POC_FAILS` | Gugur mutlak (#9a) | PoC gagal kompilasi / revert di state nyata | `06-refuted-invalid.md` |

@@ -1,53 +1,59 @@
 ---
 name: sc-phase3-verify-and-poc
-description: Phase 3 — Dynamic Registry-Routed Pre-PoC Triage (M-001..M-NNN & [POV-XX]), 6-Tier Local Fork Exploit Simulation, and Pure Staging Distribution (06, 07, 09).
-version: 6.1.0
+description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
+version: 6.2.0
 ---
 
-# Phase 3: Pre-PoC Sanity Check & Local Fork Exploit Simulation
+# Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
 
-Tujuan Fase 3 adalah menguji setiap hipotesis di audit/05-raw-leads.md dengan triage batch berbasis metode, lalu simulasi transaksi eksploitasi nyata di sandbox lokal/fork tanpa kecurangan, dan mendistribusikan hasilnya (via `audit/notes/staging-<lead>.md`) ke tiga wadah murni: audit/06-refuted-invalid.md, audit/07-needs-next-step.md, atau audit/09-confirmed-findings.md — **penulisan ke ketiga wadah itu dilakukan Parent, bukan Subagent**.
+Tujuan Fase 3 adalah menguji setiap hipotesis di audit/05-raw-leads.md di dalam laboratorium simulasi eksekusi nyata (Dual-Mode Fork: `FORK_LIVE` untuk kontrak produksi aktif, atau `FORK_DEPLOYED_HEAD` untuk kode repositori di atas state rantai nyata), dilengkapi *Realistic Victim Lifecycle Seeding* dan *Fuzzing Escalation*, lalu mendistribusikan hasilnya (via `audit/notes/staging-<id>.md`) ke tiga wadah murni: audit/06-refuted-invalid.md, audit/07-needs-next-step.md, atau audit/09-confirmed-findings.md — **penulisan ke ketiga wadah itu dilakukan Parent, bukan Subagent**.
+
+**HUKUM INTI FASE 3 (SIMULATION-FIRST & BLIND TO BOUNTY SCOPE):**
+
+1. **DILARANG menyentuh `08-valid-not-eligible.md` di Fase 3.** Pemisahan administratif apakah kontrak masih *pre-live* (HEAD-only), *admin-only*, atau berdampak *Low* adalah wewenang eksklusif Hakim Fase 4 (`VERDICT.md`) **setelah** mekanisme berhasil dibuktikan.
+2. **Hukum *No Code, No Reject*:** DILARANG KERAS menggugurkan lead logika, matematika, pembulatan, likuidasi, atau transisi state ke `06` hanya dengan hitungan kertas atau baca kode sekilas **tanpa menjalankan kode test** (`forge test` / `cargo test` / `sui move test`).
 
 **GERBANG TULIS (WAJIB):** sebelum menulis satu byte pun ke `audit/*.md` atau `notes/staging-*`, baca **`workspace/AGENTS.md` Pasal 1.3 (Protokol Anti-Truncate & Metode Write)**. `open(path,"w")` dan `>` shell **DILARANG**; untuk `05`/`07` gunakan `append` lalu `patch` saat status berubah, untuk `06`/`08`/`09` cukup `append`.
 
 ---
 
-## Langkah 0b: Anti-Rabbit-Hole — 2-Strike Circuit Breaker (WAJIB, berlaku sepanjang Fase 3)
+## Langkah 0b: Anti-Rabbit-Hole & Anti-Premature-Death — Protokol 2-Manual + 1-Fuzz Escalation (WAJIB)
 
-Aturan ini mengikat **setiap lead** di `audit/05-raw-leads.md` dan berlaku sebelum, selama, dan sesudah Langkah 1–3.
+Aturan ini mengikat **setiap lead** di `audit/05-raw-leads.md`: mencegah agen terjebak di satu lead tanpa batas, sekaligus melarang agen mematikan lead terlalu cepat hanya karena salah menebak angka manual.
 
-### 1. Hitungan Strike
+### 1. Hitungan Strike & Kewajiban Eskalasi Fuzz pada Strike 3
+
 Strike dihitung **per lead**, bukan per berkas dan bukan per sesi:
-- **Strike 1** — percobaan PoC pertama gagal: `revert` karena guard yang sah, `assert` ekspektasi tidak terpenuhi, **atau** selisih profit negatif / nol.
-- **Strike 2** — percobaan perbaikan pertama juga gagal dengan sebab yang sama.
 
-> Perbaikan **infrastruktur** (compile error, import salah, checksum alamat, salah ABI, salah offset decode) **BUKAN strike** — itu kegagalan alat, bukan kegagalan hipotesis. Aturan ini menjaga kasus "revert karena salah pakai `makeAddr`" agar tidak membuang lead yang sebenarnya benar.
+- **Strike 1 (Manual Sequence & Victim Seeding)** — percobaan PoC deterministik pertama gagal (`revert` karena guard, `assert` tidak terpenuhi, atau selisih profit $\le 0$).
+- **Strike 2 (Perbaikan Setup Siklus Korban / Urutan Aksi / 3-Way Amplification)** — percobaan manual kedua dengan penyesuaian state korban (`vm.prank(victim)`), *flashloan scaling*, atau urutan transaksi juga gagal.
+- **Strike 3 WAJIB (Mandatory Parameter Fuzzing / Symbolic Counterexample)** — **DILARANG** membuang lead ke `06` setelah Strike 2 tanpa menjalankan minimal 1× tes Fuzz (`testFuzz_...` di Foundry / `proptest` di Rust / `halmos`)! Biarkan mesin fuzzer mengacak parameter input (`amount`, `shares`, `timeDelta`, `splitCount`) untuk memastikan kegagalan Strike 1 & 2 **bukan** akibat salah pilih angka manual.
 
-### 2. Aksi Wajib pada Strike Kedua
-Setelah **2 strike berturut-turut pada lead yang sama** — **maksimal 2 percobaan gagal per hipotesis** — agen **WAJIB**:
+> Perbaikan **infrastruktur** (compile error, import salah, checksum alamat, salah ABI, salah offset decode) **BUKAN strike** — itu kegagalan alat, bukan kegagalan hipotesis.
+
+### 2. Aksi Wajib Setelah Strike Ketiga (Fuzz Gagal)
+
+Hanya setelah **Strike 1 (Manual) + Strike 2 (Manual/Amplifikasi) + Strike 3 (Fuzzing)** seluruhnya gagal membuktikan pelanggaran invarian, agen **WAJIB**:
+
 1. Berhenti menyentuh lead tersebut.
-2. Pindahkan ke `audit/06-refuted-invalid.md` dengan vonis `REJECTED_POC_FAILS` (bukan `07`), mencantumkan **kedua** percobaan beserta alasan teknis kegagalannya.
-3. Menulis 1 baris di `audit/notes/fase3-strikes.md`: **"2-STRIKE BREAKER TRIPPED"**, nama lead, dan berkas:baris.
-4. **Wajib pindah ke berkas/hipotesis lain** — bukan lanjut ke variasi lain dalam berkas yang sama.
+2. Tulis entri ke **staging** untuk `audit/06-refuted-invalid.md` dengan vonis `REJECTED_POC_FAILS` (atau `REJECTED_NEGATIVE_EV` / `REJECTED_DUST`), **wajib melampirkan perintah dan ringkasan log eksekusi ketiga percobaan** (termasuk jumlah *runs* pada Strike 3 Fuzz).
+3. Menulis 1 baris di `audit/notes/fase3-strikes.md`: **`"3-STAGE BREAKER TRIPPED"`**, nama lead, dan `berkas:baris`.
+4. **Wajib pindah** ke berkas/hipotesis lain.
 
-### 3. Larangan Iterasi Ketiga
-**DILARANG** melakukan iterasi ke-3 pada berkas/fungsi yang sama sebelum **seluruh lead lain di `05-raw-leads.md`** selesai melewati Langkah 1a (batch triage) **dan** pengujian awal (maksimal 1 strike masing-masing).
+### 3. Larangan Iterasi Keempat & Syarat Buka Kembali
 
-Lead boleh **dibuka kembali** hanya bila ada **bukti baru yang material**:
-- state on-chain nyata yang belum dibaca sebelumnya (membantah asumsi strike sebelumnya),
-- source terverifikasi explorer yang berbeda dari asumsi kode,
-- kombinasi *chaining* dengan lead **lain** yang sudah lolos uji awalnya.
+**DILARANG** melakukan iterasi ke-4 pada hipotesis yang sama sebelum **seluruh lead lain** di `05-raw-leads.md` selesai diuji. Lead boleh dibuka kembali **hanya** bila ada **bukti baru yang material** (kombinasi *chaining* dengan lead lain yang sudah lolos uji, atau penemuan jalur mutasi variabel baru).
 
-Ide baru, sudut pandang baru, atau "coba saja cara lain" **BUKAN** bukti material dan tidak membuka kunci.
+### 4. Format Pencatatan Strike
 
-### 4. Anggaran Waktu per Lead
+```
+<LEAD-ID> | <berkas:baris> | Strike 1: <sebab> | Strike 2: <sebab> | Strike 3 Fuzz: <perintah> | runs: <n> | STATUS: TRIPPED/BELUM
+```
+Lead tanpa entri strike berarti **belum diuji sama sekali** — bukan berarti bersih. Strike 3 tanpa `runs: <n>` dianggap tidak dijalankan.
+
+### 5. Anggaran Waktu per Lead
+
 Sebelum meninggalkan satu lead, catat di `audit/notes/fase3-strikes.md` berapa **jumlah percobaan** dan **berapa berkas lain yang masih `BELUM`** di `00b-file-inventory.md`. Bila percobaan > 3 sementara berkas `BELUM` masih > 0, itu pelanggaran aturan dan wajib dilaporkan sebagai kegagalan proses.
-
-### 5. Format Pencatatan Strike
-```
-<LEAD-ID> | <berkas:baris> | Strike 1: <sebab> | Strike 2: <sebab> | STATUS: TRIPPED/BELUM
-```
-Lead tanpa entri strike berarti belum diuji sama sekali — bukan berarti bersih.
 
 ---
 
@@ -194,7 +200,7 @@ Setelah Langkah 1a lolos, **DILARANG** mengerjakan PoC berdasarkan urutan nomor 
 2. **Keterwakilan domain** — pastikan lead dari domain berbeda ikut dieksekusi; jangan habiskan kuota pada satu domain.
 3. **Biaya bukti paling murah** pada EV setara — lead yang butuh satu `cast call` didahulukan daripada yang butuh harness baru.
 
-**Batalkan PoC kapan saja** begitu `2-Strike Circuit Breaker` (Langkah 0b) terpicu.
+**Batalkan PoC kapan saja** begitu `3-Stage Breaker` (Langkah 0b) terpicu — yaitu setelah Strike 1 (Manual) + Strike 2 (Manual/Amplifikasi) + Strike 3 (Fuzz) seluruhnya gagal.
 
 **Pengunci Anti-Low-Rate #1 — Kuota Beban Identik & Position-Blind Dispatch (*No Tail-End Compression*).**
 Jika dijalankan lewat delegasi Subagent: **1 Subagent menangani maksimal 1 s/d 3 Lead** untuk di-PoC — sama batasnya untuk lead urutan teratas maupun lead urutan paling buntut. **DILARANG KERAS** merapel 5–10 lead sisa di ekor antrean ke dalam satu "Subagent pembersih" di akhir. Prompt Subagent DILARANG memuat label posisi ("sisa", "prioritas rendah", "EV kecil").
@@ -243,4 +249,4 @@ Panggil skill_view pada modul referensi pengujian sesuai rantai di 00-project-ma
    - `Disposition: TOOL_BLOCKED` -> **HANYA setelah Tangga Self-Healing Langkah 0c ditempuh penuh** (Usaha 1: flag/remapping/toolchain; Usaha 2: standalone interface-only / minimal harness; Usaha 3: fallback RPC & rekonstruksi off-chain) **dengan log terminal kegagalan ketiganya dilampirkan di entri `07`**. Tanpa lampiran, label ini tidak sah.
 3. **Gagal di Langkah 0/1 ATAU Simulasi PoC Gagal (`revert`) di State Nyata:**
    Tulis entri lengkap ke **`audit/notes/staging-<lead>.md`** (bukan ke `06` langsung) beserta alasan teknisnya (sertakan `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH` sesuai template `06`), dan hapus file test sementara yang gagal agar folder test/ tetap bersih.
-4. **2-Strike Circuit Breaker:** bila percobaan PoC gagal 2 kali berturut-turut pada lead yang sama, butir 3 berlaku **otomatis** dengan label `REJECTED_POC_FAILS` — lead tidak boleh masuk `07` dan tidak boleh diiterasi ke-3. `07` hanya sah untuk lead yang **belum** mencapai 2 strike.
+4. **3-Stage Breaker (Langkah 0b):** lead hanya boleh masuk `06` `REJECTED_POC_FAILS` setelah **Strike 1 (Manual) + Strike 2 (Manual/Amplifikasi) + Strike 3 (Fuzz `testFuzz_`/`proptest`/`halmos`)** ketiganya gagal — dan ketiga log dilampirkan. `07` hanya sah untuk lead yang **belum** menuntaskan ketiga tahap itu, dan wajib memuat blok `PERCOBAAN:`.

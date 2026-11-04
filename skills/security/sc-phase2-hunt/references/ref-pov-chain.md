@@ -23,7 +23,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   Auditor menguji fungsi pembayaran secara terpisah (1 transaksi = 1 panggilan) di mana `msg.value` memang valid, dan menganggap kontrak pembungkus Multicall dari library standar sudah aman tanpa melihat efek penggabungan keduanya.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
   - *Batas Realitas Statis:* Gugur jika fungsi pembungkus batch **tidak `payable`** DAN kontrak tidak memakai *Transient Storage*/`TSTORE`, serta melacak total pemakaian pembayaran dalam akumulator per-transaksi.
-  - *Routing Simulasi Fase 3:* Jika fungsi batch `payable`, memakai `delegatecall`, loop internal yang membaca `msg.value`, atau *Transient Storage* yang tidak di-reset -> **WAJIB tulis PoC batch call** di simulator (payload multicall berisi $N$ panggilan dengan `msg.value` sekali) + **Strike 3 Fuzz** untuk mengacak `N` dan komposisi payload.
+  - *Routing Simulasi Fase 3:* Cek apakah fungsi batch benar-benar `payable` dan memakai `delegatecall` (atau loop internal yang membaca `msg.value`), atau tidak me-reset slot transient `TSTORE`. Jika ya -> wajib tulis PoC simulasi batch 1 transaksi dengan $N$ sub-call dan verifikasi penggandaan saldo!
 
 ---
 
@@ -45,7 +45,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   Auditor melihat deklarasi tipe `Account<'info, ...>` di Anchor sudah memeriksa pemilik dan diskriminator tipe, sehingga berasumsi dua variabel parameter dengan nama berbeda pasti menunjuk ke dua akun berbeda dan nilainya selalu mutakhir sepanjang fungsi.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
   - *Batas Realitas Statis:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** constraint `key() !=` terpasang pada **seluruh** pasangan akun `mut`/`remaining_accounts` **DAN** `.reload()?` dipanggil setiap kali data akun dibaca ulang pasca-CPI.
-  - *Routing Simulasi Fase 3:* Jika salah satu absen -> **WAJIB tulis test** di simulator (LiteSVM/`solana-program-test`) dengan akun kembar `[A, A]` atau skenario CPI yang mengubah akun lalu membaca snapshot lokal; tambahkan *fuzz* pada jumlah `remaining_accounts` dan isi duplikat.
+  - *Routing Simulasi Fase 3:* Cek pada struct `#[derive(Accounts)]` dan tubuh instruksi: jika constraint `key() !=` **belum** terpasang pada pasangan akun `mut`/`remaining_accounts` **ATAU** `.reload()?` tidak dipanggil pasca-CPI sebelum akun dibaca/ditulis ulang -> wajib tulis tes simulasi (`cargo test` / LiteSVM / Bankrun) yang mengirim akun kembar `[A, A]` atau memicu CPI!
 
 ---
 
@@ -67,7 +67,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   Auditor mengandalkan jaminan keamanan tipe Move (`has key`, linear *Hot Potato*, dan *auto-overflow check* pada `+`/`*`), tanpa menyadari bahwa tipe yang sama bisa berasal dari instansi objek yang berbeda dan operator `<<` di Move dapat memangkas bit tinggi secara diam-diam.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
   - *Batas Realitas Statis:* Gugur jika setiap objek bukti/posisi mengikat dan memverifikasi `object::id` dari objek wadah induknya di setiap fungsi, serta operasi `<<` memeriksa batas atas secara presisi sebelum digeser.
-  - *Routing Simulasi Fase 3:* Selama `assert!(receipt.pool_id == object::id(pool))` **belum** ada, atau mask `<<` tidak menolak bit tertinggi -> **WAJIB tulis `#[test]`** di `sui move test` / `aptos move test` yang membangun PTB dengan objek kembar atau memasukkan angka batas bit tinggi, lalu ukur selisih kewajiban yang tercipta.
+  - *Routing Simulasi Fase 3:* Cek apakah `assert!(receipt.pool_id == object::id(pool))` absen atau apakah operasi geser bit `<<` dapat memangkas bit tinggi. Jika salah satu bocor -> wajib tulis tes simulasi (`sui move test` / `aptos move test`) yang merangkai PTB multi-objek atau menguji input batas bit-shift dengan fuzzer!
 
 ---
 
@@ -89,7 +89,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   Auditor melihat kontrak sudah menyediakan fungsi `on_bounce` lalu menganggap mekanisme *rollback* asinkron sudah tuntas, tanpa menghitung offset bit pada skema serialisasi pesan yang dikirim.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
   - *Batas Realitas Statis:* Gugur jika seluruh data pemulihan disimpan di storage lokal kontrak pengirim (diindeks `query_id` yang muat di dalam 224 bit pertama) **DAN** entitas dikunci penuh selama status *in-flight* belum selesai.
-  - *Routing Simulasi Fase 3:* Jika handler `bounced` membaca data dari payload **ATAU** ada pengiriman pesan multi-hop / state tidak terkunci -> **WAJIB uji di `@ton/sandbox`** dengan skenario pesan gagal (*bounce*) atau interleaving dua pesan *in-flight*, lalu ukur saldo/state akhir tiap aktor.
+  - *Routing Simulasi Fase 3:* Hitung offset bit pada payload pesan keluar (apakah data krusial berada setelah bit ke-224 atau di dalam `ref`?) dan periksa apakah state dikunci selama *in-flight*. Jika melewati 224 bit / berada di `ref` **ATAU** state tidak dikunci selama *in-flight* -> wajib tulis tes simulasi (`@ton/sandbox` / Blueprint) yang memicu *bounced message* atau menyisipkan pesan kedua saat *in-flight*!
 
 ---
 

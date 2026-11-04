@@ -27,7 +27,7 @@ Bandingkan `audit/00b-file-inventory.md` (populasi fisik seluruh kontrak non-tes
 
 **(a) Gerbang Pemetaan (warisan Fase 1):** berkas `[MUST-AUDIT]` yang `TERPETAKAN_DI_UNIT` ÷ total `[MUST-AUDIT]` di `00b` = **100%**.
 
-**(b) Gerbang Jejak (Fase 2):** berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` (wajib bersitasi `File:Baris` per fungsi) ÷ total `[MUST-AUDIT]` >= **80% per domain**, dan pada Gerbang Fase 4 harus mencapai **0 berkas `BELUM`** di seluruh domain.
+**(b) Gerbang Jejak (Fase 2):** berkas `[MUST-AUDIT]` berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` (wajib bersitasi `File:Baris` per fungsi) ÷ total `[MUST-AUDIT]` = **100% per domain** (`0 berkas BELUM`, `0 berkas DIBACA gantung`, dan `0 berkas DEFERRED` di seluruh domain).
 
 - **Penyebut:** seluruh berkas `[MUST-AUDIT]` di inventaris.
 - `00b` **dieksklusi** dari pemindaian jejak (pengukur tidak boleh menjadi bagian populasi yang diukur).
@@ -46,7 +46,7 @@ Untuk setiap domain `D1..Dn` yang memiliki berkas `[MUST-AUDIT]`, hitung cakupan
 | Kondisi | Status |
 |---|---|
 | Gerbang pemetaan: berkas `TERPETAKAN_DI_UNIT` **< 100%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
-| Gerbang jejak: cakupan `[MUST-AUDIT]` **< 80%** atau masih ada berkas `BELUM` | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
+| Gerbang jejak: cakupan `[MUST-AUDIT]` **< 100%** (masih ada berkas `BELUM`, `DIBACA` gantung, atau `DEFERRED`) | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
 | Ada **>=1 domain** wajib ber-cakupan **0%** | `AUDIT_INCOMPLETE_COVERAGE_BIAS` |
 | Seluruh kondisi di atas terpenuhi | lanjut ke Langkah 3b & 3c |
 

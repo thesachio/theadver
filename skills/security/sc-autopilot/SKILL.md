@@ -49,7 +49,7 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 - Active Files in Scope: <path berkas nyata>
 - Active Strike Count (Fase 3): <0/3 (2 Manual + 1 Mandatory Fuzz) atau "-" bila masih Fase 2>
 
-## 2. Domain Coverage Meter (Syarat Gate >= 80%)
+## 2. Domain Coverage Meter (Syarat Gate = 100% `[MUST-AUDIT]`)
 | Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
 
 ## 3. Working Memory Scratchpad (Maks 10 Baris — Konteks Sementara Unit Aktif)
@@ -177,7 +177,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
    - Rotasi berjalan lintas domain `D1 -> D2 -> ... -> Dn -> D1`. Di dalam setiap domain, unit `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` (baik yang berlabel `[LIVE_BOUNTY]` maupun `[REPO_STAGED]`) dibedah **tanpa mendiskriminasi urutan bawah** — kontrak `[CLASS-A]` tunggal bisa memegang 100% TVL.
    - **1 panggilan `delegate_task` = tepat 1 Unit `S-n`.** DILARANG merapel beberapa unit di ekor antrean (*No Tail-End Compression*).
    - Prompt Subagent **DILARANG** memuat label "prioritas rendah / urutan bawah / EV kecil / belum masuk bounty" (*Position-Blind*).
-   - Gate keluar: >= 80% berkas `[MUST-AUDIT]` berjejak di **SETIAP** domain (dan 0 berkas `BELUM`). DILARANG memakai kuota "minimal N lead per domain".
+   - Gate keluar: **= 100%** berkas `[MUST-AUDIT]` berjejak di **SETIAP** domain (**0** berkas `BELUM`). DILARANG memakai kuota "minimal N lead per domain".
 
 1. **Putaran 1 (Mikro — metode sesuai kelas topologi unit + Gerbang Guard Statis vs Dinamis):**
    - Ambil **satu** unit dari `audit/03-attack-surface-queue.md`, panggil `delegate_task` satu per satu.
@@ -186,7 +186,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
        - Path Absolut Proyek, Paradigma Rantai, Core Invariants dari `00-project-map.md`, path `01-threat-and-env.md` & `02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
        - Wajib `skill_view('sc-phase2-hunt')`, lalu baca **`references/ref-method-registry.md`** dan **`references/ref-attacker-pov.md`**.
        - **Jalankan paket metode `M-001..M-NNN` sesuai kelas topologi unit**:
-         `[CLASS-A]` → *Single-Pass Deep Kill* (`M-005` inline saat itu juga);
+         `[CLASS-A]` → *Single-Pass Deep Kill* (`M-001`, `M-002`, `M-003` internal 2-akun, `M-004`, `M-005` inline saat itu juga, `M-006` Prinsip B, `M-007`, `M-009`, `M-010` post-upgrade/residual lokal);
          `[CLASS-B]` → *Dual-Entity* (CLASS-A + `M-003`, `M-006` Prinsip A+B, `M-008`, `M-010`);
          `[CLASS-C]` → *Multi-Entity Long Flow* (paket penuh, penekanan rantai komposisi panjang).
        - **Lazy-load `references/ref-pov-*.md`** HANYA bila gejala pemicu di tabel router `ref-attacker-pov.md` terpenuhi.
@@ -196,7 +196,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
 
 2. **Putaran 2 / Sintesis Lintas-Jalur:**
    - Bongkar **seluruh guard statis** di `04-code-guarded.md` lintas-entitas (`M-005` cross-contract, `M-008` seam, `M-009` suspended lifecycle, `M-010` residual/drift).
-   - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan >= 80% per domain (0 berkas `BELUM`, atestasi bersitasi `File:Baris` lolos §2b) dan Putaran 2 ditutup.
+   - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan **= 100%** per domain (**0** berkas `BELUM`, atestasi bersitasi `File:Baris` lolos §2b) dan Putaran 2 ditutup.
 
 ---
 
@@ -227,7 +227,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
 
 ### Tahap Orkestrasi 4: Final Verdict Judging, Deployment Split (09 vs 08), & Laporan 6 File (sc-phase4-report)
 0. **Pre-flight — TIGA GERBANG INTEGRITAS:** set `PHASE: 4`.
-   - **(i) Coverage Gate (Langkah 0a.1–3 / Pernyataan #11c & #11d):** bandingkan `00b-file-inventory.md` (100% populasi fisik repo) dengan tabel cakupan `03-attack-surface-queue.md`. Kontrak `[REPO_STAGED]` adalah **bagian sah** dari `00b` (bukan `COVERAGE_BIAS`). Bila cakupan `[MUST-AUDIT]` **< 80%**, ada **domain 0%**, ada berkas `BELUM`, atau ada `ATTESTED_CLEAN` hampa tanpa `File:Baris` -> **`AUDIT_INCOMPLETE_COVERAGE_BIAS`**: TOLAK laporan, kembalikan ke Fase 1/2.
+   - **(i) Coverage Gate (Langkah 0a.1–3 / Pernyataan #11c & #11d):** bandingkan `00b-file-inventory.md` (100% populasi fisik repo) dengan tabel cakupan `03-attack-surface-queue.md`. Kontrak `[REPO_STAGED]` adalah **bagian sah** dari `00b` (bukan `COVERAGE_BIAS`). Bila cakupan `[MUST-AUDIT]` **< 100%** (masih ada berkas `BELUM`, `DIBACA` gantung, atau `DEFERRED`), ada **domain 0%**, atau ada `ATTESTED_CLEAN` hampa tanpa `File:Baris` -> **`AUDIT_INCOMPLETE_COVERAGE_BIAS`**: TOLAK laporan, kembalikan ke Fase 1/2.
    - **(ii) LAZY_BAILOUT Gate pada `07` (Langkah 0a.3b / Pernyataan #11):** jalankan `python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py audit/07-needs-next-step.md`. Entri `07` tanpa bukti komputasi nyata -> **`LAZY_BAILOUT_DETECTED`**: TOLAK laporan, kembalikan ke Fase 3. **Target akhir `07` = 0 entri.**
    - **(iii) ANTI-PAPER-REFUTATION Gate pada `06` (Langkah 0a.3c / Pernyataan #11e):** periksa seluruh entri `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, dan `REJECTED_DUST` di `06-refuted-invalid.md`. Bila ada yang tidak memuat log eksekusi test + Strike 3 Fuzz (`BUKTI_SIMULASI:`) -> **`PAPER_REFUTATION_DETECTED`**: TOLAK laporan, kembalikan lead tersebut ke Fase 3 untuk disimulasikan!
 

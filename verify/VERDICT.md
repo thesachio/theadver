@@ -55,6 +55,7 @@ Tujuan: memisahkan temuan yang sudah terbukti secara mekanis di Fase 3 menjadi d
 1. **Cheatcode terlarang**: `vm.prank` sebagai admin/owner/pool/keeper, `vm.store`, `vm.etch` state protokol, `deal` ke kontrak protokol, `vm.warp` lintas waktu tak wajar, reentrancy lewat `.transfer()` (2300 gas) → `REJECTED_CHEATCODE` → `06-refuted-invalid.md`.
    - Pengecualian yang sah: `vm.deal` ke **dompet penyerang/pelaku uji**; `vm.prank` sebagai **EOA tanpa hak**; `vm.etch` **lingkungan predeploy** pada uji lokal (wajib dicatat sebagai deviasi).
 2. **Fantasy mock**: mengarang sifat Token Kasta 1 (LP Token, Vault Share, Receipt Token, WETH, token internal) berupa Fee-on-Transfer/Rebase/Callback/gagal-bool, menganggap USDT mainnet memotong fee, atau menyuntikkan kontrak jahat ke parameter yang dikunci Factory/Whitelist → `REJECTED_FANTASY_MOCK`.
+   - *(Catatan Penting Anti-False-Negative: Menguji quirk nyata dari token **Kasta 2** yang memang didukung protokol — seperti USDT non-zero `approve` revert, USDC/USDT blacklist DoS, stETH 1-wei transfer rounding, PAXG transfer fee, atau ekstensi SPL Token-2022 — adalah **FAKTA PRODUKSI** yang sah dan **DILARANG divonis sebagai `REJECTED_FANTASY_MOCK`!*)*
 3. **Mock-driven verdict (baru)**: mock terhadap **komponen protokol/bridge pihak ketiga** (CCTP `MessageTransmitter`, LayerZero endpoint, precompile) hanya boleh menopang bukti **STRUKTURAL**. Bukti semacam itu **dilarang** menaikkan verdict ke `09` maupun dipakai untuk menyatakan sebuah jalur "aman".
 
 ---
@@ -77,8 +78,8 @@ Baca **hanya** rentang baris yang diklaim beserta fungsi penjaga di sekitarnya.
 
 | Gerbang | Ambang | Diukur pada |
 |---|---|---|
-| **Gerbang Fase 2** | ≥ 80% berkas `[MUST-AUDIT]` per domain berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` | `audit/03-attack-surface-queue.md` |
-| **Gerbang Fase 4** | 0 berkas `BELUM` di seluruh domain | tabel cakupan di `03` |
+| **Gerbang Fase 2** | **= 100%** berkas `[MUST-AUDIT]` per domain berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` (**0** berkas `BELUM` / `DIBACA` / `DEFERRED`) | `audit/03-attack-surface-queue.md` |
+| **Gerbang Fase 4** | **= 100%** berkas `[MUST-AUDIT]` per domain berjejak, **0** berkas `BELUM` / `DIBACA` / `DEFERRED` di seluruh domain | tabel cakupan di `03` |
 
 **DILARANG memakai "jumlah lead per domain" sebagai metrik kelulusan.** Kuota lead memicu pembuatan lead sampah pada modul yang memang aman (hukum Goodhart). Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis.
 
@@ -90,7 +91,7 @@ Vonis ini dijatuhkan bila **salah satu** terpenuhi:
 
 1. Ada domain `D1..Dn` tanpa berkas `[MUST-AUDIT]` sama sekali di antrean (domain kosong / tidak terwakili).
 2. Ada berkas `[MUST-AUDIT]` berstatus `BELUM`, atau berstatus `DICAKUP_U1/U10/S-xx` tanpa uji spesifik.
-3. Ada domain dengan cakupan < 80% pada Gerbang Fase 2.
+3. Ada domain dengan cakupan **< 100%** pada Gerbang Fase 2.
 4. Audit memakai sampel, bukan populasi penuh yang terdaftar di `00b-file-inventory.md`.
 
 **Bila `AUDIT_INCOMPLETE_COVERAGE_BIAS` dijatuhkan:**
@@ -118,6 +119,7 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 **1. Keaslian Entitas & Aset (No Fantasy Mock)**
 > *"Seluruh token, LP token, share/receipt token, dan kontrak yang berinteraksi di dalam PoC memakai kode asli repositori, atau tiruan yang perilakunya 100% identik dengan aset produksi (tidak mengarang Fee-on-Transfer/Rebase/USDT-quirk pada token standar, dan tidak menyuntikkan kontrak jahat ke parameter yang dikunci Factory/Whitelist)."*
 → `REJECTED_FANTASY_MOCK`
+> *(Catatan Penting Anti-False-Negative: Menguji quirk nyata dari token **Kasta 2** yang memang didukung protokol — seperti USDT non-zero `approve` revert, USDC/USDT blacklist DoS, stETH 1-wei transfer rounding, PAXG transfer fee, atau ekstensi SPL Token-2022 — adalah **FAKTA PRODUKSI** yang sah dan **DILARANG divonis sebagai `REJECTED_FANTASY_MOCK`!)*
 
 **2. Kesetiaan Deployment & Pemisahan Live vs Repo-HEAD (Deployment Fidelity)**
 > *"Untuk masuk ke `09-confirmed-findings.md`, kode yang diserang wajib terbukti eksis dan aktif pada deployment produksi (`LIVE_MATCH`). Apabila PoC eksploitasi berhasil (`[PASS]`) membuktikan kerentanan nyata pada kode repositori (`FORK_DEPLOYED_HEAD` / `LOKAL`), namun kontrak/fitur tersebut masih berstatus `HEAD-only` (belum di-deploy ke mainnet atau berbeda dari bytecode produksi aktif), temuan tersebut **WAJIB disimpan secara utuh** di `08-valid-not-eligible.md` dengan kelas `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — bukan dipaksakan ke `09` dan bukan diparkir di `07`."*
@@ -193,12 +195,12 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 
 > **Prosedur, ambang, dan format tabel cakupan: lihat [LANGKAH 4a](#langkah-4a--gate-cakupan-wajib-sebelum-langkah-4) (sumber normatif).** Bagian ini hanya menetapkan **status vonis** dan akibatnya di tingkat laporan; bila ada perbedaan redaksi, **LANGKAH 4a yang menang**.
 
-> *"Cakupan berkas `[MUST-AUDIT]` yang berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` mencapai minimal 80% di setiap domain, dan tidak ada berkas terbesar di suatu domain yang masih berstatus `BELUM`."*
+> *"Cakupan berkas `[MUST-AUDIT]` yang berstatus `LEAD_GENERATED` atau `ATTESTED_CLEAN` mencapai **100% di setiap domain**, tanpa berkas yang masih berstatus `BELUM`, `DIBACA`, maupun `DEFERRED`."*
 
 Hakim **WAJIB** menghitung sendiri dari `00b-file-inventory.md` × `03-attack-surface-queue.md`, bukan mempercayai tabel cakupan yang ditulis pelaksana.
 
 **Syarat tolak (salah satu saja cukup):**
-1. Cakupan `[MUST-AUDIT]` berstatus `LEAD_GENERATED` / `ATTESTED_CLEAN` **< 80%** pada domain mana pun.
+1. Cakupan `[MUST-AUDIT]` berstatus `LEAD_GENERATED` / `ATTESTED_CLEAN` **< 100%** pada domain mana pun (termasuk sisa berkas `DIBACA` atau `DEFERRED`).
 2. Ada berkas `[MUST-AUDIT]` berstatus `BELUM`, atau berstatus `DICAKUP_U1/U10/S-xx` tanpa uji spesifik.
 3. Ada domain `D1..Dn` tanpa berkas `[MUST-AUDIT]` sama sekali di antrean (domain kosong / tidak terwakili).
 4. Audit memakai sampel, bukan populasi penuh yang terdaftar di `00b-file-inventory.md` (gate pemetaan < 100%).
@@ -253,7 +255,7 @@ Pelanggaran aturan ini pernah menghasilkan satu temuan High **palsu** yang nyari
 | `NEEDS_NEXT_STEP` | Dalam batasan eksplorasi (#9b) | Logika kuat tetapi pengujian **belum tuntas** — **wajib `Disposition:` + blok `PERCOBAAN:`** | `07-needs-next-step.md` |
 | `PAPER_REFUTATION_DETECTED` | **Penolakan laporan (#11e)** | Entri `06` (`REJECTED_POC_FAILS`/`REJECTED_NEGATIVE_EV`/`REJECTED_DUST`) tanpa log eksekusi test + Strike 3 Fuzz | **DITOLAK** → kembali ke Fase 3 |
 | `LAZY_BAILOUT_DETECTED` | **Penolakan laporan (#11)** | Entri `07` tanpa bukti usaha: `TOOL_BLOCKED` tanpa log 3-Step Self-Healing, `NEXT_MAINNET` padahal RPC tersedia, `NEXT_EXPLORE` tanpa log fuzzer/halmos mentok timeout, atau label basi | **DITOLAK** → kembali ke Fase 3 |
-| `AUDIT_INCOMPLETE_COVERAGE_BIAS` | **Penolakan laporan (#11d)** | Cakupan `[MUST-AUDIT]` < 80% di domain mana pun, berkas terbesar per domain `BELUM`, domain 0%, gate pemetaan < 100%, atau `ATTESTED_CLEAN` tanpa `File:Baris` | **DITOLAK** → kembali ke Fase 1/2 |
+| `AUDIT_INCOMPLETE_COVERAGE_BIAS` | **Penolakan laporan (#11d)** | Cakupan `[MUST-AUDIT]` **< 100%** di domain mana pun, sisa berkas `BELUM`/`DIBACA`/`DEFERRED`, domain 0%, gate pemetaan < 100%, atau `ATTESTED_CLEAN` tanpa `File:Baris` | **DITOLAK** → kembali ke Fase 1/2 |
 | `REJECTED_POC_FAILS` | Gugur mutlak (#9a) | PoC gagal kompilasi / revert di state nyata | `06-refuted-invalid.md` |
 | `REJECTED_FANTASY_MOCK` | Gugur mutlak (#1) | Sifat palsu pada token Kasta 1 / parameter ter-whitelist | `06-refuted-invalid.md` |
 | `REJECTED_CHEATCODE` | Gugur mutlak (#9a) | `vm.store`/`vm.etch`/`vm.prank(admin)`/fisika rantai dilanggar | `06-refuted-invalid.md` |

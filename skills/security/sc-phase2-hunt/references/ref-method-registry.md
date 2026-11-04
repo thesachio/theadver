@@ -12,7 +12,7 @@ Kelas ditentukan murni berdasarkan **jumlah entitas yang berinteraksi dan panjan
 
 | Kelas Topologi | Definisi Boundary Entitas & Alur Eksekusi | Aturan Eksekusi Fase 2 | Paket Metode Wajib Minimum |
 |---|---|---|---|
-| **`[CLASS-A]`** *(Single-Entity Flow)* | **Satu entitas mandiri** memproses state, validasi guard, kalkulasi, dan transisi alur secara tertutup tanpa ketergantungan panggilan ke entitas lain. | **1 Pass Tajam Tuntas (*Single-Pass Deep Kill*):** Seluruh guard diuji *inline* saat itu juga karena variabel pembentuknya berada di entitas yang sama. | `M-001`, `M-002`, `M-004` *(View-vs-Write & Patch-Scar lokal)*, `M-005` *(Inline Guard-Inversion)*, `M-006` *(Prinsip B: Duplicate Reference `[A,A]`)*, `M-007`, `M-009` *(bila ada state pending lokal)* |
+| `[CLASS-A]` *(Single-Entity Flow)* | Satu entitas mandiri memproses state, validasi guard, kalkulasi, dan transisi alur secara tertutup tanpa ketergantungan panggilan ke entitas lain. | 1 Pass Tajam Tuntas (*Single-Pass Deep Kill*): Seluruh guard diuji *inline* saat itu juga karena variabel pembentuknya berada di entitas yang sama. | M-001, M-002, M-003 *(2 akun/identitas pada 1 kontrak mandiri: self-transfer / self-liquidation)*, M-004 *(View-vs-Write & Patch-Scar lokal)*, M-005 *(Inline Guard-Inversion)*, M-006 *(Prinsip B: Duplicate Reference `[A,A]`)*, M-007, M-009 *(bila ada state pending lokal)*, M-010 *(Post-Upgrade Slot Drift & Residual Balance/Allowance pada kontrak tunggal)* |
 | **`[CLASS-B]`** *(Dual-Entity Interaction)* | **Dua entitas berinteraksi langsung** dalam satu jalur/jendela eksekusi (Kontrak Hulu $\leftrightarrow$ Hilir, Kontrak $\leftrightarrow$ Callback, Program $\leftrightarrow$ Target CPI, atau Akun A $\leftrightarrow$ Akun B). | Bedah internal tiap entitas **ditambah** bedah sambungan, asumsi caller-callee, callback, dan adu state 2 identitas. | Seluruh metode relevan `CLASS-A` + `M-003`, `M-006` *(Prinsip A: Stale Snapshot Write-Back & Prinsip B)*, `M-008`, `M-010` *(Residual Authority/Balance)* |
 | **`[CLASS-C]`** *(Multi-Entity Long On-Chain Flow)* | **Tiga atau lebih entitas berinteraksi berantai** dalam alur on-chain panjang, lintas-domain, multi-hop (`User -> Router -> Pool -> Strategy -> Oracle/DEX/Bridge`), PTB kompleks, atau pesan asinkron. | Bedah paket penuh 100% metode dengan fokus pada rantai komposisi panjang, state menggantung lintas-modul, dan drift konfigurasi sistemik. | **Paket Penuh (`M-001` s/d `M-010`..`M-NNN`)** dengan penekanan khusus pada `M-003`, `M-004`, `M-005` *(Cross-Contract)*, `M-008`, `M-009`, `M-010` |
 
@@ -57,6 +57,7 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 ---
 ### [M-003] / Metode 3 — Irrational Multi-Identity Sybil & Zero-Time Loop
 - **Target Kelas:** `[CLASS-B]`, `[CLASS-C]` *(serta `[CLASS-A]` bila kontrak memiliki fitur transfer/interaksi antar-akun internal)*
+- **Target Kelas Resmi:** `[CLASS-A]`, `[CLASS-B]`, `[CLASS-C]`
 - **Prinsip Mekanis (Chain-Neutral — Anti-Lexical-Overfitting):**
   Jangan pernah menyempitkan metode ini hanya sebagai "dua EOA / dua wallet". Prinsip mekanis sebenarnya adalah:
   > **Dua atau lebih identitas, akun, objek, capability, atau kontrak yang dikendalikan satu penyerang dan dapat berinteraksi secara atomik atau dalam jendela eksekusi yang sama ($\Delta t = 0$), di mana kerugian pada satu identitas dikompensasi oleh keuntungan yang lebih besar pada identitas lainnya.**
@@ -81,7 +82,7 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
   2. **Desinkronisasi Rumus `View` vs `Write`:** Bandingkan baris demi baris rumus di fungsi `view`/`preview`/getter dengan fungsi tulis pasangannya di `02-state-and-var-matrix.md` (misal: perbedaan arah pembulatan `mulDivDown` vs `mulDivUp`, atau biaya yang dihitung di preview tetapi tidak dipotong di eksekusi).
 - **Routing Simulasi Fase 3 (Simulation-First Gate):**
   - Untuk *Patch-Scar* pada jalur periferal (`migrate`, `transfer`, `sweep`, `batch`), wajib langsung tulis simulasi PoC yang mengeksekusi jalur periferal tersebut setelah melakukan *Victim Seeding*.
-  - Untuk desinkronisasi `View` vs `Write`, periksa apakah ada fungsi tulis/eksternal (di kontrak itu, router, oracle, atau integrasi) yang memanggil fungsi `view` tersebut, **ATAU** apakah fungsi `Write` itu sendiri salah menghitung hak/kewajiban dibanding spesifikasi `View`. Hanya jika fungsi `view` terbukti murni *dead-helper* yang tidak pernah dipanggil on-chain **dan** fungsi `Write`-nya sudah benar -> gugur ke `06` (`REJECTED_NO_VICTIM`). (**Ingat:** Subagent Fase 3 **DILARANG** membuang entri ke `08`!)
+  - Untuk desinkronisasi `View` vs `Write`, **DILARANG menggugurkan ke `06` (`REJECTED_NO_VICTIM`) hanya karena fungsi `view`/`preview`/`quote` tidak dipanggil secara on-chain di dalam kontrak repo yang sama!** Fungsi kuotasi/preview publik sering dikonsumsi oleh Router eksternal, Solver/Relayer off-chain, atau integrasi pihak ketiga. Selama rumus `View` dan `Write` terbukti menghasilkan angka yang berbeda di simulator, **WAJIB tulis PoC** yang membuktikan deviasi angka tersebut (biarkan Hakim Fase 4 yang menentukan pemisahan `09` vs `08`). **Hanya jika di simulator terbukti `View` dan `Write` menghasilkan nilai yang 100% identik di segala kondisi batas (termasuk setelah *Strike 3 Fuzz*)**, barulah gugur ke `06` (`REJECTED_POC_FAILS`). (**Ingat:** Subagent Fase 3 **DILARANG** membuang entri ke `08`!)
 ---
 
 ### [M-005] / Metode 5 — Guard-Inversion (Membalik Guard Kode Menjadi Target Manipulasi)
@@ -157,6 +158,7 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 
 ### [M-010] / Metode 10 — Live Residual State, Delegated Authority, & Post-Upgrade Drift
 - **Target Kelas:** `[CLASS-B]`, `[CLASS-C]` *(serta `[CLASS-A]` bila kontrak merupakan proxy/upgraded contract yang berdiri sendiri)*
+- **Target Kelas Resmi:** `[CLASS-A]`, `[CLASS-B]`, `[CLASS-C]`
 - **Prinsip Mekanis (Chain-Neutral — Anti-Lexical-Overfitting):**
   Auditor menguji pada *sandbox* kosong (`setUp()` bersih), sedangkan sistem di produksi membawa **state sisa dan riwayat migrasi yang nyata**. Jangan mengunci metode ini hanya pada istilah EVM (`allowance`, `cast call`, `slot proxy`). Lima konsep general yang wajib diperiksa lintas-rantai adalah:
   1. **Allowance atau Approval** yang masih aktif dari pengguna ke kontrak perantara;

@@ -122,13 +122,12 @@ Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati t
 **Putaran Audit Ulang (opsional, wajib bila ada indikasi):** bila ditemukan unit ber-atestasi tanpa `File:Baris`, jalankan sub-putaran **P3** yang menyisir hanya unit tersebut memakai `PUSH4..EQ` dispatcher scan + `cast call` state live + baca kode per-fungsi. Hasil masuk `06` sebagai entri `P3-xx`, **tanpa mengubah verdict lama**.
 
 ### 3. Gate Keluar Fase 2
-Agen **DILARANG** pindah ke Fase 3 sebelum **>= 80% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN` **yang lolos Gate Atestasi Bersitasi (§2b)**.
+Agen **DILARANG** pindah ke Fase 3 sebelum **100% berkas `[MUST-AUDIT]` di SETIAP domain** berstatus `LEAD_GENERATED` **atau** `ATTESTED_CLEAN` yang lolos Gate Atestasi Bersitasi (§2b) (**0** berkas berstatus `BELUM` atau `DIBACA`).
 
 | Metrik | Ambang |
 |---|---|
-| Berkas `[MUST-AUDIT]` berjejak **per domain** | **>= 80%** (setiap domain, tanpa kecuali) |
-| Berkas `[MUST-AUDIT]` terbesar per domain | wajib != `BELUM` |
-| Berkas berstatus `BELUM` di domain mana pun | **0** |
+| Berkas `[MUST-AUDIT]` berjejak (`LEAD_GENERATED` / `ATTESTED_CLEAN`) per domain | **= 100%** (setiap domain, tanpa kecuali) |
+| Berkas `[MUST-AUDIT]` berstatus `BELUM` atau `DIBACA` gantung di domain mana pun | **0** |
 
 **DILARANG memakai kuota "minimal N lead per domain" sebagai metrik kelulusan.** Kelulusan diukur dari **jejak per berkas**, bukan banyaknya hipotesis — agar modul yang memang aman tidak dipaksa melahirkan lead palsu; *Negative Attestation* yang jujur justru bukti cakupan yang sah.
 
@@ -153,7 +152,7 @@ Seluruh definisi metode (`M-001` s/d `M-010`, plus slot ekspansi `M-011`..`M-NNN
 1. **Muat registry** — panggil `skill_view("sc-phase2-hunt", "references/ref-method-registry.md")` (atau `read_file`).
 2. **Baca kelas topologi unit** yang sedang dibedah (`[CLASS-A]`, `[CLASS-B]`, atau `[CLASS-C]`) dari `audit/03-attack-surface-queue.md` (field `Topologi Entitas`).
 3. **Jalankan seluruh metode yang dipetakan** untuk kelas tersebut pada Bagian 1 & Bagian 3 registry:
-   - **`[CLASS-A]` (Single-Entity):** fokus utama `M-001` (*Backward Sink*), `M-002` (*State Delta*), `M-004` (*Patch-Scar & View-vs-Write*), `M-005` (*Inline Guard-Inversion*), `M-006` (*Prinsip B: Duplicate Reference `[A,A]`*), `M-007` (*Split-vs-Bulk*), `M-009` (*Local Suspended State*) — plus `M-011..M-NNN` yang bertarget `[CLASS-A]`.
+   - `[CLASS-A]` (Single-Entity): fokus utama `M-001` (*Backward Sink*), `M-002` (*State Delta*), `M-003` (*2-Identity Sybil di dalam 1 kontrak: self-transfer / self-liquidation*), `M-004` (*Patch-Scar & View-vs-Write*), `M-005` (*Inline Guard-Inversion*), `M-006` (*Prinsip B: Duplicate Reference `[A,A]`*), `M-007` (*Split-vs-Bulk*), `M-009` (*Local Suspended State*), dan `M-010` (*Post-Upgrade Slot Drift & Residual Balance/Allowance lokal*) — plus `M-011..M-NNN` yang bertarget `[CLASS-A]`.
    - **`[CLASS-B]` (Dual-Entity):** seluruh metode relevan `[CLASS-A]` ditambah `M-003` (*Multi-Identity Sybil & Zero-Time Loop*), `M-006` (*Prinsip A: Stale Snapshot Write-Back* + Prinsip B), `M-008` (*Caller-Callee Seam & Direct Bypass*), `M-010` (*Residual Balance/Authority*) — plus `M-011..M-NNN` bertarget `[CLASS-B]`.
    - **`[CLASS-C]` (Multi-Entity Long Flow):** **Paket Penuh 100% metode** (`M-001`..`M-NNN`) dengan penekanan pada rantai komposisi panjang, `M-003`, `M-004`, `M-005` (*Cross-Contract*), `M-008`, `M-009` (*Suspended Multi-Step/Async Lifecycle*), dan `M-010` (*Post-Upgrade & Config Drift*).
 

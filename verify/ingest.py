@@ -39,9 +39,21 @@ REQUIRED_FINDING = [
     "impact", "victim", "actor", "live",
     "poc", "cmd", "severity_claimed",
 ]
-VALID_IMPACT = {"theft", "grief", "dos", "design", "none"}
-VALID_VICTIM = {"sponsor", "user", "protocol", "third-party", "none"}
-VALID_ACTOR = {"unprivileged", "solver", "oracle", "admin"}
+VALID_IMPACT = {
+    "theft", "drain", "grief", "dos", "freeze", "fund-lock",
+    "insolvency", "bad-debt", "manipulation", "privilege-escalation",
+    "desync", "design", "none",
+}
+VALID_VICTIM = {
+    "sponsor", "user", "users", "protocol", "pool", "vault",
+    "lp", "lender", "borrower", "staker", "solver", "integrator",
+    "third-party", "none",
+}
+VALID_ACTOR = {
+    "unprivileged", "external", "attacker", "user", "borrower",
+    "liquidator", "keeper", "relayer", "solver", "router",
+    "validator", "oracle", "guardian", "operator", "admin",
+}
 VALID_SEV = {"S1", "S2", "S3", "S4"}
 
 

@@ -21,8 +21,8 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada domain matematika/vaul
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor memeriksa fungsi masuk, keluar, dan klaim utama (1-aktor) lalu melihat ketiganya sudah memanggil modifier/fungsi penyinkron indeks untuk `msg.sender`. Auditor lupa bahwa penyinkron 1-argumen tersebut tidak memperbarui akun kedua (`to`) pada fungsi 2-aktor, atau luput melihat variabel memori yang saling menimpa saat `from == to`.
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
-  - *Batas Realitas Statis:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** fungsi pemindahan secara eksplisit memanggil sinkronisasi indeks untuk kedua akun (`from` DAN `to`) sebelum mengubah saldo, SERTA memutasi state persisten secara langsung (`balances[from] -= x; balances[to] += x`) tanpa salinan variabel lokal yang saling menimpa saat `from == to`.
-  - *Routing Simulasi Fase 3:* Jika salah satu dari dua pengaman di atas absen (mis. akun `to` tidak disinkronkan, atau memakai struct memori lokal), **WAJIB langsung tulis PoC 2-Identitas** (`Attacker_A -> Attacker_B`) atau **Self-Transfer** (`Attacker_A -> Attacker_A`) di simulator!
+  - *Batas Realitas:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** pada baris awal fungsi pemindahan (tanpa cabang kondisional `if`/`else` yang dapat dilewati), sinkronisasi indeks dipanggil **tanpa syarat untuk kedua akun** (`from` DAN `to`) sebelum saldo dimutasi, DAN mutasi dilakukan langsung pada state persisten (`balances[from] -= x; balances[to] += x`) atau memiliki `require(from != to)` eksplisit.
+  - *Routing Simulasi Fase 3:* Jika sinkronisasi indeks berada di dalam **cabang kondisional (`if`)**, hanya menyinkronkan **salah satu akun**, memakai **struct/variabel memori lokal**, atau **tidak memiliki `require(from != to)` eksplisit**, **DILARANG menggugurkan di atas kertas** — WAJIB langsung tulis **PoC 2-Identitas** (`Attacker_A -> Attacker_B`) dan **Self-Transfer** (`Attacker_A -> Attacker_A`) di simulator!
 
 ---
 

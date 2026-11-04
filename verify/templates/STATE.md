@@ -11,7 +11,7 @@
 - Active Files in Scope: WormholeAdapter.sol, BridgeRelay.sol
 - Active Strike Count (Fase 3): 0/3 (2 Manual + 1 Mandatory Fuzz; kosongkan jika masih di Fase 2)
 
-## 2. Domain Coverage Meter (Syarat Gate >= 80%)
+## 2. Domain Coverage Meter (Syarat Gate = 100% `[MUST-AUDIT]`)
 | Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
 |---|---|---|---|---|
 | D1: hub-pool | 18 | 15 | 83% | PASS |

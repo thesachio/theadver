@@ -1,7 +1,7 @@
 ---
 name: sc-autopilot
-description: Master Orchestrator Whitehat Adversarial Lintas-Rantai - Jalankan siklus penuh (Fase 0 Intel -> Fase 1 Recon -> Fase 2 Class-Routed Counter-Auditor Hunt via ref-method-registry -> Fase 3 Local Fork Simulation -> Fase 4 Verdict Judge & 04-09 Reporting) secara otonom via delegate_task
-version: 6.1.0
+description: Master Orchestrator Whitehat Adversarial Lintas-Rantai (v6.2.0 Simulation-First) - Jalankan siklus penuh (Fase 0 Intel -> Fase 1 100% Repo Recon -> Fase 2 Class-Routed Hunt & Static-vs-Dynamic Guard Split -> Fase 3 Dual-Mode Fork & 3-Stage Fuzz Lab -> Fase 4 Verdict Judge & 09-vs-08 Deployment Split) secara otonom via delegate_task
+version: 6.2.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, adversarial, orchestrator, autopilot, delegation, multichain]
@@ -47,7 +47,7 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 - Last Completed Item: <S-n (Domain: <D>) -> hasil 1 baris>
 - CURRENT_ACTIVE_ITEM: <S-n (Domain: <D>)>
 - Active Files in Scope: <path berkas nyata>
-- Active Strike Count (Fase 3): <0/2 atau "-" bila masih Fase 2>
+- Active Strike Count (Fase 3): <0/3 (2 Manual + 1 Mandatory Fuzz) atau "-" bila masih Fase 2>
 
 ## 2. Domain Coverage Meter (Syarat Gate >= 80%)
 | Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
@@ -67,19 +67,20 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` lebih dulu. Jangan sentuh `Completed Units` atau `Do-Not-Reopen List`. Sebelum keluar, laporkan apa yang harus ditulis ke STATE.md (CURRENT_ACTIVE_ITEM, coverage, do-not-reopen)."* Subagent DILARANG menulis STATE.md sendiri — Parent yang menulis setelah menerima ringkasan.
 
 ## Pitfalls & Hukum Mutlak Orchestrator
-- JAGA KONTEKS PARENT TETAP RINGAN: Gunakan delegate_task (max_concurrent_children: 1 secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
-- PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`: Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File audit/00 s/d 09, instruksi skill_view, serta perintah agar Subagent menulis entri lengkap ke `audit/notes/staging-<unit>.md` dan mengembalikan **manifes** maksimal 12 baris (bukan muatan entri) — lihat **3b. Protokol Staging**.
-- JAGA PEMISAHAN 6 FILE HASIL (`04` s/d `09` — 1 File = 1 Domain Murni):
-  * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang terhalang `require`/`assert!` (umpan Putaran 2 *Guard-Inversion* / Metode 5).
-  * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3 (wajib memuat Metode Pencarian (M-001..M-NNN / `[POV-XX]`) dan Delta State).
-  * `06-refuted-invalid.md` -> Murni hipotesis gugur permanen (gagal Langkah 0/1 *Pre-PoC Fact Gate*, gagal simulasi PoC, atau melanggar **Pernyataan Ketat Mutlak #1–#6** beserta sub-kasus ketat #7a/#8a/#9a/#10a di `VERDICT.md`).
-  * `07-needs-next-step.md` -> Murni kandidat *unproven* (`NEXT_EXPLORE` / `NEXT_MAINNET` / `TOOL_BLOCKED`), termasuk klaim `HEAD-only` (gagal Pernyataan #2).
-  * `08-valid-not-eligible.md` -> Murni temuan valid dalam batasan toleransi (`LOW_NUISANCE`: *DoS no fund loss*, *minor capped damage*, *griefing* — #10b; `ADMIN_ONLY` — #8b; atau `PRE_LIVE_SCOPE` — #7b).
-  * `09-confirmed-findings.md` -> Murni `VALID_ELIGIBLE` (Simulasi Local Fork PASS + Bahaya Finansial Nyata + Lolos 11 Pernyataan `verify/VERDICT.md`).
-- WAJIB JALANKAN TAHAP 4 (`VERDICT.md` GATE): Orchestrator DILARANG melaporkan temuan sebagai Confirmed sebelum Tahap 4 mengadilinya dengan /home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md.
-- DILARANG MEMANGGIL `skill_manage` ATAU `memory`.
+- **JAGA KONTEKS PARENT TETAP RINGAN:** Gunakan `delegate_task` (`max_concurrent_children: 1` secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
+- **PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`:** Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File `audit/00` s/d `09`, instruksi `skill_view`, serta perintah agar Subagent menulis entri lengkap ke `audit/notes/staging-<unit>.md` dan mengembalikan **manifes** maksimal 12 baris (bukan muatan entri) — lihat **3b. Protokol Staging**.
+- **JAGA PEMISAHAN 6 FILE HASIL (`04` s/d `09` — 1 File = 1 Domain Murni):**
+  * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang dihentikan oleh **Guard Statis / Struktural** (`onlyOwner`, `onlyRole`, `msg.sender == router`, `nonReentrant`, `whenNotPaused`, cek alamat `!= 0`). **DILARANG** menaruh guard matematis/dinamis di sini!
+  * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3, mencakup seluruh anomali mutasi state, *Patch-Scar*, View-vs-Write, serta **Guard Dinamis / Matematis / State-Dependent** (rasio, pembulatan, saldo, waktu, panjang array) yang wajib diuji dengan fuzzer di Fase 3.
+  * `06-refuted-invalid.md` -> Murni hipotesis gugur permanen karena salah baca statis literal, gagal setelah *Victim Seeding* + **3-Stage Escalation (2 Manual + 1 Mandatory Fuzz)**, atau melanggar Pernyataan Ketat Mutlak #1–#6 (#7a/#8a/#9a/#10a) di `VERDICT.md`. Wajib memuat blok **`BUKTI_SIMULASI:`** (log test + fuzz) untuk `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, dan `REJECTED_DUST` (Pernyataan #11e `PAPER_REFUTATION_DETECTED`).
+  * `07-needs-next-step.md` -> Murni kandidat yang terhalang kendala komputasi/RPC ekstrem (`NEXT_EXPLORE` / `NEXT_MAINNET` / `TOOL_BLOCKED`) dan wajib lulus `verify07.py` (`Disposition:` + blok `PERCOBAAN:`). **Target akhir `07` = 0 entri** (temuan HEAD-only yang PoC-nya PASS **DILARANG** masuk `07`, melainkan ke `08`).
+  * `08-valid-not-eligible.md` -> **Hanya boleh diisi oleh Hakim Fase 4 (`VERDICT.md`)!** Murni temuan yang PoC eksploitasinya terbukti `[PASS]` tanpa curang, namun berada dalam batasan eligibilitas: `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` (#2 & #7b — terbukti berbahaya di kode repo HEAD / `[REPO_STAGED]`, namun belum live di produksi), `ADMIN_ONLY` (#8b), atau `LOW_NUISANCE` (#10b).
+  * `09-confirmed-findings.md` -> Murni `VALID_ELIGIBLE` (Simulasi `FORK_LIVE` `[PASS]` + `DEPLOYMENT_MATCH: LIVE_MATCH` + Bahaya Finansial Nyata + Lolos 11 Pernyataan `verify/VERDICT.md`).
+- **WAJIB JALANKAN TAHAP 4 (`VERDICT.md` GATE):** Orchestrator **DILARANG** melaporkan temuan sebagai Confirmed sebelum Tahap 4 mengadilinya dengan `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
+- **DILARANG MEMANGGIL `skill_manage` ATAU `memory`.**
 
 ---
+
 
 ## Procedure (Autonomous 4-Stage Adversarial Pipeline)
 
@@ -149,100 +150,103 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
 
 ---
 
-### Tahap Orkestrasi 1: Threat-First Recon (sc-phase1-recon)
+### Tahap Orkestrasi 1: Threat-First Recon & 100% Repo Inventory (sc-phase1-recon)
 0. **Pre-flight:** bila `audit/STATE.md` belum ada, buat lebih dulu (lihat Langkah −1), lalu set `PHASE: 1`.
 1. Periksa apakah `audit/00b-file-inventory.md` **DAN** `audit/00-project-map.md` s/d `audit/03-attack-surface-queue.md` sudah ada.
    - **Semua ada** -> lanjutkan ke butir 2 (jangan menimpa hasil yang sudah valid).
    - **Ada yang hilang** -> jalankan butir 2. Bila yang hilang hanya sebagian (mis. `00b` tidak ada tetapi `00`–`03` ada), **tetap jalankan dari Langkah 0**: inventaris adalah fondasi seluruh gerbang cakupan.
 
-   **Proyek lama dengan audit/ sebelumnya (rebuild bersih).** Untuk proyek yang sudah pernah diaudit dengan antrean lama, **DILARANG melanjutkan di atas folder lama**:
+   **Proyek lama dengan `audit/` sebelumnya (rebuild bersih).** Untuk proyek yang sudah pernah diaudit dengan antrean lama, **DILARANG melanjutkan di atas folder lama**:
    ```bash
    mv audit audit_old_$(date +%Y%m%d)   # arsipkan, JANGAN rm -rf
    ```
-2. Panggil delegate_task untuk Subagent Recon dengan instruksi wajib:
-   - **Baca `audit/INTEL.md` lebih dulu** (bila ada) untuk **menyelaraskan scope bounty** (Bagian 3) dan **riwayat laporan audit** (Bagian 4) sebelum menyusun inventaris.
+2. Panggil `delegate_task` untuk Subagent Recon dengan instruksi wajib:
+   - **Baca `audit/INTEL.md` lebih dulu** (bila ada) sebagai **penanda metadata non-destruktif**: beri tag setiap berkas di `00b-file-inventory.md` dengan **`[LIVE_BOUNTY]`** (terdaftar di halaman bounty & aktif di produksi) atau **`[REPO_STAGED]`** (ada di repositori fisik namun belum terdaftar di halaman bounty / masih HEAD-only). **DILARANG KERAS mengecualikan atau menghapus kontrak `[REPO_STAGED]` dari `00b`** — 100% kontrak non-test/non-mock di repo wajib masuk populasi! Gunakan juga Bagian 4 `INTEL.md` (riwayat audit) untuk memandu pelacakan *Patch-Scar*.
+   - **Petakan rencana Dual-Mode Fork di `00-project-map.md`:** kontrak mana yang siap ditembak dengan `FORK_LIVE` dan kontrak `[REPO_STAGED]`/HEAD-only mana yang harus diuji dengan `FORK_DEPLOYED_HEAD` di Fase 3.
    - Menerapkan **3-Level Chain Detection** (`sc-phase2-hunt/references/ref-attacker-pov.md` Bagian 3) dan menuliskannya ke `00-project-map.md`; tulis `CHAIN: AMBIGUOUS (<runtime>)` bila `.rs` bukan program Solana.
    - Menetapkan **Kelas Topologi Entitas** pada **setiap** unit `S-n` di `03-attack-surface-queue.md`: `[CLASS-A]` (Single-Entity), `[CLASS-B]` (Dual-Entity), `[CLASS-C]` (Multi-Entity Long Flow).
-   - Wajib `skill_view('sc-phase1-recon')`, DILARANG mengubah kode sumber, laporkan data untuk STATE.md, kembalikan ringkasan maksimal 12 baris.
+   - Wajib `skill_view('sc-phase1-recon')`, DILARANG mengubah kode sumber, laporkan data untuk `STATE.md`, kembalikan ringkasan maksimal 12 baris.
 3. Setelah selesai, **perbarui `audit/STATE.md`** (PHASE, Domain Coverage Meter, antrean), lalu baca `00-project-map.md` dan `03-attack-surface-queue.md`.
 
 ---
 
-### Tahap Orkestrasi 2: Two-Stage Counter-Auditor Hunting (sc-phase2-hunt)
+### Tahap Orkestrasi 2: Two-Stage Counter-Auditor Hunting & Static-vs-Dynamic Guard Split (sc-phase2-hunt)
 0. **Pre-flight:** set `PHASE: 2`.
 
    **Interleaved Domain Wave & Position-Blind Fixed Quota:**
-   - Rotasi berjalan lintas domain `D1 -> D2 -> ... -> Dn -> D1`. Di dalam setiap domain, unit `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` dibedah **tanpa mendiskriminasi urutan bawah** — kontrak `[CLASS-A]` tunggal bisa memegang 100% TVL.
+   - Rotasi berjalan lintas domain `D1 -> D2 -> ... -> Dn -> D1`. Di dalam setiap domain, unit `[CLASS-A]`, `[CLASS-B]`, dan `[CLASS-C]` (baik yang berlabel `[LIVE_BOUNTY]` maupun `[REPO_STAGED]`) dibedah **tanpa mendiskriminasi urutan bawah** — kontrak `[CLASS-A]` tunggal bisa memegang 100% TVL.
    - **1 panggilan `delegate_task` = tepat 1 Unit `S-n`.** DILARANG merapel beberapa unit di ekor antrean (*No Tail-End Compression*).
-   - Prompt Subagent **DILARANG** memuat label "prioritas rendah / urutan bawah / EV kecil" (*Position-Blind*).
-   - Gate keluar: >= 80% berkas `[MUST-AUDIT]` berjejak di **SETIAP** domain. DILARANG memakai kuota "minimal N lead per domain".
+   - Prompt Subagent **DILARANG** memuat label "prioritas rendah / urutan bawah / EV kecil / belum masuk bounty" (*Position-Blind*).
+   - Gate keluar: >= 80% berkas `[MUST-AUDIT]` berjejak di **SETIAP** domain (dan 0 berkas `BELUM`). DILARANG memakai kuota "minimal N lead per domain".
 
-1. **Putaran 1 (Mikro — metode sesuai kelas topologi unit):**
+1. **Putaran 1 (Mikro — metode sesuai kelas topologi unit + Gerbang Guard Statis vs Dinamis):**
    - Ambil **satu** unit dari `audit/03-attack-surface-queue.md`, panggil `delegate_task` satu per satu.
      * **Goal:** "Bedah unit `S-n` menggunakan prosedur Putaran 1 di `sc-phase2-hunt`."
      * **Context Wajib:**
        - Path Absolut Proyek, Paradigma Rantai, Core Invariants dari `00-project-map.md`, path `01-threat-and-env.md` & `02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
-       - Wajib `skill_view('sc-phase2-hunt')`, lalu **baca `references/ref-method-registry.md`** dan **`references/ref-attacker-pov.md`**.
+       - Wajib `skill_view('sc-phase2-hunt')`, lalu baca **`references/ref-method-registry.md`** dan **`references/ref-attacker-pov.md`**.
        - **Jalankan paket metode `M-001..M-NNN` sesuai kelas topologi unit**:
          `[CLASS-A]` → *Single-Pass Deep Kill* (`M-005` inline saat itu juga);
          `[CLASS-B]` → *Dual-Entity* (CLASS-A + `M-003`, `M-006` Prinsip A+B, `M-008`, `M-010`);
          `[CLASS-C]` → *Multi-Entity Long Flow* (paket penuh, penekanan rantai komposisi panjang).
-       - **Lazy-load `references/ref-pov-<math|call|defi|chain>.md`** HANYA bila gejala pemicu di tabel router `ref-attacker-pov.md` terpenuhi.
-       - **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB); `03` boleh di-`patch` pada baris status; **`STATE.md` DILARANG disentuh**. Kembalikan manifes ≤ 20 baris: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris verdict per entri.
-       - Entri `05` wajib memuat `Kelas Topologi`, kolom Metode Pencarian (`M-00X`/`[POV-XX]`), dan Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk.
+       - **Lazy-load `references/ref-pov-*.md`** HANYA bila gejala pemicu di tabel router `ref-attacker-pov.md` terpenuhi.
+       - **GERBANG PEMISAHAN GUARD STATIS VS DINAMIS (WAJIB):** Hanya guard otorisasi/struktural statis (`onlyOwner`, `msg.sender == router`, `nonReentrant`, `whenNotPaused`, cek alamat `!= 0`) yang boleh ditulis sebagai entri `04-code-guarded.md`. Semua guard yang melibatkan aritmetika, pembulatan (`mulDiv`), rasio pool, saldo (`balanceOf`), waktu/indeks, LTV/likuidasi, atau panjang array **DILARANG masuk `04`** dan **WAJIB** ditulis sebagai entri `05-raw-leads.md` (beri tag `M-005`/`M-007`) untuk di-fuzz di Fase 3!
+       - **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB); `03` boleh di-`patch` pada baris status; **`STATE.md` DILARANG disentuh**. Kembalikan manifes ≤ 12 baris: `STAGING: <path> | 04: <n> | 05: <m>` + 1 baris verdict per entri.
+       - Entri `05` wajib memuat `Kelas Topologi`, kolom Metode Pencarian (`M-00X`/`[POV-XX]`), dan Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk, dan Penulis Variabel.
 
 2. **Putaran 2 / Sintesis Lintas-Jalur:**
-   - Bongkar **seluruh** guard di `04-code-guarded.md` **lintas-entitas** (`M-005` cross-contract, `M-008` seam, `M-009` suspended lifecycle, `M-010` residual/drift).
-   - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan >= 80% per domain dan Putaran 2 ditutup.
+   - Bongkar **seluruh guard statis** di `04-code-guarded.md` lintas-entitas (`M-005` cross-contract, `M-008` seam, `M-009` suspended lifecycle, `M-010` residual/drift).
+   - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan >= 80% per domain (0 berkas `BELUM`, atestasi bersitasi `File:Baris` lolos §2b) dan Putaran 2 ditutup.
 
 ---
 
-### Tahap Orkestrasi 3: Simulation-First Pre-PoC Triage & Dual-Mode Fork Lab (sc-phase3-verify-and-poc)
-0. **Pre-flight:** set `PHASE: 3`. **Langkah 1a wajib:** susun tabel triage **BATCH** atas **SELURUH** lead di `05-raw-leads.md` di `audit/notes/fase3-urutan-poc.md` (petakan skenario harness, kebutuhan *Victim Seeding*, dan potensi chaining lintas-kelas), lalu urutkan eksekusi PoC berdasarkan **EV tertinggi dengan keterwakilan domain** — **BUKAN FIFO**.
+### Tahap Orkestrasi 3: Simulation-First Lab, Dual-Mode Fork, & 3-Stage Fuzz Escalation (sc-phase3-verify-and-poc)
+0. **Pre-flight:** set `PHASE: 3`.
+   - **Langkah 1a wajib:** susun tabel triage **BATCH** atas **SELURUH** lead di `05-raw-leads.md` untuk memetakan **Mode Fork** (`FORK_LIVE` vs `FORK_DEPLOYED_HEAD`) dan **Skenario Victim Seeding**.
+   - **HUKUM NO CODE, NO REJECT:** DILARANG KERAS menggugurkan lead matematika, logika, atau ekonomi ke `06` di Langkah 1 tanpa menulis dan menjalankan kode test! Hanya **4 Kemustahilan Fakta Statis Sempit** (Langkah 1c `sc-phase3-verify-and-poc`) yang boleh ditolak secara statis.
+   - **3-Stage Escalation Breaker (2 Manual + 1 Mandatory Fuzz):** Sebuah hipotesis DILARANG dinyatakan `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` sebelum melewati **Strike 1** (PoC Manual + *Victim Lifecycle Seeding*), **Strike 2** (Perbaikan Urutan + *3-Way EV Amplification*), dan **Strike 3** (1× tes Fuzz `testFuzz_` / `proptest` / `halmos`). Setelah ketiganya gagal, barulah dikunci di `06` beserta log eksekusinya (`BUKTI_SIMULASI:`) dan masuk **Do-Not-Reopen List**.
+   - **Langkah 0c (Tangga Self-Healing) & Langkah 0d (Do-It-Now):** tetap mengikat mutlak sebelum klaim `TOOL_BLOCKED` / `NEXT_MAINNET` / `NEXT_EXPLORE`.
 
-**Hukum Mutlak di Tahap Orkestrasi 3:**
-- **Hukum *No Code, No Reject*:** DILARANG KERAS menggugurkan lead logika/matematika/ekonomi ke `06` di Langkah 1 hanya berdasarkan hitungan kertas **tanpa menulis dan menjalankan kode simulasi test**!
-- **Protokol *3-Stage Escalation (2 Manual + 1 Mandatory Fuzz)*:** Lead DILARANG dibuang ke `06` sebagai `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` hanya dari 2 percobaan manual; **percobaan ke-3 WAJIB** menggunakan `testFuzz_` (atau `proptest`/`halmos`) untuk mengacak parameter input sebelum boleh dinyatakan gugur dan masuk **Do-Not-Reopen List**.
-- **DILARANG Menyentuh Wadah `08` di Tahap 3:** Subagent Fase 3 **buta** terhadap apakah kontrak sudah *live* di halaman bounty atau masih HEAD-only. Bila kontrak sudah live di on-chain, gunakan **`FORK_LIVE`**; bila kontrak belum deploy atau kode HEAD berbeda, gunakan **`FORK_DEPLOYED_HEAD`** (deploy kontrak repo di atas fork mainnet). **Semua PoC yang PASS membuktikan patahnya invarian wajib diajukan sebagai kandidat `09` (lewat staging)** untuk diadili di Tahap 4!
-- **Langkah 0c (Tangga Self-Healing) & Langkah 0d (Do-It-Now):** Tetap mengikat mutlak sebelum label `TOOL_BLOCKED`, `NEXT_MAINNET`, atau `NEXT_EXPLORE` boleh dipakai di `07`.
-
-1. **Simulasi & Pembuktian Seluruh Raw Leads (`05-raw-leads.md`) — Unified Cross-Class:**
-   - **Kuota delegasi PoC:** maksimal **1 s/d 3 Lead per Subagent**, dari urutan **pertama sampai urutan paling akhir** (*No Tail-End Compression*, *Position-Blind*).
-   - Untuk setiap batch 1–3 lead aktif di `audit/05-raw-leads.md`, panggil `delegate_task` untuk menugaskan Subagent Verifier:
-     * **Goal:** "Buktikan mekanisme Lead `[ID_Lead]` (maks 1–3 lead) melalui simulasi eksekusi nyata (`FORK_LIVE`, `FORK_DEPLOYED_HEAD`, atau harness native non-EVM) dengan *Realistic Victim Seeding*, *3-Way EV Amplification*, dan *Fuzz Escalation* sesuai `sc-phase3-verify-and-poc`."
-     * **Context Wajib:** Path Absolut Proyek, detail lead dari `05-raw-leads.md`, path `audit/STATE.md`, dan instruksi literal berikut:
+1. **Simulasi & Pembuktian Seluruh Raw Leads (`05-raw-leads.md`) — Blind to Bounty Scope:**
+   - **Kuota delegasi PoC: maksimal 1 s/d 2 Lead per Subagent**, dari urutan **pertama sampai urutan paling akhir**. DILARANG KERAS merapel 5–10 lead sisa ke satu Subagent pembersih (*No Tail-End Compression*).
+   - Untuk setiap lead aktif di `audit/05-raw-leads.md`, panggil `delegate_task` untuk menugaskan Subagent Verifier:
+     * **Goal:** "Buktikan Lead `[ID_Lead]` (maks 1–2 lead) melalui simulasi kode nyata di Fase 3 sesuai `sc-phase3-verify-and-poc`."
+     * **Context Wajib:** Path Absolut Proyek, detail lead dari `05-raw-leads.md`, path `audit/STATE.md`, dan instruksi:
        > "Wajib panggil `skill_view('sc-phase3-verify-and-poc')` dan baca `audit/STATE.md` lebih dulu.
-       > **URUTAN WAJIB EKSEKUSI:**
-       > (1) **DILARANG *Paper Refutation***: Jangan buang lead ke `06` hanya dengan hitungan kertas! Gunakan routing metode di `ref-method-registry.md` & `ref-pov-*.md` untuk **merancang kode test**.
-       > (2) **Pilih Mode Simulasi Terbaik**: Jika kontrak target sudah ter-deploy di rantai ber-RPC, jalankan **`Mode Uji: FORK_LIVE`**. Jika kontrak belum ter-deploy atau kode repo (HEAD) lebih baru, **WAJIB** jalankan **`Mode Uji: FORK_DEPLOYED_HEAD`** (nyalakan `--fork-url` rantai target agar token/oracle/pool eksternal tetap asli, lalu deploy kontrak repo di atas fork tersebut). Gunakan **`LOKAL`** hanya untuk non-EVM atau rantai tanpa RPC.
-       > (3) **WAJIB *Victim Lifecycle Seeding***: Jika state kontrak sedang kosong/pasif, simulasikan transaksi pengguna normal (`vm.prank(victim)` melakukan `deposit`/`borrow`/`requestWithdraw`/`createOrder`/`approve`) lebih dulu sebelum menembakkan `vm.prank(attacker)`.
-       > (4) **WAJIB *3-Way EV Amplification* & *Strike 3 Fuzzing***: Sebelum memvonis `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST`, wajib uji ketiga pengali (Flashloan Scaling, Single-Tx Looping, Cross-Lead Chaining ke guard `04`) **DAN** wajib jalankan minimal 1× `testFuzz_` (Strike 3).
-       > (5) **DISTRIBUSI MURNI 3 WADAH (`09`, `06`, `07` — DILARANG `08`!)**: Jangan pernah menargetkan `08` atau menggugurkan lead karena pre-live/HEAD-only di Fase 3! Jika simulasi eksploitasi PASS, tulis ke staging sebagai kandidat `09`. Jika gagal setelah Strike 3 Fuzz, tulis ke staging sebagai kandidat `06` (wajib lampirkan log eksekusi test/fuzz). `07` HANYA sah dengan `Disposition:` + blok `PERCOBAAN:` berisi perintah `$ ...` dan output nyata.
-       > **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<id>.md` (jangan tulis ke `06`/`07`/`09` langsung). Laporkan update untuk `STATE.md`. Kembalikan maksimal 12 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 09: <n>` + 1 baris verdict per entri."
+       > **NO PAPER REFUTATION:** Dilarang menolak lead dengan hitungan kertas! Kecuali melanggar 4 Kemustahilan Statis Sempit, Anda WAJIB menulis dan menjalankan kode test.
+       > **DUAL-MODE FORK:** Gunakan `FORK_LIVE` bila kontrak aktif di mainnet, atau `FORK_DEPLOYED_HEAD` (deploy kontrak repo HEAD di atas fork mainnet nyata) bila kontrak berstatus `[REPO_STAGED]` / HEAD-only / belum deploy. Jangan gunakan `revert 0x` pada `eth_call` sebagai alasan berhenti — cek selector via `cast code` atau jalankan `FORK_DEPLOYED_HEAD`!
+       > **MANDATORY VICTIM SEEDING:** Sebelum kode penyerang berjalan di `setUp()`, wajib simulasikan transaksi pengguna/korban normal (`vm.prank(victim)`) agar pool, antrean, atau allowance terisi secara realistis.
+       > **3-STAGE ESCALATION (2 MANUAL + 1 FUZZ) & 3-WAY EV AMPLIFICATION:** Jika Strike 1 & Strike 2 (Flashloan + Looping + Chaining) masih revert atau merugi, Anda WAJIB menulis dan menjalankan Strike 3 berupa fungsi `testFuzz_` untuk mengacak parameter input sebelum boleh memvonis `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` ke `06` (dan wajib lampirkan log terminal test + fuzz di blok `BUKTI_SIMULASI:`).
+       > **LARANGAN MENYENTUH `08` DI FASE 3:** Subagent Fase 3 **DILARANG** membuang lead ke `08-valid-not-eligible.md` dan DILARANG menurunkan temuan karena alasan HEAD-only/pre-live. Semua PoC yang `[PASS]` membuktikan eksploitasi wajib ditulis ke staging sebagai **kandidat `09`** (lengkap dengan tag `Mode Uji: FORK_LIVE` atau `FORK_DEPLOYED_HEAD`) untuk diadili oleh Hakim Fase 4!
+       > **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<lead>.md` (staging WAJIB; jangan menulis ke `06`/`07`/`09` langsung). Kembalikan maksimal 12 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 09: <n>` + 1 baris verdict per entri."
 
-2. **Fuzzing Invarian Stateful & Simetri** (untuk sisa kandidat yang belum bisa dituntaskan):
-   - Tugaskan 1 Subagent Fase 3 untuk menjalankan Handler Stateful Invariant Fuzzing (Tier 2), Differential/Split-vs-Bulk Fuzzing (Tier 3), atau Symbolic Proving Halmos (Tier 5) **pada sesi ini juga**, dan lampirkan log statistik run ke `notes/`.
+2. **Fuzzing Invarian Stateful & Simetri Lintas-Alur:**
+   - Untuk kandidat yang membutuhkan eksplorasi urutan mendalam, tugaskan Subagent Fase 3 menjalankan Handler Stateful Invariant Fuzzing (Tier 2), Differential/Split-vs-Bulk Fuzzing (Tier 3), atau Symbolic Proving Halmos (Tier 5) **pada sesi berjalan**.
 
-### Tahap Orkestrasi 4: Final Verdict Judging, Deployment Gate, & Laporan 6 File (sc-phase4-report)
-0. **Pre-flight — TIGA GATE INTEGRITAS:** set `PHASE: 4`.
-   - **(i) Coverage Gate (Langkah 0a butir 1–3):** bandingkan `00b-file-inventory.md` dengan tabel cakupan `03-attack-surface-queue.md`. Kontrak repo yang belum tercantum di halaman Bug Bounty **tetap sah** sebagai populasi `[REPO_STAGED]` (bukan `COVERAGE_BIAS`), namun seluruh berkas `[MUST-AUDIT]` di repo wajib mencapai cakupan **>= 80% per domain** dan **0 berkas `BELUM`**.
-   - **(ii) Anti-Lazy-Bailout Gate pada `07` (Pernyataan #11):** jalankan `python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py audit/07-needs-next-step.md`. Setiap entri `07` tanpa `Disposition:` atau tanpa perintah `$ ...` dan log nyata di `PERCOBAAN:` -> **`LAZY_BAILOUT_DETECTED`** -> kembalikan ke Fase 3. **Target akhir `07` = 0 entri.**
-   - **(iii) Anti-Paper-Refutation Gate pada `06` (Pernyataan #11e):** periksa entri `06` berlabel `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, dan `REJECTED_DUST`. Jika ada yang dibuang hanya dengan klaim teks **tanpa bukti eksekusi test/fuzz** -> **`PAPER_REFUTATION_DETECTED`** -> kembalikan ke Fase 3 untuk disimulasikan!
+---
 
-1. **WAJIB jalankan Hakim Akhir (`verify/VERDICT.md`) — Satu-Satunya Gerbang Deployment & Pemisahan `09` vs `08`:**
+### Tahap Orkestrasi 4: Final Verdict Judging, Deployment Split (09 vs 08), & Laporan 6 File (sc-phase4-report)
+0. **Pre-flight — TIGA GERBANG INTEGRITAS:** set `PHASE: 4`.
+   - **(i) Coverage Gate (Langkah 0a.1–3 / Pernyataan #11c & #11d):** bandingkan `00b-file-inventory.md` (100% populasi fisik repo) dengan tabel cakupan `03-attack-surface-queue.md`. Kontrak `[REPO_STAGED]` adalah **bagian sah** dari `00b` (bukan `COVERAGE_BIAS`). Bila cakupan `[MUST-AUDIT]` **< 80%**, ada **domain 0%**, ada berkas `BELUM`, atau ada `ATTESTED_CLEAN` hampa tanpa `File:Baris` -> **`AUDIT_INCOMPLETE_COVERAGE_BIAS`**: TOLAK laporan, kembalikan ke Fase 1/2.
+   - **(ii) LAZY_BAILOUT Gate pada `07` (Langkah 0a.3b / Pernyataan #11):** jalankan `python3 /home/ubuntu/.hermes/profiles/adv/verify/tools/verify07.py audit/07-needs-next-step.md`. Entri `07` tanpa bukti komputasi nyata -> **`LAZY_BAILOUT_DETECTED`**: TOLAK laporan, kembalikan ke Fase 3. **Target akhir `07` = 0 entri.**
+   - **(iii) ANTI-PAPER-REFUTATION Gate pada `06` (Langkah 0a.3c / Pernyataan #11e):** periksa seluruh entri `REJECTED_POC_FAILS`, `REJECTED_NEGATIVE_EV`, dan `REJECTED_DUST` di `06-refuted-invalid.md`. Bila ada yang tidak memuat log eksekusi test + Strike 3 Fuzz (`BUKTI_SIMULASI:`) -> **`PAPER_REFUTATION_DETECTED`**: TOLAK laporan, kembalikan lead tersebut ke Fase 3 untuk disimulasikan!
+
+1. **WAJIB jalankan Hakim Akhir (`verify/VERDICT.md`) & Pemisahan Deployment (`09` vs `08`):**
    Panggil `delegate_task` dengan instruksi:
    > "Wajib panggil `skill_view('sc-phase4-report')` dan baca `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md` serta `audit/STATE.md`.
-   > (a) **Jalankan Langkah 0 (Rekonsiliasi Identitas Deployment) di sini:** periksa apakah kandidat di `09-confirmed-findings.md` terbukti pada kontrak produksi yang sudah *live* (`FORK_LIVE` + bytecode/source on-chain cocok) atau pada kode repositori HEAD yang belum di-deploy / berbeda versi (`FORK_DEPLOYED_HEAD` / `HEAD-only`).
-   > (b) **Adili dengan 11 Pernyataan Wajib `VERDICT.md`:**
-   >   - Kandidat yang PoC-nya PASS, berdampak bahaya finansial nyata (Critical/High/Medium), **DAN** terbukti cocok dengan deployment produksi aktif -> Disahkan tetap di `09-confirmed-findings.md` (`VALID_ELIGIBLE`).
-   >   - Kandidat yang PoC eksploitasi dan bahaya finansialnya sudah terbukti 100% `PASS` lewat `FORK_DEPLOYED_HEAD` / `LOKAL`, tetapi kontrak/fiturnya masih berstatus HEAD-only / belum *live* di produksi / di luar daftar alamat bounty saat ini -> Pindahkan dari `09` ke `08-valid-not-eligible.md` dengan kelas `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` **sambil mempertahankan kode PoC utuh dan perhitungan dampaknya**! (JANGAN dibuang ke `07` agar `07` tetap bersih 0 entri).
-   >   - Kandidat yang PoC-nya PASS secara mekanis tetapi dampaknya tergolong `LOW_NUISANCE` (#10b) atau `ADMIN_ONLY` (#8b) -> Pindahkan dari `09` ke `08-valid-not-eligible.md`.
-   >   - Kandidat yang terbukti memakai cheatcode terlarang (#9a) atau melanggar Pernyataan Ketat Mutlak #1–#6 -> Cabut ke `06-refuted-invalid.md`.
-   > (c) Pastikan setiap vonis memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan keenam file (`04` s/d `09`), jalankan `verify07.py`, dan kembalikan ringkasan maksimal 12 baris."
+   >
+   > **(1) Jalankan Langkah 0a** (Ketiga Gerbang Integritas: #11d Coverage, #11 `verify07.py`, dan #11e Anti-Paper-Refutation pada `06`).
+   > **(2) Jalankan Langkah 0 VERDICT.md (Rekonsiliasi Identitas Deployment):** cocokkan setiap kandidat di `09-confirmed-findings.md` dengan bytecode/source produksi aktif (`cast code` / `cast implementation` / explorer) dan cakupan `INTEL.md`:
+   >   - Kandidat yang PoC-nya `[PASS]`, lolos 11 Pernyataan, dan kodenya terbukti aktif di produksi (`DEPLOYMENT_MATCH: LIVE_MATCH`) -> tetap disahkan di `09-confirmed-findings.md` (`VALID_ELIGIBLE`).
+   >   - Kandidat yang PoC-nya terbukti `[PASS]` dan berbahaya secara finansial pada kode repositori (`FORK_DEPLOYED_HEAD` / `LOKAL`), **TETAPI** kontrak/fiturnya masih HEAD-only, belum di-deploy di mainnet, atau berlabel `[REPO_STAGED]` -> **CABUT dari `09` dan pindahkan secara utuh** (lengkap dengan kode PoC & dampak kuantitatifnya) ke `08-valid-not-eligible.md` dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` dan `TANGGA_BUKTI: A-HEAD / B`! (**DILARANG memasukkannya ke `07`!**).
+   > **(3)** Cabut kandidat yang berdampak kelas Low (`LOW_NUISANCE` #10b) atau `ADMIN_ONLY` (#8b) dari `09` ke `08-valid-not-eligible.md`.
+   > **(4)** Cabut kandidat yang melanggar Pernyataan Ketat Mutlak (#1–#6, #7a, #8a, #9a, #10a) ke `06-refuted-invalid.md`.
+   > **(5)** Pastikan setiap entri di `06`, `07`, `08`, dan `09` memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan keenam file (`04` s/d `09`), pastikan status akhir semua lead di `05-raw-leads.md` sinkron, dan kembalikan ringkasan maksimal 12 baris."
 
-2. Baca hasil akhir di `09`, `08`, `07`, `06`, dan `04`, lalu sajikan laporan eksekutif kepada pengguna — wajib menyertakan baris `COVERAGE:`, `LAZY_BAILOUT:`, jumlah entri `07`, serta **pemisahan jelas antara temuan Live Production (`09`) dan temuan Proven on Repo HEAD / Pre-Live (`08`)**.
+2. Baca hasil akhir di `09`, `08`, `07`, `06`, `05`, dan `04`, lalu sajikan **Ringkasan Eksekutif** kepada pengguna — wajib menyertakan tabel cakupan per domain, baris `COVERAGE: PASS|AUDIT_INCOMPLETE_COVERAGE_BIAS`, baris `07: <n> entri | LAZY_BAILOUT: PASS|DETECTED`, baris `PAPER_REFUTATION_06: PASS|DETECTED`, serta **pemisahan tegas** antara temuan Live Production (`09`) dan Proven on Repo HEAD / Pre-Live (`08 - HEAD_ONLY_PROVEN`).
 
 ---
+
 
 ## Verification
 Pastikan di akhir eksekusi keenam file laporan (`04` s/d `09`) berada dalam kondisi rapi dan konsisten, kode sumber asli tidak berubah, dan tidak ada file test rusak yang tertinggal di repositori proyek. Laporkan jumlah item per file beserta daftar kandidat yang dicabut oleh Hakim `VERDICT.md` — DILARANG menyembunyikan pencabutan.

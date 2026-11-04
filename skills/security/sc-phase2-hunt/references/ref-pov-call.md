@@ -24,6 +24,7 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada penyerahan kontrol eks
 - Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
   - *Batas Realitas:* Gugur jika seluruh mutasi state internal dan akuntansi bersama diselesaikan 100% sebelum interaksi eksternal (CEI murni), atau jika terdapat *global reentrancy lock* yang juga diperiksa oleh seluruh fungsi pembaca/fungsi pasangan.
   - *Routing Simulasi Fase 3:* Jika benar ada jendela di mana variabel pertama sudah berubah namun variabel pasangannya belum berubah saat kontrol diserahkan keluar, **WAJIB tulis kontrak/hook penyerang di simulator** yang masuk kembali ke fungsi pembaca/pasangan pada jendela *mid-tx* tersebut (lengkap dengan *Victim Seeding* pada pool).
+  - *Jalur 3 — Unprivileged State Poisoning pada Eksekusi Rutin (`M-005`/`M-009`):* `nonReentrant` lokal **BUKAN** bukti aman bila fungsi pembaca/pasangan hanya bisa dipanggil oleh aktor berizin (Keeper/Relayer/Solver/Operator). Penyerang tak berizin dapat meracuni state/antrean/saldo di fungsi publik **sebelum** aktor rutin memanggil fungsi tersebut secara normal, sehingga pembacaan state yang timpang terjadi **tanpa** reentrancy sama sekali. **WAJIB tulis PoC** yang (a) meracuni state lewat jalur *permissionless*, lalu (b) memicu fungsi rutin sebagai Keeper/Relayer (prank sah menurut `VERDICT.md` Pengecualian #9a-iii) dan mengukur kebocoran nilai atau DoS revert. **DILARANG menggugurkan lead ini hanya karena fungsi pembacanya ber-guard `onlyKeeper`/`onlyRole`.**
 
 ---
 

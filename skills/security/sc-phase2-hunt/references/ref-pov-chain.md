@@ -21,9 +21,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   3. **[Ekstraksi Nilai]** Karena setiap sub-panggilan `delegatecall` membaca konteks `msg.value` yang sama ($X$), kontrak mengkreditkan nilai sebesar $N \times X$ kepada penyerang dengan modal hanya $1 \times X$.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor menguji fungsi pembayaran secara terpisah (1 transaksi = 1 panggilan) di mana `msg.value` memang valid, dan menganggap kontrak pembungkus Multicall dari library standar sudah aman tanpa melihat efek penggabungan keduanya.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika fungsi pembungkus batch tidak `payable`, atau kontrak melacak total pemakaian pembayaran dalam akumulator per-transaksi, atau setiap slot *Transient Storage* selalu di-reset sebelum keluar dari masing-masing aksi.
-  - *Routing Uji Cepat Fase 3:* Cek apakah fungsi batch benar-benar `payable` dan memakai `delegatecall` (atau loop internal yang membaca `msg.value`), atau tidak me-reset slot transient. Jika multicall tidak `payable` atau fungsi target tidak membaca `msg.value` -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur jika fungsi pembungkus batch **tidak `payable`** DAN kontrak tidak memakai *Transient Storage*/`TSTORE`, serta melacak total pemakaian pembayaran dalam akumulator per-transaksi.
+  - *Routing Simulasi Fase 3:* Jika fungsi batch `payable`, memakai `delegatecall`, loop internal yang membaca `msg.value`, atau *Transient Storage* yang tidak di-reset -> **WAJIB tulis PoC batch call** di simulator (payload multicall berisi $N$ panggilan dengan `msg.value` sekali) + **Strike 3 Fuzz** untuk mengacak `N` dan komposisi payload.
 
 ---
 
@@ -43,9 +43,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   3. **[Ekstraksi Nilai]** Program memproses penjumlahan/klaim di atas snapshot memori yang belum diperbarui (atau menimpa pengurangan saldo), menggandakan hak penyerang dalam satu instruksi.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor melihat deklarasi tipe `Account<'info, ...>` di Anchor sudah memeriksa pemilik dan diskriminator tipe, sehingga berasumsi dua variabel parameter dengan nama berbeda pasti menunjuk ke dua akun berbeda dan nilainya selalu mutakhir sepanjang fungsi.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika terdapat validasi ketidaksetaraan kunci (`key() != ...`) pada seluruh pasangan akun `mut`/`remaining_accounts`, serta `.reload()?` dipanggil setiap kali data akun dibaca ulang pasca-CPI.
-  - *Routing Uji Cepat Fase 3:* Cek pada struct `#[derive(Accounts)]` dan tubuh instruksi: jika constraint `key() !=` sudah terpasang pada akun `mut` DAN `.reload()?` sudah dipanggil pasca-CPI sebelum pembacaan ulang -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** constraint `key() !=` terpasang pada **seluruh** pasangan akun `mut`/`remaining_accounts` **DAN** `.reload()?` dipanggil setiap kali data akun dibaca ulang pasca-CPI.
+  - *Routing Simulasi Fase 3:* Jika salah satu absen -> **WAJIB tulis test** di simulator (LiteSVM/`solana-program-test`) dengan akun kembar `[A, A]` atau skenario CPI yang mengubah akun lalu membaca snapshot lokal; tambahkan *fuzz* pada jumlah `remaining_accounts` dan isi duplikat.
 
 ---
 
@@ -65,9 +65,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   3. **[Ekstraksi Nilai]** Masih di PTB yang sama, penyerang menyerahkan `Position` / `Receipt` tersebut ke `Container_Utama` untuk menguras aset riil.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor mengandalkan jaminan keamanan tipe Move (`has key`, linear *Hot Potato*, dan *auto-overflow check* pada `+`/`*`), tanpa menyadari bahwa tipe yang sama bisa berasal dari instansi objek yang berbeda dan operator `<<` di Move dapat memangkas bit tinggi secara diam-diam.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika setiap objek bukti/posisi mengikat dan memverifikasi `object::id` dari objek wadah induknya di setiap fungsi, serta operasi `<<` memeriksa batas atas secara presisi sebelum digeser.
-  - *Routing Uji Cepat Fase 3:* Cek apakah sudah ada `assert!(receipt.pool_id == object::id(pool))` dan apakah batas mask `<<` sudah menolak bit tertinggi yang akan tergeser keluar. Jika keduanya sudah ada -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur jika setiap objek bukti/posisi mengikat dan memverifikasi `object::id` dari objek wadah induknya di setiap fungsi, serta operasi `<<` memeriksa batas atas secara presisi sebelum digeser.
+  - *Routing Simulasi Fase 3:* Selama `assert!(receipt.pool_id == object::id(pool))` **belum** ada, atau mask `<<` tidak menolak bit tertinggi -> **WAJIB tulis `#[test]`** di `sui move test` / `aptos move test` yang membangun PTB dengan objek kembar atau memasukkan angka batas bit tinggi, lalu ukur selisih kewajiban yang tercipta.
 
 ---
 
@@ -87,9 +87,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata yang bertumpu pada perilaku
   3. **[Ekstraksi Nilai]** Handler bounced membaca nilai yang terpotong/rusak (atau gagal berjalan), menyebabkan pengembalian saldo berlebih atau penghapusan kewajiban tanpa membatalkan hak yang sudah dicetak.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor melihat kontrak sudah menyediakan fungsi `on_bounce` lalu menganggap mekanisme *rollback* asinkron sudah tuntas, tanpa menghitung offset bit pada skema serialisasi pesan yang dikirim.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika seluruh data pemulihan disimpan di storage lokal kontrak pengirim (diindeks dengan `query_id` yang muat di dalam 224 bit pertama) DAN entitas dikunci penuh selama status *in-flight* belum selesai.
-  - *Routing Uji Cepat Fase 3:* Hitung total bit field sebelum data pemulihan pada payload pesan keluar (apakah $\le 224$ bit tanpa `ref`?) dan periksa apakah state dikunci berdasarkan `query_id` / `is_locked` selama *in-flight*. Jika muat $\le 224$ bit DAN terkunci -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur jika seluruh data pemulihan disimpan di storage lokal kontrak pengirim (diindeks `query_id` yang muat di dalam 224 bit pertama) **DAN** entitas dikunci penuh selama status *in-flight* belum selesai.
+  - *Routing Simulasi Fase 3:* Jika handler `bounced` membaca data dari payload **ATAU** ada pengiriman pesan multi-hop / state tidak terkunci -> **WAJIB uji di `@ton/sandbox`** dengan skenario pesan gagal (*bounce*) atau interleaving dua pesan *in-flight*, lalu ukur saldo/state akhir tiap aktor.
 
 ---
 

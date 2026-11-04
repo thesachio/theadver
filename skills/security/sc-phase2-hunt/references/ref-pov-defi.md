@@ -20,9 +20,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada mekanisme valuasi orac
   3. **[Ekstraksi Nilai]** Identitas kedua mengeksekusi likuidasi/klaim terhadap identitas pertama — secara atomik atau dalam jendela eksekusi yang sama — untuk mengantongi bonus likuidasi atau menyedot cadangan asuransi protokol yang nilainya lebih besar daripada modal yang sengaja dikorbankan.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor selalu mengasumsikan Borrower (peminjam) dan Liquidator (pelikuidasi) adalah dua pihak yang saling bermusuhan, sehingga auditor tidak pernah menghitung bahwa jika keduanya dikendalikan satu penyerang, kerugian di satu identitas bisa menghasilkan keuntungan lebih besar di identitas lain atas beban kolam protokol.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` pada setiap kondisi batas (sehingga keuntungan identitas kedua selalu lebih kecil dari kerugian identitas pertama — *Negative-EV*).
-  - *Routing Uji Cepat Fase 3:* Sebelum menulis PoC, hitung pertidaksamaan `total Collateral_Tersita >= Bonus_Liquidator + Utang_Dihapus` memakai angka parameter live (LTV, liquidation threshold, liquidation bonus, reserve factor). Jika ruas kiri selalu menang di seluruh kondisi batas -> lead *Negative-EV*, langsung buang ke `06` tanpa menulis PoC.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas:* Gugur (`REJECTED_NEGATIVE_EV`) **hanya setelah** simulasi PoC 2-identitas dan *Strike 3 Fuzzing* membuktikan bahwa pada seluruh ukuran posisi, kemiringan harga, dan skenario likuidasi parsial, nilai `Total_Jaminan_Tersita` selalu lebih besar daripada `Bonus_Liquidator + Utang_Dihapus` tanpa menyisakan *bad debt* ke kolam publik.
+  - *Routing Simulasi Fase 3:* **DILARANG KERAS menggugurkan `[POV-DEFI-01]` hanya dengan menghitung pertidaksamaan di atas kertas!** Wajib tulis tes simulasi 2-identitas (`Attacker_A` sebagai Borrower + `Attacker_B` sebagai Liquidator) disertai **Strike 3 Fuzz** (`testFuzz_`) yang mengacak jumlah pinjaman, urutan likuidasi pecahan kecil, dan distorsi harga spot/agunan. Jika gagal, wajib lampirkan log eksekusi test & fuzz di `06` (`BUKTI_SIMULASI:` — Pernyataan #11e).
 
 ---
 
@@ -40,9 +40,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada mekanisme valuasi orac
   3. **[Ekstraksi Nilai]** Kontrak protokol mengeksekusi penukaran/pelepasan aset pada harga Sumber B yang sedang terdistorsi, lalu penyerang memulihkan posisi Sumber B untuk mengekstrak selisih nilai dari protokol.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor berhenti memeriksa risiko manipulasi harga begitu melihat kontrak membaca harga acuan dari Oracle yang tahan manipulasi satu blok (Sumber A), tanpa memeriksa ke mana eksekusi riil dikirim (Sumber B) dan bagaimana batas *slippage* pada eksekusi tersebut dihitung.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika fungsi pemicu dikunci hanya untuk operator tepercaya melalui jalur transaksi privat, ATAU jika batas hasil minimum pada Sumber B dihitung langsung dari harga Sumber A dengan deviasi maksimum yang lebih kecil daripada dua kali biaya pertukaran (*2x swap fee*) di Sumber B.
-  - *Routing Uji Cepat Fase 3:* Cek modifier akses fungsi pemicu dan rumus batas output minimum (`amountOutMin`). Jika fungsi hanya bisa dipanggil operator tepercaya ATAU batas output dikunci ke harga Oracle Sumber A dengan toleransi $< 2\times$ biaya swap Sumber B -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur jika batas penerimaan minimum (`amountOutMin`) pada eksekusi Sumber B diturunkan secara ketat di dalam kode dari harga Oracle Sumber A dengan toleransi slippage statis yang sempit **DAN** fungsi tidak dapat dipanggil maupun dipicu oleh pengguna eksternal.
+  - *Routing Simulasi Fase 3:* Apabila eksekusi ke Sumber B memakai `amountOutMin == 0`, menerima parameter slippage dari pemanggil, atau menghitung `amountOutMin` dari cadangan spot Sumber B itu sendiri, **WAJIB tulis PoC simulasi Sandwich / Flashloan Skew** pada fork (`FORK_LIVE` atau `FORK_DEPLOYED_HEAD`) untuk mengukur profit bersih ekstraksi nilai dari protokol!
 
 ---
 

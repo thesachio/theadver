@@ -20,9 +20,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada domain matematika/vaul
   3. **[Ekstraksi Nilai]** Akun penerima mengeklaim hak penuh menggunakan saldo baru dikalikan selisih indeks lama, lalu mengembalikan pokoknya untuk diulang (*loop*).
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor memeriksa fungsi masuk, keluar, dan klaim utama (1-aktor) lalu melihat ketiganya sudah memanggil modifier/fungsi penyinkron indeks untuk `msg.sender`. Auditor lupa bahwa penyinkron 1-argumen tersebut tidak memperbarui akun kedua (`to`) pada fungsi 2-aktor, atau luput melihat variabel memori yang saling menimpa saat `from == to`.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika fungsi pemindahan secara eksplisit menyinkronkan indeks untuk `from` DAN `to` sebelum mengubah saldo, serta menggunakan pengurangan/penambahan langsung di state persisten tanpa penimpaan cache lokal saat `from == to`.
-  - *Routing Uji Cepat Fase 3:* Cek langsung baris kode fungsi pemindah: apakah ia memanggil sinkronisasi indeks untuk **kedua** akun (`from` dan `to`) sebelum mutasi saldo? Jika ya dan tidak ada salinan lokal yang menimpa state saat `from == to` -> langsung buang ke `06` tanpa menulis PoC.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur secara statis (`REJECTED_MISMATCH`) **hanya jika** fungsi pemindahan secara eksplisit memanggil sinkronisasi indeks untuk kedua akun (`from` DAN `to`) sebelum mengubah saldo, SERTA memutasi state persisten secara langsung (`balances[from] -= x; balances[to] += x`) tanpa salinan variabel lokal yang saling menimpa saat `from == to`.
+  - *Routing Simulasi Fase 3:* Jika salah satu dari dua pengaman di atas absen (mis. akun `to` tidak disinkronkan, atau memakai struct memori lokal), **WAJIB langsung tulis PoC 2-Identitas** (`Attacker_A -> Attacker_B`) atau **Self-Transfer** (`Attacker_A -> Attacker_A`) di simulator!
 
 ---
 
@@ -40,9 +40,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada domain matematika/vaul
   3. **[Ekstraksi Nilai]** Potongan biaya atau beban bagian yang harus dibakar terpangkas menjadi 0 atau berkurang 1 unit di setiap iterasi, lalu dilipatgandakan dalam satu transaksi batch/multicall.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor terpaku memeriksa fungsi *Exact-Input* utama serta proteksi pendeposit pertama (`totalSupply == 0`), lalu menganggap fungsi *Exact-Output* pasangannya sudah simetris tanpa menguji apakah pembagian antara (*intermediate division*) memotong penyebut atau biaya sebelum langkah pembulatan terakhir.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika seluruh tahap pembagian pada fungsi *Exact-Output* membulatkan beban pengguna ke atas (`Rounding.Up` / *ceil*) tanpa pemangkasan perantara, atau jika selisih maksimum setelah di-loop dalam batas gas 1 blok lebih kecil dari biaya gas + fee protokol (`REJECTED_DUST` / `REJECTED_NEGATIVE_EV`).
-  - *Routing Uji Cepat Fase 3:* Sandingkan rumus *Exact-Input* vs *Exact-Output*; hitung $f(a)+f(b)$ vs $f(a+b)$ pada angka batas; bila setelah diuji dengan *3-Way EV Amplification* (Flashloan + Looping 1 blok + Chaining) selisih bersih tetap < biaya gas + fee -> langsung ke `06` (`REJECTED_DUST`).
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas:* Gugur jika seluruh tahap pembagian pada fungsi *Exact-Output* terbukti membulatkan beban pengguna ke atas (`Rounding.Up` / *ceil*) tanpa pemangkasan di langkah tengah, **DAN** setelah disimulasikan dengan *3-Way EV Amplification* + *Strike 3 Fuzzing* hasilnya tetap merugi (`REJECTED_DUST` / `REJECTED_NEGATIVE_EV`).
+  - *Routing Simulasi Fase 3:* **DILARANG menghitung pembulatan di atas kertas lalu membuang ke `06`!** Wajib tulis fungsi `testFuzz_` di simulator yang menguji rasio pool tidak bulat dan membandingkan $N \times \text{aksi}(a)$ terhadap $1 \times \text{aksi}(N \cdot a)$. Hanya boleh masuk `06` bila log eksekusi test dan fuzz dilampirkan (`BUKTI_SIMULASI:` sesuai Pernyataan #11e).
 
 ---
 

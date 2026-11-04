@@ -10,7 +10,7 @@ Berkas ini adalah **Router Gejala Kode (Symptom Router)** untuk memanggil pola e
 
 1. **Jangan Membuka Semua File `ref-pov-*.md` Sekaligus!**
 2. Baca kolom **Gejala Pemicu di Kode (Trigger Symptom)** pada Tabel Router di Bagian 2 di bawah ini.
-3. **HANYA JIKA** fungsi/unit `S-n` yang sedang Anda bedah memiliki gejala yang cocok dengan baris tabel tersebut, panggil `skill_view` / `read_file` pada berkas `ref-pov-*.md` yang ditunjuk untuk membaca 8 field lengkapnya (termasuk *Auditor Blindspot* dan *Routing Uji Cepat Fase 3*).
+3. **HANYA JIKA** fungsi/unit `S-n` yang sedang Anda bedah memiliki gejala yang cocok dengan baris tabel tersebut, panggil `skill_view` / `read_file` pada berkas `ref-pov-*.md` yang ditunjuk untuk membaca 8 field lengkapnya (termasuk *Auditor Blindspot* dan *Routing Simulasi Fase 3*).
 4. **Larangan Halusinasi Nomor POV:** DILARANG memakai nomor `[POV-XX]` yang belum terdaftar di tabel ini. Jika menemukan pola baru yang belum ada di katalog, gunakan analogi mekanis bebas dari `ref-method-registry.md` (`M-001`..`M-010`).
 
 ---

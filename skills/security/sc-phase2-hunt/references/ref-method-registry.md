@@ -1,6 +1,6 @@
 # Single-Source Counter-Auditor Method Registry (`M-001` .. `M-NNN`)
 
-Berkas ini adalah **pusat kendali tunggal (Plug-and-Play Registry)** untuk seluruh Metode Pencarian Kerentanan di Fase 2 dan Routing Uji Cepat Pra-PoC di Fase 3.
+Berkas ini adalah **pusat kendali tunggal (Plug-and-Play Registry)** untuk seluruh Metode Pencarian Kerentanan di Fase 2 dan **Routing Simulasi Fase 3 (Simulation-First Gate — No Paper Refutation)**.
 - **Aturan Penamaan Kompatibel:** Setiap metode memiliki ID stabil `M-00X` dan nama alias `Metode X` (keduanya sah ditulis di `audit/05-raw-leads.md` dan `audit/03-attack-surface-queue.md`).
 - **Cara Menambah Metode Baru (`M-011`, dst.):** Cukup tambahkan 1 blok metode baru di bagian bawah berkas ini dan daftarkan ke Tabel Matriks Kelas di Bagian 1. Anda **TIDAK PERLU** mengubah `sc-phase2-hunt`, `sc-phase3-verify-and-poc`, `sc-autopilot`, atau `AGENTS.md`.
 
@@ -40,9 +40,8 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. Cari **Titik Kritis di Bawah (*The Sink*)**: baris pengiriman token/koin/aset/objek, pencetakan hak/share, penghapusan utang/kewajiban, atau penyitaan jaminan.
   2. Lacak mundur ke atas (*backward*) setiap variabel pembentuk angka di *Sink* tersebut: *"Bagaimana cara memperbesar angka yang keluar di Sink sambil memperkecil pengorbanan di Source menggunakan input yang diizinkan pada 3 Kasta Aset di `01-threat-and-env.md`?"*
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - `M-001` adalah metode pembacaan alur. Pastikan jalur dari *Source* ke *Sink* yang diklaim benar-benar dapat dicapai tanpa melanggar 4 Kemustahilan Fakta Dasar (Langkah 1c Fase 3).
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - `M-001` adalah metode pembacaan alur *Sink-to-Source*. Selama jalur dari *Source* ke *Sink* tidak melanggar 4 Kemustahilan Fakta Statis Sempit (Langkah 1c Fase 3), **WAJIB langsung tulis tes simulasi PoC** (dan *Strike 3 Fuzzing* `testFuzz_`) untuk memaksimalkan selisih antara *Sink* dan *Source*.
 ---
 
 ### [M-002] / Metode 2 — State-Transition Differential Analysis (Expected vs. Actual Delta)
@@ -52,9 +51,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
   1. Untuk setiap aksi atau pasangan aksi (Masuk/Buat vs Keluar/Batal/Transfer/Sita dari `02-state-and-var-matrix.md`), bandingkan perubahan state yang seharusnya terjadi secara ekonomi vs yang benar-benar tertulis di kode:
      `State Awal -> Aksi -> Delta Ekspektasi (Hak vs Kewajiban) vs Delta Aktual di Kode -> Selisih Variabel yang Tidak Sinkron`.
   2. Periksa apakah ada variabel global yang berubah tanpa memperbarui variabel akun/posisi (atau sebaliknya), indeks akrual yang terlambat disinkronkan satu langkah, atau operasi batal/klaim sebagian yang lupa me-reset salah satu field.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Verifikasi langsung pada baris kode yang dikutip apakah variabel yang diklaim "lupa di-update/di-reset" memang tidak diperbarui di fungsi helper/internal/modifier yang dipanggil oleh transaksi tersebut. Jika sebenarnya sudah diperbarui di sub-fungsi -> gugur ke `06` (`REJECTED_MISMATCH`).
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Periksa cepat pada baris kode yang dikutip apakah variabel yang diklaim "lupa di-update/di-reset" sudah diperbarui secara identik di sub-fungsi/modifier internal dalam transaksi yang sama.
+  - **Hanya jika 100% terbukti salah baca baris kode statis** -> gugur ke `06` (`REJECTED_MISMATCH`). Jika benar ada perbedaan urutan atau kondisi cabang yang melewati pembaruan -> **DILARANG menebak dampaknya di atas kertas; langsung tulis tes simulasi urutan transaksi tersebut di Fase 3!**
 ---
 ### [M-003] / Metode 3 — Irrational Multi-Identity Sybil & Zero-Time Loop
 - **Target Kelas:** `[CLASS-B]`, `[CLASS-C]` *(serta `[CLASS-A]` bila kontrak memiliki fitur transfer/interaksi antar-akun internal)*
@@ -70,10 +69,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
   1. **Self-Transfer & Ping-Pong Loop:** Apa yang terjadi jika identitas pertama memindahkan/mendelegasikan hak ke dirinya sendiri (`from == to`) atau memantulkannya `A -> B -> A` berulang kali dalam jendela eksekusi yang sama ($\Delta t = 0$)?
   2. **Self-Liquidation / Self-Penalty Arbitrage:** Apa yang terjadi jika identitas pertama sengaja membuat posisinya terkena likuidasi/slashing/lelang/bad-debt, sementara identitas kedua bertindak sebagai likuidator/penawar yang memanen bonus atau mengalihkan kerugian (*bad debt socialization*) ke kolam publik?
   3. **Zero / Boundary & Dust Amplification:** Masukkan nilai `0`, `1` unit terkecil, atau `batas_minimum - 1` antar-identitas untuk menguji apakah biaya/penalti terpotong jadi `0` karena pembulatan dan dapat di-loop.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - PoC untuk `M-003` **WAJIB** menghadirkan minimal dua identitas/akun/objek/capability yang dikendalikan penyerang dalam satu jendela eksekusi (PoC satu identitas yang gagal tidak membuktikan gugurnya hipotesis multi-identitas).
-  - Untuk sub-kasus *Self-Liquidation / Bad-Debt*, hitung dulu pertidaksamaan `Total_Jaminan_Tersita >= Bonus_Pelikuidasi + Utang_Dihapus` dengan parameter live; bila ruas kiri selalu lebih besar di semua kondisi batas -> `Negative-EV`, langsung ke `06`.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - PoC untuk `M-003` **WAJIB** menghadirkan minimal dua identitas/akun/objek/capability yang dikendalikan penyerang (`Attacker_A` dan `Attacker_B`) dalam satu jendela eksekusi (PoC satu identitas yang gagal **tidak** membuktikan gugurnya hipotesis multi-identitas).
+  - Untuk sub-kasus *Self-Liquidation / Bad-Debt* atau *Ping-Pong Loop*, **DILARANG menggugurkan lead dengan hitungan pertidaksamaan di atas kertas!** Wajib jalankan simulasi test + **Strike 3 Fuzz** (`testFuzz_`) yang mengacak ukuran posisi, kemiringan harga flashloan, dan urutan likuidasi parsial untuk menguji apakah `Profit(Attacker_A + Attacker_B) > 0` atau menghasilkan *bad debt* pada pool.
 ---
 ### [M-004] / Metode 4 — Patch-Scar, Periphery, & View-vs-Write Asymmetry
 - **Target Kelas:** `[CLASS-A]`, `[CLASS-B]`, `[CLASS-C]`
@@ -81,9 +79,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. **Bedah *Patch-Scar* (Bekas Tambalan):** Jika fungsi utama memiliki `if`/`require`/`assert!` khusus yang terlihat seperti tambalan audit (rujuk `01-threat-and-env.md` dan riwayat laporan di `audit/INTEL.md`), periksa apakah jalur sampingan (`transfer`, `migrate`, `rescue`, `sweep`, `emergencyWithdraw`, `batch`, hook/callback) yang menyentuh variabel yang sama lupa dipasang tambalan tersebut.
   2. **Desinkronisasi Rumus `View` vs `Write`:** Bandingkan baris demi baris rumus di fungsi `view`/`preview`/getter dengan fungsi tulis pasangannya di `02-state-and-var-matrix.md` (misal: perbedaan arah pembulatan `mulDivDown` vs `mulDivUp`, atau biaya yang dihitung di preview tetapi tidak dipotong di eksekusi).
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Jika klaim berupa desinkronisasi `View` vs `Write`, periksa apakah ada fungsi tulis/eksternal (di kontrak itu atau kontrak pasangan) yang **benar-benar memanggil fungsi `view` tersebut untuk keputusan finansial** (pencetakan share, batas pinjaman, harga likuidasi). Jika fungsi `view` itu murni hanya untuk tampilan UI front-end tanpa menyentuh eksekusi on-chain -> buang ke `06` atau `08`.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Untuk *Patch-Scar* pada jalur periferal (`migrate`, `transfer`, `sweep`, `batch`), wajib langsung tulis simulasi PoC yang mengeksekusi jalur periferal tersebut setelah melakukan *Victim Seeding*.
+  - Untuk desinkronisasi `View` vs `Write`, periksa apakah ada fungsi tulis/eksternal (di kontrak itu, router, oracle, atau integrasi) yang memanggil fungsi `view` tersebut, **ATAU** apakah fungsi `Write` itu sendiri salah menghitung hak/kewajiban dibanding spesifikasi `View`. Hanya jika fungsi `view` terbukti murni *dead-helper* yang tidak pernah dipanggil on-chain **dan** fungsi `Write`-nya sudah benar -> gugur ke `06` (`REJECTED_NO_VICTIM`). (**Ingat:** Subagent Fase 3 **DILARANG** membuang entri ke `08`!)
 ---
 
 ### [M-005] / Metode 5 — Guard-Inversion (Membalik Guard Kode Menjadi Target Manipulasi)
@@ -93,9 +91,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
   1. Setiap kali menemukan `require(Kondisi_X >= Kondisi_Y)` atau `if (...) revert`: identifikasi seluruh variabel yang menyusun `Kondisi_X` dan `Kondisi_Y`.
   2. Berdasarkan `02-state-and-var-matrix.md`, periksa: bisakah fungsi publik lain (di entitas yang sama pada `CLASS-A`, atau melalui entitas lain/flashloan/donasi/callback pada `CLASS-B/C`) mengubah nilai `X` atau `Y` sesaat sebelum baris guard ini dieksekusi?
   3. Untuk guard yang ditampung di `audit/04-code-guarded.md`, gunakan metode ini secara khusus untuk membongkar apakah guard tersebut dapat ditembus lintas-entitas.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Cek di `02-state-and-var-matrix.md` daftar penulis variabel pembentuk guard tersebut. Jika seluruh penulisnya terkunci `onlyAdmin`/`onlyOwner` dan tidak dipengaruhi oleh saldo/rasio eksternal yang bisa digeser publik -> gugur ke `06` (`REJECTED_PRIVILEGED_FANTASY` / `REJECTED_BY_DESIGN`).
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Jika guard bersifat **Statis Murni** (`onlyOwner`, alamat tetap tanpa fungsi setter publik): cek di `02-state-and-var-matrix.md` apakah benar tidak ada penulis variabel selain admin. Jika murni terkunci admin -> `06` (`REJECTED_PRIVILEGED_FANTASY`).
+  - Jika guard bersifat **Dinamis / Matematis / State-Dependent** (melibatkan saldo, rasio share, waktu, harga, atau panjang array): **DILARANG KERAS menolak di atas kertas!** Wajib tulis tes simulasi + **Strike 3 Fuzzing** (`testFuzz_` / `proptest` / `halmos`) yang memanipulasi variabel pembentuk guard (via flashloan, donasi, *dust splitting*, atau urutan multi-step) **sebelum** guard dieksekusi.
 ---
 ### [M-006] / Metode 6 — Stale Local-Snapshot Write-Back & Duplicate-Reference Aliasing (`[A, A]`)
 - **Target Kelas:** `[CLASS-A]` *(Prinsip B)*, `[CLASS-B]` & `[CLASS-C]` *(Prinsip A & B)*
@@ -114,10 +112,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. Cari fungsi yang menyalin struktur/saldo ke variabel lokal, melakukan panggilan keluar / memanggil helper yang memutasi state yang sama, lalu menulis balik salinan lokal ke state persisten di akhir fungsi.
   2. Pada setiap fungsi yang menerima >= 2 akun/objek atau parameter daftar/array, uji input dengan referensi kembar `[A, A]`. Periksa apakah ada pemeriksaan ketidaksetaraan / deduplikasi sebelum mutasi.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Untuk **Prinsip A**: pastikan urutan *baca-lokal -> mutasi-persisten -> tulis-balik* benar-benar terjadi di kode; jika tidak ada penulisan balik setelah interaksi -> gugur ke `06`.
-  - Untuk **Prinsip B**: cek apakah sudah ada deduplikasi ketat (`ids[i] < ids[i+1]`, bitmap, atau constraint `account_a.key() != account_b.key()`); jika sudah ada -> `06`; jika belum -> PoC cukup 1 transaksi dengan input kembar `[A, A]`.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Untuk **Prinsip A** (*Stale Snapshot Write-Back*): pastikan urutan *baca-lokal -> mutasi-persisten -> tulis-balik* benar-benar ada di kode; jika terbukti **tidak ada** penulisan balik setelah interaksi -> gugur ke `06` (`REJECTED_MISMATCH`). Jika urutan itu ada -> **langsung tulis PoC** yang memicu mutasi di tengah jendela tersebut.
+  - Untuk **Prinsip B** (*Duplicate Reference* `[A, A]`): cek apakah sudah ada deduplikasi eksplisit (`ids[i] < ids[i+1]`, `key() !=`, atau `from != to`); jika belum ada -> **wajib eksekusi 1 transaksi PoC nyata** dengan input kembar `[A, A]` pada simulator!
 ---
 
 ### [M-007] / Metode 7 — Metamorphic Split-vs-Bulk Asymmetry ($f(a + b) \neq f(a) + f(b)$)
@@ -126,9 +123,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. **Salami Slicing (Pecah Jadi $N$ Potongan Kecil):** Bandingkan 1 panggilan `aksi(1000)` vs 100 panggilan `aksi(10)`. Jika biaya/utang/share yang dibakar menggunakan pembulatan ke bawah (*round down* / *floor*), memecah transaksi dapat membuat kewajiban terpotong menjadi `0` atau berkurang 1 unit di setiap iterasi.
   2. **Bulk Consolidation (Gabung via Flashloan Lalu Pecah):** Bandingkan eksekusi terpisah vs menggabungkan likuiditas/posisi sesaat pada titik perhitungan bagi-hasil/reward/tier, lalu memecahnya kembali di blok yang sama.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Hitung selisih maksimum `N x aksi(kecil)` vs `1 x aksi(besar)` dalam batas gas/komputasi 1 blok (dan setelah melewati 3-Way EV Amplification: *Flashloan + Looping + Chaining*). Jika total selisih maksimum tetap lebih kecil dari biaya gas + fee protokol -> `REJECTED_DUST` / `REJECTED_NEGATIVE_EV` ke `06`.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - **DILARANG menghitung pembulatan/salami-slicing di atas kertas lalu membuangnya sebagai `REJECTED_DUST`!**
+  - Setiap lead `M-007` **WAJIB** diuji di simulator menggunakan loop nyata ($N$ iterasi panggilan kecil vs 1 panggilan besar) + **3-Way EV Amplification** (*Flashloan modal besar + Multicall/Batch Looping + Chaining*) + **Strike 3 Fuzz** (`testFuzz_`) untuk mencari titik rasio penyebut/pembilang yang menghasilkan kebocoran maksimum. Hanya boleh masuk `06` (`REJECTED_DUST` / `REJECTED_NEGATIVE_EV`) jika log eksekusi test & fuzz membuktikan hasil tetap merugi.
 ---
 ### [M-008] / Metode 8 — Caller-Callee Assumption Seam & Direct Downstream Bypass
 - **Target Kelas:** `[CLASS-B]`, `[CLASS-C]`
@@ -143,9 +140,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. **Unvalidated Seam (Celah Lempar Tanggung Jawab):** Pada titik panggilan `Hulu -> Hilir`, apakah Hulu meneruskan parameter (`receiver`, `from`, `onBehalfOf`, `token`, `data`, atau akun/objek) tanpa validasi karena mengira Hilir akan memvalidasinya — sementara Hilir percaya buta karena panggilan datang dari Hulu?
   2. **Direct Downstream Bypass:** Jika validasi keamanan (slippage, whitelist, fee, access check) hanya ada di Hulu, periksa apakah penyerang dapat memanggil fungsi publik di Hilir secara langsung dengan melompati Hulu.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Periksa dua syarat di komponen hilir: **(1) apakah jalur hilir benar-benar membatasi caller yang sah**, dan **(2) apakah seluruh validasi kritis atas parameter pengguna sudah dilakukan di hulu ATAU diulang di hilir**. Jika caller hilir sudah dibatasi secara ketat DAN tidak ada parameter bebas yang lolos tanpa validasi -> gugur ke `06`. Jika salah satu bocor -> PoC wajib memanggil hilir secara langsung (atau menyuntikkan parameter lewat seam hulu).
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Periksa pada kode hilir apakah pemanggil sudah dikunci secara ketat ke alamat hulu tunggal (`msg.sender == router`) **DAN** seluruh parameter kritis sudah divalidasi penuh.
+  - Jika fungsi hilir dapat dipanggil langsung atau menerima parameter bebas (`from`, `receiver`, `data`, `token`, akun/objek) yang tidak divalidasi ulang -> **wajib tulis PoC simulasi** (lengkap dengan *Victim Seeding* seperti victim yang sudah memberi `approve` atau menyetor dana) yang menembak kontrak hilir secara langsung atau menyuntikkan payload lewat seam hulu.
 ---
 ### [M-009] / Metode 9 — Half-Baked / Suspended Lifecycle State (Menyerang Saat Status "Menggantung")
 - **Target Kelas:** `[CLASS-A]` *(State Machine Lokal)*, `[CLASS-B]`, `[CLASS-C]` *(Multi-Step / Async Lifecycle)*
@@ -153,9 +150,9 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. Mulai **Langkah 1** dari proses multi-tahap (misal: `requestWithdraw`, `initiateCooldown`, `createOrder`, `startAuction`, `propose`, `initiateMigration`, atau pengiriman pesan asinkron tahap pertama).
   2. **JANGAN** jalankan langkah penyelesaiannya. Saat akun/posisi/objek masih berada dalam status *"Pending / Menggantung"* tersebut, panggil fungsi dari jalur lain (`transfer`, `delegate`, `borrow`, `liquidate`, `emergencyWithdraw`, atau `cancel` berulang) untuk memeriksa apakah saldo/jaminan yang sedang menggantung belum dikunci sehingga bisa dipakai dua kali (*double-spend*) atau menghindari likuidasi.
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Cek pada kode Langkah 1 (`request`/`initiate`/`createOrder`) apakah saldo/share/objek langsung dibakar, dipindahkan ke escrow, atau dikunci penuh oleh flag yang juga diperiksa di **seluruh** fungsi jalur sampingan (`transfer`, `borrow`, `liquidate`, `cancel`). Jika sudah terkunci rapat di semua jalur -> gugur ke `06`. Jika ada satu jalur sampingan yang tidak memeriksa kunci tersebut -> PoC wajib mengeksekusi urutan: `Langkah 1 (Gantung) -> Jalur Sampingan -> Langkah 2 (Penyelesaian/Klaim)`.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - **Hanya jika** pada kode Langkah 1 (`request`/`initiate`) objek/share terbukti langsung dibakar (`_burn`) dan tidak bisa disentuh lagi oleh fungsi mana pun -> gugur ke `06` (`REJECTED_MISMATCH`).
+  - Selama posisi masih tercatat dalam struktur state/antrean "Pending / In-Flight" -> **wajib tulis PoC simulasi berurutan**: Langkah 1 (Gantung) -> Panggil Jalur Sampingan (`transfer`/`borrow`/`liquidate`/`cancel`) -> Langkah 2 (Finalize/Claim).
 ---
 
 ### [M-010] / Metode 10 — Live Residual State, Delegated Authority, & Post-Upgrade Drift
@@ -178,10 +175,10 @@ terhadap **5 Primitif Universal**: (1) Kuantisasi Proporsi, (2) Transisi Paksa &
 - **Prosedur Bedah Fase 2:**
   1. **Delegated Authority & Residual Asset:** Apakah komponen perantara (Router/Helper/Migrator/Adapter) memiliki panggilan eksternal terbuka (`call`, `transferFrom`, `sweep`, `swap`, CPI, atau fungsi publik terbuka) yang dapat menarik aset tertinggal atau menyedot otorisasi/capability pengguna aktif?
   2. **Post-Upgrade / Migration State Drift:** Setelah peningkatan atau migrasi versi, apakah ada variabel/field/slot baru yang berasumsi sudah terisi saat inisialisasi padahal pada state produksi masih `0` / kosong — atau bertabrakan dengan layout state versi sebelumnya?
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - Sebelum menulis kode PoC, **wajib membaca state live produksi lebih dulu** (khusus EVM gunakan `cast call` / `cast storage` / `cast implementation`; untuk non-EVM gunakan pembacaan account data / object field / actor state yang setara).
-  - Jika pada state produksi nyata terbukti tidak ada saldo/asset object tertinggal, tidak ada otorisasi/capability aktif yang bisa ditarik, dan seluruh slot/field pasca-upgrade sudah terisi dengan benar -> langsung buang ke `06` tanpa menulis PoC.
-
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - Pertama, **baca state live produksi** (`cast call` / `cast storage` / `cast implementation` atau padanan non-EVM) untuk melihat apakah sudah ada *residual balance*, *allowance* aktif, atau *uninitialized post-upgrade slot* saat ini.
+  - **PERINGATAN KERAS ANTI-FALSE-NEGATIVE:** Meskipun pada blok saat ini kebetulan saldo kontrak perantara = 0 atau belum terlihat *allowance* di satu alamat sampel, **DILARANG langsung membuang lead ke `06`** bila kode kontrak memang memiliki celah struktural pencurian allowance/refund/deposit! Anda **WAJIB** melakukan *Victim Lifecycle Seeding* di PoC (simulasikan transaksi pengguna normal `vm.prank(victim)` yang melakukan `approve` atau memulai transaksi normal sesuai arsitektur protokol, lalu tunjukkan penyerang menyedotnya)!
+  - **Hanya untuk** klaim *Post-Upgrade Uninitialized Slot* yang pada storage mainnet terbukti sudah diinisialisasi permanen dan terkunci rapat, barulah boleh digugurkan ke `06`.
 ---
 
 ## 4. Template Plug-and-Play untuk Menambah Metode Baru (`M-011` .. `M-NNN`)
@@ -200,6 +197,6 @@ Saat ingin menambahkan metode pencarian baru di masa depan, salin blok di bawah 
 - **Prosedur Bedah Fase 2:**
   1. ...
   2. ...
-- **Routing Uji Cepat Fase 3 (Pre-PoC Gate):**
-  - <Pemeriksaan termurah untuk menggugurkan ke `06` atau syarat wajib PoC sebelum masuk ke simulasi penuh>
+- **Routing Simulasi Fase 3 (Simulation-First Gate):**
+  - <Pemeriksaan statis-termurah yang HANYA boleh menggugurkan bila terbukti salah-baca statis literal / melanggar 4 Kemustahilan Statis Sempit; selebihnya syarat wajib merancang PoC + Strike 3 Fuzz>
 ```

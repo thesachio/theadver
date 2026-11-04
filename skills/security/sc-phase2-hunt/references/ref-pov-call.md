@@ -21,9 +21,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada penyerahan kontrol eks
   3. **[Ekstraksi Nilai]** Di dalam callback, penyerang memanggil fungsi di Kontrak B (atau fungsi lain) yang membaca nilai rasio yang sedang timpang sementara (*inflated/deflated mid-tx state*) untuk meminjam berlebih atau melikuidasi secara tidak sah.
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor melihat kata kunci `nonReentrant` pada fungsi tersebut lalu langsung menandainya aman dari reentrancy, tanpa memeriksa apakah ada kontrak/fungsi lain di ekosistem yang membaca state yang baru setengah selesai diperbarui tersebut.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika seluruh mutasi state internal dan akuntansi bersama diselesaikan 100% sebelum interaksi eksternal (CEI murni), atau jika terdapat *global reentrancy lock* yang juga diperiksa oleh seluruh fungsi pembaca (*view check*).
-  - *Routing Uji Cepat Fase 3:* Cek apakah benar ada kontrak/fungsi lain di dalam scope (atau integrasi produksi nyata) yang membaca rasio *mid-tx* tersebut tanpa terhalang *reentrancy lock* yang sama. Jika tidak ada pembaca eksternal/internal yang terpengaruh -> tidak ada korban -> langsung ke `06` (`REJECTED_NO_VICTIM`).
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas:* Gugur jika seluruh mutasi state internal dan akuntansi bersama diselesaikan 100% sebelum interaksi eksternal (CEI murni), atau jika terdapat *global reentrancy lock* yang juga diperiksa oleh seluruh fungsi pembaca/fungsi pasangan.
+  - *Routing Simulasi Fase 3:* Jika benar ada jendela di mana variabel pertama sudah berubah namun variabel pasangannya belum berubah saat kontrol diserahkan keluar, **WAJIB tulis kontrak/hook penyerang di simulator** yang masuk kembali ke fungsi pembaca/pasangan pada jendela *mid-tx* tersebut (lengkap dengan *Victim Seeding* pada pool).
 
 ---
 
@@ -44,9 +44,9 @@ Berkas ini menyimpan pola eksploitasi on-chain nyata pada penyerahan kontrol eks
   3. **[Ekstraksi Nilai]** Transaksi induk tetap berhasil dengan state menguntungkan dari cabang gagal, atau seluruh gas pemanggil terkuras habis oleh biaya ekspansi memori kuadratik sebelum blok `catch` dapat menyelamatkan transaksi (DoS permanen pada fungsi likuidasi/penyelesaian).
 - **Mengapa Lolos dari Auditor Biasa (Auditor Blindspot):**
   Auditor menganggap keberadaan `try/catch` atau pembatasan `.call{gas: X}()` sudah otomatis menjamin keamanan dari kegagalan pihak ketiga, sehingga tidak membandingkan selisih akuntansi antara cabang sukses vs gagal dan lupa bahwa biaya penyalinan returndata ke memori dibebankan ke kontrak pemanggil.
-- **Batas Realitas (Kapan Pola Ini GUGUR) & Routing Uji Cepat Fase 3:**
-  - *Batas Realitas:* Gugur jika target panggilan adalah kontrak internal/tetap yang *immutable* dan tidak meneruskan eksekusi ke alamat pengguna, serta mutasi state pada cabang sukses maupun gagal tetap mempertahankan invarian akuntansi yang setara.
-  - *Routing Uji Cepat Fase 3:* Cek pengendali alamat target pada panggilan eksternal tersebut. Jika target adalah kontrak internal/tetap *immutable* yang tidak bisa dibuat gagal oleh penyerang dan tidak meneruskan panggilan ke alamat pengguna -> langsung ke `06`.
+- Batas Realitas (Kapan Pola Ini GUGUR) & Routing Simulasi Fase 3:
+  - *Batas Realitas Statis:* Gugur secara statis (`REJECTED_MISMATCH`) jika target subcall adalah kontrak internal tetap yang *immutable*, tidak meneruskan panggilan ke alamat pengguna, dan tidak dapat dipaksa gagal melalui manipulasi gas (EIP-150 63/64) maupun batas state.
+  - *Routing Simulasi Fase 3:* Selama target subcall dapat dipengaruhi penyerang (alamat penerima dikendalikan pengguna, hook token, atau subcall bisa dibuat *Out-of-Gas* / *revert* dengan sengaja), **WAJIB tulis PoC simulasi** yang memaksa eksekusi masuk ke cabang `catch` / `!success` (atau mengembalikan payload returndata besar untuk uji *Returnbombing* DoS) dan ukur dampak state/gas-nya di simulator!
 
 ---
 

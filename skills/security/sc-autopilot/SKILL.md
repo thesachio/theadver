@@ -1,7 +1,7 @@
 ---
 name: sc-autopilot
 description: Master Orchestrator Whitehat Adversarial Lintas-Rantai (v6.2.0 Simulation-First) - Jalankan siklus penuh (Fase 0 Intel -> Fase 1 100% Repo Recon -> Fase 2 Class-Routed Hunt & Static-vs-Dynamic Guard Split -> Fase 3 Dual-Mode Fork & 3-Stage Fuzz Lab -> Fase 4 Verdict Judge & 09-vs-08 Deployment Split) secara otonom via delegate_task
-version: 6.3.0
+version: 6.4.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, adversarial, orchestrator, autopilot, delegation, multichain]
@@ -27,8 +27,10 @@ Dijalankan pada setiap sesi baru, instruksi "lanjutkan/resume", atau setelah kom
 ### 2. Booting Hemat-Konteks
 - **A** — Baca **HANYA** `audit/STATE.md` lebih dulu.
 - **B** — Baca `CURRENT_ACTIVE_ITEM` dan `Working Memory Scratchpad`.
-- **C** — Buka file antrean **hanya pada baris item aktif**: `03-attack-surface-queue.md` (Fase 2) atau `05-raw-leads.md` (Fase 3), via `grep -n` atau baca sebagian. DILARANG memuat file penuh.
-- **D** — **DILARANG KERAS** membaca ulang kode unit di `Completed Units`, dan **DILARANG menguji ulang** lead di `06-refuted-invalid.md` / `08-valid-not-eligible.md` / `Do-Not-Reopen List`.
+- **C** — Buka **FILE AUDIT** (`03-attack-surface-queue.md` / `05-raw-leads.md`) **hanya pada baris item aktif**, via `grep -n` atau baca sebagian. **DILARANG memuat file audit penuh.**
+  - ⚠️ **BATAS OBJEK (jangan salah perluas):** larangan ini **HANYA untuk `audit/*.md`**. **KODE SUMBER KONTRAK TIDAK TERMASUK.** Fungsi yang sedang dibedah **WAJIB dibaca utuh** dari `function` sampai `}` penyeimbang (`read_file` ber-`offset`/`limit` bila > 60 baris) — lihat `sc-phase2-hunt` §A0 dan `sc-phase3-verify-and-poc` Langkah 0e. Menghemat token dengan membaca potongan kode adalah penyebab lead palsu.
+- **D** — **DILARANG menguji ulang** lead di `06-refuted-invalid.md` / `08-valid-not-eligible.md` / `Do-Not-Reopen List`.
+  - Untuk kode unit di `Completed Units`: **DILARANG membaca ulang secara penuh** — **KECUALI** bila unit itu tidak mencatat rentang baca (`File:awal-akhir` + jumlah baris). Tanpa rentang tercatat, unit **dianggap belum selesai** dan pembacaan utuh **WAJIB** dilakukan.
 
 ### 3. Write-Ahead Checkpoint
 **DILARANG** pindah `S-n` -> `S-(n+1)` atau `LEAD-x` -> `LEAD-(x+1)` sebelum memperbarui `CURRENT_ACTIVE_ITEM`, `Domain Coverage Meter`, dan `Do-Not-Reopen List` di `audit/STATE.md`. Checkpoint ditulis **sebelum** unit berikutnya dimulai.

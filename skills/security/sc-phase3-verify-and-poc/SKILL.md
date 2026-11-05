@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
 description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
-version: 6.3.0
+version: 6.4.0
 ---
 
 # Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
@@ -133,6 +133,28 @@ HASIL: masih terbuka karena <sebab yang tidak bisa diselesaikan sekarang>
 Entri tanpa blok `PERCOBAAN` **ditolak** dan lead dikembalikan ke antrean untuk dikerjakan.
 
 > Beda tegas: **`NEXT_EXPLORE` bukan `07` versi sopan dari `06`.** Bila setelah fuzzing/chaining hasilnya tetap negatif, lead pindah ke `06` `REJECTED_POC_FAILS` — bukan dibiarkan menggantung di `07`.
+
+---
+
+## Langkah 0e: Re-Read Pass Bersyarat — Verifikasi Hipotesis Sebelum PoC (WAJIB)
+
+Fase 2 sudah membaca kode untuk **membentuk** lead. Fase 3 membaca kode yang sama untuk **membuktikan** lead. Kode tidak berubah — **pertanyaannya yang berubah**: Fase 2 bertanya "apakah ada celah?", Fase 3 bertanya "apakah celah ini benar-benar dieksekusi?".
+
+**Wajib Re-Read Pass bila SALAH SATU terpenuhi:**
+1. Lead mengandung **klaim negatif** ("tidak ada guard", "X tidak dipanggil", "tidak ada validasi").
+2. Lead akan **digugurkan** (`06`). Menggugurkan tanpa membaca utuh adalah cara termahal untuk salah.
+3. Fungsi target **> 60 baris**.
+4. Anda **tidak ingat** isi fungsi itu secara utuh.
+
+**Tidak wajib** bila: lead positif sederhana, fungsi pendek, dan rentang baca Fase 2 tercatat lengkap — sebutkan rujukannya di notes.
+
+**Prosedur:**
+1. Buka fungsi target, baca **utuh** dari `function` sampai `}` penyeimbang (`read_file` ber-`offset`/`limit`, bukan `sed|tail`).
+2. Catat `File:awal-akhir` + jumlah baris di `notes/fase3-bukti-simulasi.md`.
+3. Bandingkan dengan klaim lead: **cocok**, **sebagian**, atau **bertentangan**.
+4. Bila bertentangan → lead **DILARANG** di-PoC apa adanya; tulis ke `06` sebagai `REJECTED_MISMATCH` dan lanjut ke lead berikutnya.
+
+**Insiden yang melahirkan aturan ini:** `_fallback` di `ModuleManager.sol` diklaim "tidak pernah memanggil `postCheck`" dan masuk `05` sebagai lead kuat. Re-Read Pass membuktikan `postCheck` dipanggil sebelum `return` dan men-revert `PolicyBlocked()` — dua lead (`L-31`, `L-30`) mati seketika, setelah satu siklus PoC terbuang.
 
 ---
 
@@ -269,6 +291,60 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 > | `P1_PRE_DEPLOY` | Tulis PoC `LOKAL`/`FORK_DEPLOYED_HEAD`; staging kandidat `08` |
 >
 > **DILARANG KERAS** memakai aturan "bytecode harus identik" atau "`sha256` explorer harus sama" sebagai alasan menggugurkan/menghentikan PoC: setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint**, bukan hash file. Tugas utama Fase 3 tetap: **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
+
+---
+
+### Langkah 2c: Kewajiban Kontrol Positif untuk Setiap Assertion Negatif (WAJIB)
+
+**Hukum:** `assertFalse(ok)`, `assertEq(count, 0)`, `assertTrue(reverted)`, atau bentuk negatif apa pun **DILARANG berdiri sendiri**. Setiap harness wajib memuat minimal satu **kasus kontrol positif** yang membuktikan jalur yang sama bisa menghasilkan hasil positif.
+
+**Alasan mekanis:** tanpa kontrol, **"tidak ada kegagalan" tak terbedakan dari "tidak ada eksekusi"**. `assertFalse(ok)` otomatis lulus ketika semua input me-revert karena alasan yang tidak ada hubungannya dengan hipotesis — mis. salah encoding, selector salah, modul tidak terpasang, atau input tidak valid.
+
+**Pola wajib — 2 kasus minimum per harness:**
+
+| Kasus | Tujuan | Harus menghasilkan |
+|---|---|---|
+| **Kontrol positif** | buktikan jalur bisa berjalan | eksekusi sukses / kondisi normal tercapai |
+| **Kasus target** | buktikan hipotesis | delta state / revert yang dihipotesiskan |
+
+**DILARANG menggugurkan lead bila kontrol positif tidak berhasil dibuat.** Harness yang tidak bisa membuktikan jalur normalnya berjalan **bukan bukti** bahwa protokol aman — itu bukti harness belum benar. Kembali ke Langkah 0c (Tangga Self-Healing), jangan tulis ke `06`.
+
+**Insiden yang melahirkan aturan ini:** pada audit nyata, dua lead (`L-41`, `L-42`) dinyatakan gugur karena fuzzer menemukan "counterexample" (`typesLen=0`). Pemeriksaan ulang menunjukkan **seluruh input** me-revert `InvalidInput() 0xb4fa3fb3` — termasuk payload valid — sehingga assertion negatif lulus tanpa pernah mengeksekusi jalur target. Satu lead lain (`L-20`) juga gugur karena encoding mode salah sehingga "kontrol" ikut gagal, membuat uji returnbomb tidak bermakna. Ketiganya adalah **false positive yang menutupi kegagalan harness**, bukan temuan.
+
+**Cek cepat sebelum menulis hasil harness:**
+- [ ] Ada kasus kontrol positif? Apakah ia benar-benar `[PASS]`?
+- [ ] Apakah kasus target masuk ke jalur yang dihipotesiskan, bukan revert lebih awal?
+- [ ] Kode error kontrol berbeda dari kode error target? (kalau sama, tidak ada pembeda)
+
+---
+
+### Langkah 2d: Gate Penutupan Fase 3 — Artefak Wajib Berwujud (WAJIB SEBELUM LANJUT)
+
+**Hukum: Fase 3 DILARANG dinyatakan "selesai" berdasarkan STATUS. Kelulusan diukur dari FILE yang benar-benar ada di disk.**
+
+**Kejadian nyata:** seluruh lead diberi status keputusan di file antrean, lalu Fase 3 dinyatakan selesai. Ternyata file wadah penolakan **belum pernah dibuat**. Saat Fase 4 dijalankan, gate integritas penolakan (`#11e`) **tidak dapat dieksekusi** karena file yang diperiksa tidak ada — bukan karena isinya salah, tetapi karena **artefaknya belum berwujud**. Laporan otomatis tidak sah.
+
+**Akar penyebab:** status keputusan ditulis ke **file antrean** (`05-raw-leads.md`) alih-alih **memindahkan** entri ke wadahnya (`06`/`07`/kandidat `09`). Akibat berantai: file antrean tumbuh tanpa batas (puluhan KB), memaksa pembacaan berulang, dan melanggar aturan "satu file satu domain".
+
+**Pemeriksaan wajib sebelum menutup Fase 3 — semua harus terpenuhi:**
+
+- [ ] `06-refuted-invalid.md` **ada sebagai file** (bila ada ≥1 lead gugur)
+- [ ] `07-needs-next-step.md` **ada sebagai file** (bila ada ≥1 lead `NEXT_*`/`TOOL_BLOCKED`)
+- [ ] Setiap entri `06` yang berstatus `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` memuat blok `BUKTI_SIMULASI:`
+- [ ] `grep -c 'Status Fase 3' 05-raw-leads.md` **== 0** — file antrean wajib bersih dari status keputusan
+- [ ] Jumlah entri di `06` **==** jumlah lead yang benar-benar gugur
+- [ ] Setiap lead yang diputuskan sudah **DIPINDAHKAN** (bukan sekadar ditandai) ke wadahnya
+
+**Satu perintah verifikasi:**
+
+```bash
+test -f audit/06-refuted-invalid.md \
+  && test -f audit/07-needs-next-step.md \
+  && [ "$(grep -c 'Status Fase 3' audit/05-raw-leads.md)" -eq 0 ] \
+  && echo "GATE PENUTUPAN: PASS" || echo "GATE PENUTUPAN: GAGAL — Fase 3 belum boleh ditutup"
+```
+
+**Bila gagal:** Fase 3 **belum selesai**, meski seluruh lead sudah punya keputusan. Kembali ke Langkah 3 dan wujudkan wadahnya.
 
 ---
 

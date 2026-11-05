@@ -1,7 +1,7 @@
 ---
 name: sc-phase1-recon
 description: Phase 0 & 1 — Domain-Agnostic Recon, 100% Physical Repo Population Inventory, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
-version: 6.3.0
+version: 6.4.0
 ---
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
@@ -183,6 +183,23 @@ Gabungkan berkas yang berada dalam **satu alur transaksi** di domain yang sama m
 Buat file `audit/05-raw-leads.md` dan catat setiap indikasi awal anomali mutasi state, *Patch-Scar*, ketidaksinkronan View vs Write, atau **guard aritmetika/dinamis mencurigakan** yang ditemukan selama Langkah 0–4 **tanpa melakukan penghakiman kelayakan ekonomi (EV) atau penyaringan `HEAD-only` terlebih dahulu**.
 
 > **Guard dinamis JANGAN diparkir di `04`.** Guard yang ekspresinya melibatkan aritmetika, `mulDiv`, `balanceOf`, rasio `totalAssets`/`totalSupply`, akumulator waktu/indeks, batas LTV/likuidasi, atau panjang array **wajib masuk `05`** (tag `M-005`) agar di-fuzz di Fase 3. Lihat `verify/templates/04-code-guarded.md`.
+
+> ⚠️ **`05` ADALAH ANTREAN, BUKAN RIWAYAT — DILARANG MEMBENGKAK.**
+> `05` dibaca **berulang** setiap resume, triage, dan perpindahan lead; ia adalah file paling sering dibuka sepanjang audit. Isi `05` dibatasi **hanya** untuk hal yang dibutuhkan saat memilih lead berikutnya.
+>
+> **Wajib ada per lead (ringkas, maks ~10 baris):** ID · `File:Baris` · hipotesis **satu baris** · metode (`M-xxx`/`[POV-xx]`) · EV kasar · status.
+>
+> **DILARANG ada di `05`:**
+> - kutipan kode panjang, trace, atau salinan log terminal → taruh di `audit/notes/lead-<id>.md`
+> - analisis berlapis / riwayat koreksi → taruh di `audit/notes/lead-<id>.md`
+> - **atestasi `ATTESTED_CLEAN`** → taruh di `audit/03` (1 baris di tabel cakupan) + detail di `audit/notes/attest-<unit>.md`
+> - blok bukti hasil uji → wadah hasilnya (`06`/`07`/`08`/`09`)
+>
+> **Patokan ukuran:** rata-rata **≤ 250 B per lead**. `05` dengan 50 lead sehatnya **≤ 15 KB**. File > 25 KB adalah tanda riwayat sudah bocor ke antrean — pindahkan sebelum menambah lead baru.
+>
+> **Aturan pemindahan (dua arah, jangan dipisah):** sebelum memangkas detail dari `05`, **WAJIB** sudah ada `audit/notes/lead-<id>.md` yang memuat detail itu. Memangkas tanpa memindah = data hilang permanen.
+>
+> **Bedakan dari wadah hasil:** `06`/`07`/`08`/`09` **DILARANG** diringkas — isinya bukti eksekusi yang menjadi syarat sah laporan (`BUKTI_SIMULASI`, `PERCOBAAN`, PoC `[PASS]`). Yang dipadatkan hanya `05`, karena `05` memuat **rencana**, bukan **bukti**.
 
 **Fase 1 adalah penulis SAH `05`** — skill ini secara eksplisit melarang delegasi ("DILARANG mendelegasikan pekerjaan Fase 1 ke subagent lain"), sehingga tidak ada Subagent yang bersaing menulis. Aturan staging hanya mengikat ketika pekerjaan didelegasikan (Fase 2/3). Tetap patuhi `workspace/AGENTS.md` Pasal 1.3: `write_file` awal lalu `append`, **DILARANG** `open(path,"w")` / `>`.
 

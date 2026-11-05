@@ -19,8 +19,16 @@ Setiap kali memulai sesi, menerima instruksi "lanjutkan/resume", atau mengalami 
 ### 2. Prosedur Booting Hemat-Konteks (Mode Resume)
 - **Langkah A** — Baca **HANYA** `audit/STATE.md` terlebih dahulu. Jangan buka file audit lain sebelum ini selesai.
 - **Langkah B** — Lihat field `CURRENT_ACTIVE_ITEM` dan `Working Memory Scratchpad`.
-- **Langkah C** — Buka file antrean relevan **hanya pada baris item aktif**: `03-attack-surface-queue.md` bila di Fase 2, `05-raw-leads.md` bila di Fase 3. Gunakan `grep -n` atau baca sebagian (`offset`/`limit`). DILARANG memuat satu file penuh.
+- **Langkah C** — Buka **FILE AUDIT** relevan (`03-attack-surface-queue.md` bila di Fase 2, `05-raw-leads.md` bila di Fase 3) **hanya pada baris item aktif**. Gunakan `grep -n` atau baca sebagian (`offset`/`limit`). **DILARANG memuat satu FILE AUDIT penuh.**
 - **Langkah D** — **DILARANG KERAS** membaca ulang kode kontrak dari unit yang tercatat di `Completed Units`, dan **DILARANG menguji ulang** lead yang sudah ada di `06-refuted-invalid.md` (Dead-End) atau `08-valid-not-eligible.md` (Verified-Not-Eligible). Larangan ini juga berlaku untuk lead berstatus `REJECTED_POC_FAILS` yang terkunci `3-Stage Escalation (2 Manual + 1 Fuzz)`.
+
+> ⚠️ **BATAS OBJEK LANGKAH C & D — BACA INI, JANGAN DITAFSIRKAN SENDIRI.**
+> Hemat-konteks **BERLAKU HANYA UNTUK `audit/*.md`**. **KODE SUMBER KONTRAK (`source/`, `contracts/`, `src/`, `programs/`) TIDAK TERMASUK.**
+> - **Kode kontrak WAJIB dibaca UTUH** dari `function` sampai `}` penyeimbang sebelum menulis lead (`sc-phase2-hunt` §A0) atau menulis PoC (`sc-phase3-verify-and-poc` Langkah 0e). `read_file` ber-`offset`/`limit` bila fungsi > 60 baris.
+> - **`grep`/`sed`/`head`/`tail` HANYA untuk menemukan lokasi**, **DILARANG** dipakai menyimpulkan isi fungsi atau membuktikan klaim negatif ("tidak ada guard", "X tidak dipanggil").
+> - **Pengecualian Langkah D:** larangan baca-ulang **GUGUR** bila unit di `Completed Units` **tidak mencatat rentang baca** (`File:awal-akhir` + jumlah baris). Tanpa rentang tercatat, unit **dianggap belum selesai** dan pembacaan utuh **WAJIB** dilakukan.
+>
+> **Alasan aturan ini saling berlawanan arah:** hemat-token melindungi **file audit** yang tumbuh besar (65 KB); anti-hemat melindungi **pemahaman kode** yang bisa hancur oleh potongan. Menerapkan salah satunya ke objek yang salah menghasilkan biaya atau lead palsu.
 
 ### 3. Kewajiban Sinkronisasi Checkpoint (Write-Ahead Rule)
 **DILARANG** berpindah dari Unit `S-n` ke `S-(n+1)`, atau dari `LEAD-x` ke `LEAD-(x+1)`, sebelum memperbarui tiga hal di `audit/STATE.md`:
@@ -76,6 +84,34 @@ Backup **SEBELUM** mutasi, bukan sesudah. Backup yang dibuat setelah kegagalan m
 ### 1.3.4 Satu Penulis per File
 
 Subagent **DILARANG** menulis ke `audit/04`–`09`. Mereka menulis entri lengkap ke `audit/notes/staging-<unit>.md`, lalu **Parent** yang menggabungkan (lihat Pasal 4 — Protokol Staging). Alasan: ringkasan `≤12 baris` tidak dapat membawa muatan 120–160 baris, dan `max_concurrent_children` adalah konfigurasi yang bisa berubah, bukan jaminan.
+
+---
+
+## 1.4 PROTOKOL INTEGRITAS BUKTI — DILARANG MENULIS BUKTI DARI INGATAN
+
+**Hukum:** blok bukti di `06`/`08`/`09` (`BUKTI_SIMULASI:`, `PERCOBAAN:`, log `forge test`/`cast`) **WAJIB** ditempel dari keluaran yang benar-benar dijalankan, atau disalin dari `audit/notes/*-bukti-simulasi.md` yang sudah memuat log aslinya. Menyusunnya dari narasi atau ingatan = **`FABRICATED_EVIDENCE`** = laporan DITOLAK.
+
+**Mengapa aturan ini terpisah dari `#11e`:** `#11e` mencegah *"gugur tanpa bukti"*. Aturan ini mencegah **"menyajikan bukti yang tidak ada"** — kegagalan yang **lolos semua gerbang otomatis**. `verify07.py` hanya memeriksa *ada-tidaknya* baris `$ ...`; `grep -c` hanya menghitung entri; `#11e` hanya memeriksa keberadaan kata `BUKTI_SIMULASI`. Semuanya **PASS** meski isinya palsu.
+
+**Insiden nyata:** pada audit run-2, blok bukti di `08-valid-not-eligible.md` memuat tiga nama test yang **tidak pernah ada** (`test_L03_timelockStartByThirdParty`, `test_L03_ownerCannotCancel`, `test_L03_resetWindowExtends3x`). Berkas aslinya berisi nama berbeda. Nama-nama itu terasa masuk akal sehingga lolos tanpa dicurigai.
+
+**Verifikasi wajib sebelum menutup Fase 4:**
+
+```bash
+# 1. Nama test di 06/08/09 harus ADA di lab atau arsip
+forge test --list | grep -oE 'test[A-Za-z0-9_]+' | sort -u > /tmp/real.txt
+cat audit-lab-archive/*.sol 2>/dev/null \
+  | grep -hoE 'function (test[A-Za-z0-9_]+)' | sed 's/function //' >> /tmp/real.txt
+sort -u /tmp/real.txt -o /tmp/real.txt
+# ekstrak test_* dari 06/08/09, sisa yang tidak cocok = FABRICATED_EVIDENCE
+```
+
+```bash
+# 2. Nomor File:Baris wajib dicek ulang, bukan dari ingatan
+# 3. Setiap baris "Perintah yang dijalankan:" harus punya keluarannya, bukan hanya perintahnya
+```
+
+**Label yang sah:** hanya **"terverifikasi"** bila ada kutipan kode + log eksekusi. Tanpa keduanya, label yang jujur adalah **"indikasi"**.
 
 ---
 

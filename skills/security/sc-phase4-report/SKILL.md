@@ -1,7 +1,7 @@
 ---
 name: sc-phase4-report
 description: Phase 4 — Final Verdict Judging (via verify/VERDICT.md), Deployment Eligibility Gate (09 Live vs 08 Pre-Live/HEAD-Only), Anti-Paper-Refutation Check (#11e), and Pure 6-File Audit Reporting (04 to 09).
-version: 6.3.0
+version: 6.4.0
 ---
 
 # Phase 4: Final Verdict Judging & Pure 6-File Audit Reporting (04–09)
@@ -9,6 +9,25 @@ version: 6.3.0
 Tujuan Fase 4 adalah bertindak sebagai Hakim Akhir (Bounty Judge) menggunakan standar `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md` terhadap seluruh hasil simulasi Fase 3, menjalankan **Rekonsiliasi Identitas Deployment** (memisahkan temuan *Live Production* ke `09` vs *Proven on Repo HEAD / Pre-Live* ke `08`), memeriksa integritas cakupan dan bukti simulasi (#11d, #11, #11e), lalu menyusun keenam file hasil (`audit/04` s/d `audit/09`) secara bersih.
 
 **GERBANG TULIS (WAJIB):** sebelum memindahkan/mengedit entri di `audit/04`–`09`, baca **`workspace/AGENTS.md` Pasal 1.3 (Protokol Anti-Truncate & Metode Write)**. `open(path,"w")` dan `>` shell **DILARANG** untuk seluruh `audit/*.md` — memotong file ke 0 byte saat dibuka. Pemindahan entri antar wadah wajib memakai `append` (entri baru) + `patch` (ubah status), dan diverifikasi dengan `grep -c '^## \['` sebelum & sesudah.
+
+---
+
+## Langkah 0: Rekonsiliasi Identitas Deployment — TEKNIK BUKTI YANG SAH
+
+**Hukum teknik (dari insiden nyata):** `eth_call` pada endpoint publik **mengembalikan `revert` dengan data KOSONG (`0x`) untuk selector APA PUN** — termasuk selector yang jelas ada. Bukti:
+```
+# selector VALID + ABI lengkap -> revert nyata dengan guard
+cast call <periphery> "0x609ea081<ABI-lengkap>"  -> InvalidQuoteTimestamp  data "0xf722177f"
+# selector VALID tanpa argumen      -> revert data "0x"
+# selector PALSU 0x11111111         -> revert data "0x"   (identik)
+```
+
+**DILARANG** menyimpulkan "fungsi tidak ada" dari `revert 0x`. **Urutan bukti yang sah:**
+1. **Scan dispatcher** dari `eth_getCode` — cari pola `PUSH4 <sel> EQ`; daftar selector inilah yang otoritatif (mis. `0x97CCDBea…` → 26 selector).
+2. **Sentinel decoded-call** — panggil selector dengan ABI **lengkap**; guard nyata (`InvalidQuoteTimestamp`, `MsgValueDoesNotMatchInputAmount`, dll.) membuktikan fungsi ada **dan** jalur kodenya dieksekusi.
+3. **Kompilasi silang** — kompilasi source terverifikasi explorer lalu diff selector hasil kompilasi terhadap daftar live (menemukan `HEAD-only` per-fungsi, bukan per-kontrak).
+
+**Catatan `HEAD-only` per-fungsi:** kontrak bisa **sebagian** live — sebagian selector ada, sebagian tidak. Jangan menandai seluruh kontrak `HEAD-only` hanya karena satu fungsi absen. Contoh nyata: `SpokePoolPeriphery` live mengekspos 26 selector (termasuk `depositWithAuthorization 0x711bc67b` dan `depositNative 0x609ea081`) tetapi **tidak** mengekspos `MAX_RELATIVE_TIME_SECONDS 0x8dc18f26`, `swapAndBridge*`, dan `depositWithPermit*`.
 
 ---
 

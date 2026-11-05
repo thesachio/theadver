@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
-version: 6.3.0
+version: 6.4.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -47,6 +47,8 @@ DILARANG memakai "append selalu" sebagai resep tunggal — tiap file punya pola 
 | **Edit tabel/baris** | `03`, `STATE` | `patch` baris (`grep -n` dulu bila perlu) | baca penuh lalu tulis ulang |
 
 **Patokan biaya:** entri baru ≈ 300 token tulis. Baca penuh `03`/`04`/`05` ≈ 4–5 ribu token, dan naik terus seiring file membesar. Ubah 1 baris tabel = ~40 token vs 5.364 token bila baca penuh (**rasio ≈134×**).
+
+> ⚠️ **BATAS OBJEK — WAJIB DIBACA SEBELUM MENERAPKAN LARANGAN DI ATAS.** Seluruh larangan "baca penuh" / "membaca penuh" pada tabel metode write ini berlaku **eksklusif untuk FILE AUDIT** (`00b`, `03`, `04`, `05`, `06`, `07`, `08`, `09`, `STATE.md`). **KODE SUMBER KONTRAK TIDAK TERMASUK.** Membaca kode kontrak secara hemat (potongan, `sed`, `grep`, `head`, `tail`) **DILARANG** sebagai dasar menyimpulkan isi fungsi — lihat **§A0 Pembacaan Wajib Penuh** di bawah. Dua aturan ini hemat-token untuk file audit, dan **anti-hemat** untuk kode kontrak; keduanya sengaja berlawanan arah pada objek yang berbeda.
 
 **Aturan pemilihan:** pilih metode dengan **token terendah yang tetap tidak merusak data**. Append hanya sah bila entri memang tidak akan diubah; bila status entri harus diperbarui kemudian, gunakan `patch`.
 
@@ -138,6 +140,26 @@ Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
 ---
 
 ## TAHAP A: Fondasi First-Principles & Resolusi Metode Dinamis (WAJIB Sebelum Membaca Referensi!)
+
+### A0. PEMBACAAN WAJIB PENUH — Gerbang Sebelum Menulis Lead (WAJIB, SEBELUM TAHAP A)
+
+**Hukum: klaim negatif DILARANG dibangun dari cara membaca yang cacat.**
+
+Insiden nyata: `_fallback` dibaca dengan `sed -n '/function _fallback/,/^    }$/p' | tail -25`. `postCheck` berada di tengah fungsi dan **terpotong dari jendela baca**. Kesimpulan "tidak pernah memanggil postCheck" ditulis ke `05` dengan label *"asimetri terverifikasi, bukan dugaan"*. Fase 3 membuktikan sebaliknya — `postCheck` dipanggil dan me-revert `PolicyBlocked()`. Satu lead palsu lolos sebagai "lead kuat", menghabiskan satu siklus PoC penuh, dan nyaris masuk laporan.
+
+**Kewajiban sebelum menulis entri apa pun ke `staging-<unit>.md`:**
+
+1. **Baca fungsi UTUH** — dari baris `function` sampai kurung kurawal penutup yang menyeimbangkan. Bukan potongan, bukan "sekitar tempat yang menarik".
+2. **`grep`/`sed` hanya untuk MENEMUKAN lokasi, bukan menyimpulkan isi.** DILARANG memakai `grep`, `sed`, `head`, `tail`, atau `grep -A/-B` sebagai dasar klaim negatif.
+3. **Fungsi > 60 baris wajib** dibaca bertahap dengan `read_file` ber-`offset`/`limit` sampai tuntas, bukan dicicil dengan alat pencari.
+4. **Setiap klaim negatif wajib menyertakan** `File:awal-akhir` + jumlah baris yang dibaca, dan bukti bahwa rentang itu mencakup **seluruh** fungsi.
+5. **Label "terverifikasi" hanya sah** bila disertai kutipan kode; untuk klaim perilaku ("dipanggil", "tidak dipanggil", "revert sebelum X") wajib disertai **trace eksekusi**. Tanpa keduanya, label yang sah hanyalah **"indikasi"**.
+
+**Klaim negatif meliputi:** "tidak ada guard", "X tidak dipanggil", "tidak ada cek", "tidak ada validasi", "selalu revert", dan segala bentuk "aman karena tidak ada ...".
+
+**Kapan ini menggigit:** fungsi dengan pola `try/catch`, `_fallback`, router multi-cabang, loop kustom, atau pemanggilan eksternal di tengah — di situlah `sed|tail` paling sering memotong bagian penting.
+
+---
 
 ### Fondasi Wajib: 4 Kondisi Batas Konkret & 5 Primitif Universal
 Saat membedah setiap fungsi di unit antrean, selalu substitusikan 4 Kondisi Batas (1. Likuiditas realistis tanpa ilusi `totalSupply == 0` pada pool live; 2. Batas bawah 0, 1 wei, `min - 1`; 3. Blok/waktu sama $\Delta t = 0$; 4. Entitas kembar `sender == recipient` / `target == address(this)`) terhadap 5 Primitif Universal: (1) Kuantisasi Proporsi, (2) Transisi Paksa & Sabotase DoS, (3) Replay Otoritas/Signature, (4) Penyerahan Kontrol Eksekusi, dan (5) Lompatan Mesin Status.

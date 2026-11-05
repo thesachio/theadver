@@ -62,7 +62,7 @@ if [ "$MODE" = "dry" ]; then
     src="$PROFILE/$p"; dst="$REPO/$p"
     [ -e "$src" ] || continue
     if [ -d "$src" ]; then
-      out="$(rsync -an --itemize-changes --exclude '*.bak' --exclude '.DS_Store' "$src/" "$dst/" | grep -v '^\.d' || true)"
+      out="$(rsync -an --itemize-changes --exclude '*.bak*' --exclude '*.tmp' --exclude '__pycache__' --exclude '.DS_Store' "$src/" "$dst/" | grep -v '^\.d' || true)"
       if [ -n "$out" ]; then echo "$out" | sed "s|^|  [$p] |"; ada=1; fi
     else
       if ! cmp -s "$src" "$dst" 2>/dev/null; then echo "  [$p] berbeda"; ada=1; fi
@@ -88,7 +88,7 @@ if [ "$MODE" = "apply" ] || [ "$MODE" = "commit" ] || [ "$MODE" = "all" ]; then
     [ -e "$src" ] || { echo "  ! tidak ada di profil, dilewati: $p"; continue; }
     mkdir -p "$(dirname "$dst")"
     if [ -d "$src" ]; then
-      rsync -a --exclude '*.bak' --exclude '.DS_Store' "$src/" "$dst/"
+      rsync -a --exclude '*.bak*' --exclude '*.tmp' --exclude '__pycache__' --exclude '.DS_Store' "$src/" "$dst/"
     else
       cp -p "$src" "$dst"
     fi

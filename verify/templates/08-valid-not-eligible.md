@@ -20,13 +20,23 @@ LOW_CLASS           : PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN) | ADMIN_ONLY | LOW_NUISA
 TARGET_FILE         : 08-valid-not-eligible.md
 ALASAN              : <mengapa valid secara mekanis namun masuk batas eligibilitas 08>
 BUKTI MEKANISME     : <kode PoC & log eksekusi [PASS]>
-TANGGA_BUKTI        : A-HEAD | B | A  (D tidak sah di sini)
+POC_STATUS          : PASS                       <- WAJIB literal PASS; selain itu -> 07
+TANGGA_BUKTI        : A-HEAD | B | C            (D tidak sah di sini)
 DEPLOYMENT_MATCH    : HEAD-only (PROVEN_ON_REPO_HEAD) | LIVE_MATCH | UNVERIFIED
+CYCLE               : P1_PRE_DEPLOY | P2_TESTNET_ONLY | P3_LIVE_PARTIAL | P4_LIVE_FULL
+ELIGIBILITY         : HEAD_ONLY_PROVEN | TESTNET_ONLY | ENTRYPOINT_RELOCATED | LIVE_MATCH
 Mode Uji            : FORK_DEPLOYED_HEAD | LOKAL | FORK_LIVE
+SEVERITY            : Critical | High | Medium | Low      <- DARI IMPACT, bukan dari siklus
 DAMPAK KUANTITATIF  : <angka kerugian/profit terukur dari log PoC>
 ```
 
 **`BUKTI MEKANISME` dan `DAMPAK KUANTITATIF` wajib berisi hasil eksekusi PoC dan angka terukur.** Khusus untuk `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`, **kode PoC dan patch perbaikan wajib disertakan secara utuh** karena temuan ini bernilai tinggi bagi tim pengembang sebelum mereka melakukan deployment/upgrade ke mainnet. Menulis *"dampaknya kecil"* tanpa angka = entri ditolak dan lead kembali ke `07`.
+
+> **`SEVERITY` ditentukan oleh IMPACT, BUKAN oleh `CYCLE`/`ELIGIBILITY`.** Temuan yang terbukti mencuri dana tanpa syarat **tetap ditulis `Critical`** meski `CYCLE: P1_PRE_DEPLOY`. Menuliskan `Low`/`Medium` di `08` hanya karena "belum live" adalah pelanggaran `VERDICT.md` §0.3 dan akan ditolak `verify/ingest.py`.
+>
+> **`POC_STATUS` wajib literal `PASS`.** `08` berarti *valid tetapi tidak eligible* — bila PoC belum bisa dijalankan (RPC mati, rantai tak dikenal, toolchain absen), tempatnya **`07`**, bukan `08`.
+>
+> **`CYCLE` dan `ELIGIBILITY` diisi dari artefak `deploy_parity`:** `python3 verify/tools/deploy_parity.py … --out audit/notes/deploy-parity-<ID>.json`. Bila artefak tidak ada, entri `08` ditolak.
 
 ## Kelas yang sah
 

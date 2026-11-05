@@ -20,7 +20,7 @@ Salin kerangka ini apa adanya. Semua field wajib terisi — `Disposition:` dan `
 ```text
 ID                 : <id>
 VERDICT            : NEEDS_NEXT_STEP
-Disposition        : NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED   <- WAJIB, pilih tepat satu
+Disposition        : NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED | ENV_ERROR   <- WAJIB, pilih tepat satu
 TARGET_FILE        : 07-needs-next-step.md
 ALASAN             : <1-2 kalimat: mengapa belum tuntas, rujuk Pernyataan #9b>
 BUKTI              : <ringkasan mekanisme & titik terhenti>
@@ -45,7 +45,7 @@ sebagian field dari satu bentuk dan sebagian dari bentuk lain tidak sah.
 ```markdown
 ## [ID-LEAD] Judul Singkat Hipotesis
 - VERDICT: NEEDS_NEXT_STEP
-- Disposition: NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED
+- Disposition: NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED | ENV_ERROR
 - File & Baris: <path:baris>
 - TANGGA_BUKTI: B | C
 - DEPLOYMENT_MATCH: LIVE_MATCH | HEAD-only (PROVEN_ON_REPO_HEAD) | UNVERIFIED (<sumber gagal>)
@@ -81,6 +81,7 @@ dipakai di audit nyata (`- **Disposition:** `NEXT_MAINNET``).
 | `NEXT_EXPLORE` | Log **Tier 2** (handler stateful fuzzing) / **Tier 3** (differential split-vs-bulk) / **Tier 5** (halmos/symbolic) yang **berjalan sampai timeout komputasi** — sertakan waktu run & jumlah iterasi | `LAZY_BAILOUT_DETECTED` |
 | `TOOL_BLOCKED` | Log terminal **ketiga** anak tangga: **(1)** flag/remapping/toolchain (`--via-ir`, `--optimize`, `--evm-version`, `cargo-build-sbf`, versi compiler) -> **(2)** standalone interface-only / minimal harness -> **(3)** fallback RPC (`.env.rpc`, `rpc-env.sh`, chunking `eth_getLogs`) | `LAZY_BAILOUT_DETECTED` |
 | `NEXT_MAINNET` | Bukti rantai/explorer **benar-benar tidak tersedia** (endpoint mati, chain tanpa RPC publik, kontrak belum ter-deploy). **Bila RPC tersedia, `07` tidak sah** — jalankan `cast call`/`cast storage`/`cast implementation` saat itu juga dan tuntaskan ke `09`/`06`/`08` | `LAZY_BAILOUT_DETECTED` |
+| `ENV_ERROR` | Log **dua** endpoint RPC berbeda yang gagal (403 / timeout / rate-limit / `debug_traceCall` tidak tersedia), atau keluaran `deploy_parity` dengan `eligibility: ENV_ERROR` / `IDENTITY_ONLY`. **DILARANG** dipakai untuk menyimpulkan fungsi tidak ada; severity **tidak diturunkan** | `PAPER_REFUTATION_DETECTED` |
 
 ---
 

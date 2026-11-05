@@ -21,7 +21,7 @@ import json
 import re
 import sys
 
-ALLOWED_DISPOSITIONS = {"NEXT_EXPLORE", "NEXT_MAINNET", "TOOL_BLOCKED"}
+ALLOWED_DISPOSITIONS = {"NEXT_EXPLORE", "NEXT_MAINNET", "TOOL_BLOCKED", "ENV_ERROR"}
 
 # Satu entri dimulai pada heading level-2 bernomor-bracket, DI LUAR code fence.
 ENTRY_HEADING = re.compile(r"^##\s+\[(?P<id>[^\]]+)\]")
@@ -121,7 +121,7 @@ def check_entry(entry: dict) -> list[str]:
     disp = [v.strip("`*").upper() for v in DISPOSITION_LINE.findall(body)]
     disp = [d for d in disp if d in ALLOWED_DISPOSITIONS]
     if not disp:
-        problems.append("missing/!!invalid `Disposition:` (NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED)")
+        problems.append("missing/!!invalid `Disposition:` (NEXT_EXPLORE | NEXT_MAINNET | TOOL_BLOCKED | ENV_ERROR)")
     elif len(set(disp)) > 1:
         problems.append(f"multiple `Disposition:` values {sorted(set(disp))} — exactly one required")
 

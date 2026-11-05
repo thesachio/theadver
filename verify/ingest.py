@@ -136,12 +136,41 @@ def check_deploy_parity(f: dict) -> list[str]:
             f"padahal severity_claimed={sev} — dilarang, label wajib tetap {sev}"
         )
 
-    # 4. ENV_ERROR tidak boleh dipakai sebagai bukti ketiadaan
-    if elig == "ENV_ERROR" and "06" in str(wadah):
-        bad.append(
-            "ENV_ERROR TIDAK BOLEH menjadi dasar penolakan di 06; "
-            "tempatkan di 07 TOOL_BLOCKED dengan PERCOBAAN:"
-        )
+    # 4. ENV_ERROR / IDENTITY_ONLY / UNVERIFIABLE tidak boleh dipakai sebagai bukti ketiadaan
+    #    DAN tidak boleh masuk 08/09 — status "valid" belum terbukti.
+    WADAH_KENDALA = ("07",)
+    if elig in ("ENV_ERROR", "IDENTITY_ONLY", "UNVERIFIABLE"):
+        if "06" in str(wadah):
+            bad.append(
+                f"{elig} TIDAK BOLEH menjadi dasar penolakan di 06; "
+                "tempatkan di 07 TOOL_BLOCKED dengan PERCOBAAN:"
+            )
+        if "08" in str(wadah):
+            bad.append(
+                f"{elig} TIDAK BOLEH masuk 08: 08 menuntut PoC [PASS] (valid-not-eligible). "
+                "Tanpa PoC PASS, status valid belum terbukti -> wajib 07 (TOOL_BLOCKED/NEXT_EXPLORE)"
+            )
+        if "09" in str(wadah):
+            bad.append(f"{elig} TIDAK BOLEH masuk 09 (live tidak terverifikasi)")
+
+    # 4b. 08 WAJIB punya bukti PoC PASS. Tanpa itu -> 07.
+    poc = f.get("poc_status") or f.get("poc_result")
+    if "08" in str(wadah) and poc is not None:
+        if str(poc).upper() not in ("PASS", "[PASS]", "PROVEN", "OK"):
+            bad.append(
+                f"08 menuntut PoC [PASS]; poc_status={poc} -> temuan bukan 'valid tapi tidak eligible', "
+                "melainkan belum tuntas -> 07"
+            )
+
+    # 4c. 07 adalah wadah SAH untuk kendala tooling, tetapi wajib punya Disposition + PERCOBAAN.
+    if any(w in str(wadah) for w in WADAH_KENDALA):
+        disp = f.get("disposition")
+        if not disp:
+            bad.append("07 wajib memuat field 'disposition' (TOOL_BLOCKED/NEXT_EXPLORE/NEXT_MAINNET/ENV_ERROR)")
+        elif str(disp).upper() not in ("TOOL_BLOCKED", "NEXT_EXPLORE", "NEXT_MAINNET", "ENV_ERROR"):
+            bad.append(f"disposition tidak dikenal: {disp}")
+        if not f.get("percobaan"):
+            bad.append("07 wajib memuat blok PERCOBAAN: berisi perintah + keluaran nyata")
 
     # 5. P1/P2 tidak boleh masuk 09
     if cycle in ("P1_PRE_DEPLOY", "P2_TESTNET_ONLY") and "09" in str(wadah):

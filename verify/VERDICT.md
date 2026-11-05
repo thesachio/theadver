@@ -64,6 +64,22 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 | `ENTRYPOINT_RELOCATED` | entrypoint ada di handler/callee, bukan kontrak titik serang | **`08`** + catatan rute |
 | `REGRESSION_FIXED` | live lulus & PoC di HEAD gagal (**dua-arah**, dua log) | **`06`** `REJECTED_BY_DESIGN` |
 | `ENV_ERROR` / `UNVERIFIABLE` | RPC gagal 2×, rate-limit, revert tak terklasifikasi | **`07`** `TOOL_BLOCKED` |
+| `IDENTITY_ONLY` | rantai belum dikenal / entrypoint tak terbaca otomatis | **`07`** `NEXT_EXPLORE` |
+
+### 0.2b — Aturan Penempatan: `08` HANYA untuk PoC yang Sudah `[PASS]`
+
+`08-valid-not-eligible.md` berarti **"valid tetapi tidak eligible"** — jadi **validitasnya sudah dibuktikan** oleh PoC `[PASS]`. **DILARANG** menempatkan temuan di `08` bila PoC belum/tidak bisa dijalankan.
+
+| PoC sudah `[PASS]`? | Rantai/objek terdeteksi? | Wadah | Catatan severity |
+|---|---|---|---|
+| ✅ PASS | ❌ live tak terdeteksi, **tetapi** bisa dijalankan LOKAL/`FORK_DEPLOYED_HEAD` | **`08`** `PRE_LIVE_SCOPE` | **severity utuh (High tetap High)** |
+| ✅ PASS | ✅ live | **`09`** | severity utuh |
+| ❌ belum bisa dijalankan (RPC mati, endpoint tak dikenal, toolchain absen) | ❌ | **`07`** | **severity utuh — ditulis lengkap, hanya belum diuji** |
+| ❌ dijalankan & gagal (3-Stage Breaker) | — | `06` | — |
+
+**Konsekuensi penting:** rantai yang tidak terdeteksi **BUKAN** alasan menaruh temuan di `08`. Bila PoC tetap bisa dijalankan secara lokal atas kode repo (`LOKAL` / `FORK_DEPLOYED_HEAD`) dan `[PASS]` → `08` sah. Bila PoC **tidak dapat dijalankan sama sekali** (mis. `cargo-build-sbf` absen di ARM64) → **`07` `TOOL_BLOCKED`**, bukan `08`, bukan `06`.
+
+**Severity tidak berubah di jalur mana pun.** Temuan High yang masuk `07` karena `TOOL_BLOCKED` **tetap ditulis High** — wadah `07` hanya menandai "belum tuntas diuji", bukan "kurang berbahaya".
 
 **Aturan keras anti-false-negative:**
 
@@ -90,9 +106,12 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 |---|---|---|---|
 | Critical / High | `LIVE_MATCH` | `09` | Critical / High |
 | Critical / High | `HEAD_ONLY_PROVEN` | **`08`** | **Critical / High (tetap!)** |
+| Critical / High | `ENV_ERROR` / `IDENTITY_ONLY` | **`07`** | **Critical / High (tetap!)** |
 | Medium | `LIVE_MATCH` | `09` | Medium |
 | Medium | `TESTNET_ONLY` | `08` | Medium |
 | Low | `LIVE_MATCH` | `09` / `06` | Low |
+
+**Dua wadah yang mengubah penempatan tanpa mengubah severity:** `08` (valid tapi belum live) dan `07` (belum tuntas diuji). Keduanya **mempertahankan label keparahan apa adanya**.
 
 ### 0.4 — Bila `DEPLOYMENT_MATCH` ≠ `LIVE_MATCH` padahal alamat live tersedia
 

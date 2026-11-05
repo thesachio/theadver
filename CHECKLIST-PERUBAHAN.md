@@ -182,17 +182,31 @@ Sesudah:
 
 ---
 
-## LAMPIRAN A — Anti-pola penulisan (pembanding, bukan contoh)
+## LAMPIRAN A — Uji anti-kontaminasi
 
-Tabel ini **hanya untuk pembanding** saat menulis entri baru. Isinya sengaja memuat nama
-spesifik dari satu run lama, agar mudah dikenali sebagai **bentuk yang harus dihindari**.
-**DILARANG** menyalin nama-nama ini ke dalam entri perubahan.
+Sebelum menyimpan perubahan workflow, jalankan tiga pemeriksaan ini:
 
-| ❌ Bentuk spesifik (hindari) | ✅ Bentuk universal (pakai) |
-|---|---|
-| "fungsi `_fallback` tidak memanggil `postCheck`" | "fungsi diklaim tidak melakukan X, padahal X ada di tengah fungsi" |
-| "lead `L-31` menghabiskan satu siklus PoC" | "lead palsu lolos ke antrean dan menghabiskan satu siklus verifikasi" |
-| "validator live `name()` berbeda dari repo" | "identitas deployment berbeda antara artefak live dan repositori" |
-| "`08` berisi test `Test_L03_*` yang tidak ada" | "blok bukti memuat nama test yang tidak pernah dijalankan" |
+```bash
+# 1. Nama proyek / protokol / kontrak
+grep -rniE "<nama-proyek>|<nama-kontrak>" skills/ workspace/
 
-**Cara memakai:** baca kolom kiri → kenali polanya → tulis dengan kolom kanan.
+# 2. ID lead atau temuan dari run tertentu
+grep -rnE "\b[A-Z]-[0-9]{2,}\b" skills/ workspace/
+
+# 3. Path atau berkas milik satu proyek (nama lab, nama folder notes khusus)
+grep -rnE "/(lab|poc|notes)/[a-z0-9_-]+" skills/ workspace/
+```
+
+**Ambang:** hasil **harus 0** untuk pemeriksaan 1 dan 3. Pemeriksaan 2 boleh
+menghasilkan **placeholder** (`<ID>`, `L-xx`) tetapi **bukan** ID nyata.
+
+**Bila ada yang lolos:** ganti dengan kelas masalah. Contoh rumus — sebut **apa yang bisa
+salah**, bukan **di mana ia terjadi**:
+- "fungsi diklaim tidak melakukan X, padahal X ada di tengah fungsi"
+- "lead palsu lolos ke antrean dan menghabiskan satu siklus verifikasi"
+- "identitas deployment berbeda antara artefak live dan repositori"
+- "blok bukti memuat nama test yang tidak pernah dijalankan"
+
+> **Mengapa tanpa contoh nama:** lampiran yang "hanya sebagai pembanding" tetap menanam nama
+> proyek ke dalam repo workflow, dan pembaca berikutnya akan menyalinnya tanpa sadar bahwa itu
+> contoh. Repo workflow harus bersih dari konteks proyek mana pun.

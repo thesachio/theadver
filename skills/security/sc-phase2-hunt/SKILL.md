@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
-version: 6.4.0
+version: 6.4.2
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -145,7 +145,7 @@ Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
 
 **Hukum: klaim negatif DILARANG dibangun dari cara membaca yang cacat.**
 
-Insiden nyata: `_fallback` dibaca dengan `sed -n '/function _fallback/,/^    }$/p' | tail -25`. `postCheck` berada di tengah fungsi dan **terpotong dari jendela baca**. Kesimpulan "tidak pernah memanggil postCheck" ditulis ke `05` dengan label *"asimetri terverifikasi, bukan dugaan"*. Fase 3 membuktikan sebaliknya — `postCheck` dipanggil dan me-revert `PolicyBlocked()`. Satu lead palsu lolos sebagai "lead kuat", menghabiskan satu siklus PoC penuh, dan nyaris masuk laporan.
+Insiden nyata: sebuah fungsi dibaca dengan `sed ... | tail -N`. Pemanggilan penting yang berada di **tengah fungsi terpotong dari jendela baca**, sehingga klaim negatif ("X tidak dipanggil") ditulis ke antrean dengan label *"terverifikasi, bukan dugaan"*. Tahap verifikasi membuktikan sebaliknya. Satu lead palsu lolos sebagai "lead kuat", menghabiskan satu siklus PoC penuh, dan nyaris masuk laporan.
 
 **Kewajiban sebelum menulis entri apa pun ke `staging-<unit>.md`:**
 
@@ -157,7 +157,7 @@ Insiden nyata: `_fallback` dibaca dengan `sed -n '/function _fallback/,/^    }$/
 
 **Klaim negatif meliputi:** "tidak ada guard", "X tidak dipanggil", "tidak ada cek", "tidak ada validasi", "selalu revert", dan segala bentuk "aman karena tidak ada ...".
 
-**Kapan ini menggigit:** fungsi dengan pola `try/catch`, `_fallback`, router multi-cabang, loop kustom, atau pemanggilan eksternal di tengah — di situlah `sed|tail` paling sering memotong bagian penting.
+**Kapan ini menggigit:** fungsi dengan pola `try/catch`, *fallback dispatcher*, router multi-cabang, loop kustom, atau pemanggilan eksternal di tengah — di situlah `sed|tail` paling sering memotong bagian penting.
 
 ---
 

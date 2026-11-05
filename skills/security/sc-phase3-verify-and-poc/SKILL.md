@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
 description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
-version: 6.4.1
+version: 6.4.2
 ---
 
 # Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
@@ -154,7 +154,7 @@ Fase 2 sudah membaca kode untuk **membentuk** lead. Fase 3 membaca kode yang sam
 3. Bandingkan dengan klaim lead: **cocok**, **sebagian**, atau **bertentangan**.
 4. Bila bertentangan → lead **DILARANG** di-PoC apa adanya; tulis ke `06` sebagai `REJECTED_MISMATCH` dan lanjut ke lead berikutnya.
 
-**Insiden yang melahirkan aturan ini:** `_fallback` di `ModuleManager.sol` diklaim "tidak pernah memanggil `postCheck`" dan masuk `05` sebagai lead kuat. Re-Read Pass membuktikan `postCheck` dipanggil sebelum `return` dan men-revert `PolicyBlocked()` — dua lead (`L-31`, `L-30`) mati seketika, setelah satu siklus PoC terbuang.
+**Insiden yang melahirkan aturan ini:** sebuah fungsi *fallback* diklaim "tidak pernah memanggil pemeriksaan akhir" dan masuk antrean sebagai lead kuat. Re-Read Pass membuktikan pemeriksaan itu **ada** sebelum `return` dan justru menjadi penyebab revert — lead tersebut mati seketika, setelah satu siklus PoC terbuang.
 
 ---
 
@@ -309,7 +309,7 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 
 **DILARANG menggugurkan lead bila kontrol positif tidak berhasil dibuat.** Harness yang tidak bisa membuktikan jalur normalnya berjalan **bukan bukti** bahwa protokol aman — itu bukti harness belum benar. Kembali ke Langkah 0c (Tangga Self-Healing), jangan tulis ke `06`.
 
-**Insiden yang melahirkan aturan ini:** pada audit nyata, dua lead (`L-41`, `L-42`) dinyatakan gugur karena fuzzer menemukan "counterexample" (`typesLen=0`). Pemeriksaan ulang menunjukkan **seluruh input** me-revert `InvalidInput() 0xb4fa3fb3` — termasuk payload valid — sehingga assertion negatif lulus tanpa pernah mengeksekusi jalur target. Satu lead lain (`L-20`) juga gugur karena encoding mode salah sehingga "kontrol" ikut gagal, membuat uji returnbomb tidak bermakna. Ketiganya adalah **false positive yang menutupi kegagalan harness**, bukan temuan.
+**Insiden yang melahirkan aturan ini:** dua lead dinyatakan gugur karena fuzzer menemukan "counterexample". Pemeriksaan ulang menunjukkan **seluruh input** me-revert dengan kode error yang sama — termasuk payload yang seharusnya valid — sehingga assertion negatif lulus tanpa pernah mengeksekusi jalur target. Satu lead lain gugur karena parameter encoding salah sehingga "kontrol" ikut gagal. Ketiganya adalah **false positive yang menutupi kegagalan harness**, bukan temuan.
 
 **Cek cepat sebelum menulis hasil harness:**
 - [ ] Ada kasus kontrol positif? Apakah ia benar-benar `[PASS]`?
@@ -356,7 +356,7 @@ test -f audit/06-refuted-invalid.md \
 
 | # | Jenis | Tempat | Boleh diringkas? |
 |---|---|---|---|
-| 1 | **Kode test/PoC hidup** (masih dipakai) | folder lab (`poc3/test/` dst.) | ❌ kode utuh |
+| 1 | **Kode test/PoC hidup** (masih dipakai) | folder lab proyek (`<lab>/test/` dst.) | ❌ kode utuh |
 | 2 | **Kode test/PoC gugur** (tidak dipakai lagi) | `audit/notes/testref/` | ❌ **dipindah**, jangan dihapus |
 | 3 | **Log eksekusi mentah** (`forge test -vv`, `cast`, `cargo test`) | `audit/notes/lead-<id>.md` | ❌ log penuh |
 | 4 | **Hipotesis + analisis + verdict** | `audit/notes/lead-<id>.md` | ⚠️ ringkas di `05`, utuh di sini |

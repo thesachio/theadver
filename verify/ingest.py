@@ -60,6 +60,104 @@ VALID_ACTOR = {
 }
 VALID_SEV = {"S1", "S2", "S3", "S4"}
 
+# ---------------------------------------------------------------------------
+# Siklus deployment & eligibility (VERDICT Langkah 0)
+# ---------------------------------------------------------------------------
+VALID_CYCLE = {
+    "P1_PRE_DEPLOY",
+    "P2_TESTNET_ONLY",
+    "P3_LIVE_PARTIAL",
+    "P4_LIVE_FULL",
+    "P0_UNKNOWN",
+}
+VALID_ELIGIBILITY = {
+    "LIVE_MATCH",
+    "HEAD_ONLY_PROVEN",
+    "TESTNET_ONLY",
+    "ENTRYPOINT_RELOCATED",
+    "REGRESSION_FIXED",
+    "ENV_ERROR",
+    "UNVERIFIABLE",
+    "IDENTITY_ONLY",
+}
+VALID_TANGGA = {"A", "A-HEAD", "B", "C", "D"}
+# severity tinggi yang menuntut bukti impact kuat
+HIGH_SEV = {"S3", "S4"}
+
+
+def check_deploy_parity(f: dict) -> list[str]:
+    """
+    Validasi silang Siklus x Eligibility x Severity x Tangga Bukti.
+
+    Prinsip: SEVERITY berasal dari IMPACT; ELIGIBILITY berasal dari SIKLUS.
+    Keduanya ortogonal dan tidak boleh saling menurunkan.
+    """
+    bad: list[str] = []
+
+    cycle = f.get("cycle")
+    elig = f.get("eligibility")
+    tangga = f.get("tangga_bukti")
+    sev = f.get("severity_claimed")
+    wadah = f.get("wadah") or f.get("dest") or f.get("target_file") or ""
+
+    if cycle is not None and cycle not in VALID_CYCLE:
+        bad.append(f"cycle tidak dikenal: {cycle}")
+    if elig is not None and elig not in VALID_ELIGIBILITY:
+        bad.append(f"eligibility tidak dikenal: {elig}")
+    if tangga is not None and tangga not in VALID_TANGGA:
+        bad.append(f"tangga_bukti tidak dikenal: {tangga}")
+
+    # 1. TANGGA_BUKTI A-HEAD tidak boleh berpasangan dengan LIVE_MATCH
+    if tangga == "A-HEAD" and elig == "LIVE_MATCH":
+        bad.append(
+            "KONTRADIKSI: TANGGA_BUKTI 'A-HEAD' berarti HEAD-only, "
+            "tidak boleh berpasangan dengan eligibility LIVE_MATCH"
+        )
+    if tangga == "A" and elig in ("HEAD_ONLY_PROVEN", "TESTNET_ONLY"):
+        bad.append(
+            f"KONTRADIKSI: TANGGA_BUKTI 'A' menuntut objek live, "
+            f"tidak boleh dengan eligibility {elig}"
+        )
+    if elig == "HEAD_ONLY_PROVEN" and tangga not in (None, "A-HEAD", "B", "C"):
+        bad.append(f"HEAD_ONLY_PROVEN mensyaratkan A-HEAD/B/C, bukan {tangga}")
+
+    # 2. Severity tinggi + eligibility bukan LIVE_MATCH -> DILARANG di 09
+    if sev in HIGH_SEV and "09" in str(wadah) and elig is not None and elig != "LIVE_MATCH":
+        bad.append(
+            f"OVER-SELL: severity {sev} ditempatkan di 09 tetapi eligibility={elig} "
+            "(wajib LIVE_MATCH; selain itu tempatkan di 08 dengan label severity utuh)"
+        )
+
+    # 3. DILARANG menurunkan severity karena alasan siklus
+    label = str(f.get("severity_label") or f.get("label") or "")
+    if wadah and "08" in str(wadah) and sev in HIGH_SEV and "LOW" in label.upper():
+        bad.append(
+            "SEVERITY DITURUNKAN KARENA SIKLUS: temuan berlabel LOW di 08 "
+            f"padahal severity_claimed={sev} — dilarang, label wajib tetap {sev}"
+        )
+
+    # 4. ENV_ERROR tidak boleh dipakai sebagai bukti ketiadaan
+    if elig == "ENV_ERROR" and "06" in str(wadah):
+        bad.append(
+            "ENV_ERROR TIDAK BOLEH menjadi dasar penolakan di 06; "
+            "tempatkan di 07 TOOL_BLOCKED dengan PERCOBAAN:"
+        )
+
+    # 5. P1/P2 tidak boleh masuk 09
+    if cycle in ("P1_PRE_DEPLOY", "P2_TESTNET_ONLY") and "09" in str(wadah):
+        bad.append(f"SIKLUS {cycle} dilarang masuk 09 (wajib 08)")
+
+    # 6. LIVE_MATCH wajib punya identitas deployment terukur
+    if elig == "LIVE_MATCH":
+        ident = f.get("live_identity")
+        if not ident:
+            bad.append(
+                "LIVE_MATCH tanpa live_identity terukur (mis. accountId()/sha256 ProgramData) "
+                "— wajib diisi dari artefak deploy_parity"
+            )
+
+    return bad
+
 
 def sh(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
     p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
@@ -102,6 +200,9 @@ def check_finding(f: dict, root: str, nfile: dict[str, int]) -> list[str]:
         bad.append(f"severity tidak dikenal: {f['severity_claimed']}")
     if not isinstance(f["live"], bool):
         bad.append("live harus boolean")
+
+    # ---- Validasi silang Siklus x Eligibility x Severity (VERDICT Langkah 0) ----
+    bad.extend(check_deploy_parity(f))
 
     lines = f["lines"]
     if not (isinstance(lines, list) and len(lines) == 2

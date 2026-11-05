@@ -1,7 +1,7 @@
 ---
 name: sc-autopilot
 description: Master Orchestrator Whitehat Adversarial Lintas-Rantai (v6.2.0 Simulation-First) - Jalankan siklus penuh (Fase 0 Intel -> Fase 1 100% Repo Recon -> Fase 2 Class-Routed Hunt & Static-vs-Dynamic Guard Split -> Fase 3 Dual-Mode Fork & 3-Stage Fuzz Lab -> Fase 4 Verdict Judge & 09-vs-08 Deployment Split) secara otonom via delegate_task
-version: 6.2.5
+version: 6.3.0
 metadata:
   hermes:
     tags: [security, web3, whitehat, adversarial, orchestrator, autopilot, delegation, multichain]
@@ -195,6 +195,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
        - Entri `05` wajib memuat `Kelas Topologi`, kolom Metode Pencarian (`M-00X`/`[POV-XX]`), dan Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk, dan Penulis Variabel.
 
 2. **Putaran 2 / Sintesis Lintas-Jalur:**
+   - **Gerbang Siklus (WAJIB sebelum tahap ini):** jalankan `python3 verify/tools/deploy_parity.py` untuk setiap kontrak yang disebut hipotesis `05`, dan tulis ringkasannya di `STATE.md` sebagai `DEPLOY_PARITY: <n> LIVE_MATCH | <n> RELOCATED/HEAD_ONLY | <n> ENV_ERROR`. Bila ada `ENV_ERROR`, **DILARANG** menutupnya sebagai "tidak ada" — wajib 2 RPC berbeda sebelum menyerah.
    - Bongkar **seluruh guard statis** di `04-code-guarded.md` lintas-entitas (`M-005` cross-contract, `M-008` seam, `M-009` suspended lifecycle, `M-010` residual/drift).
    - **Unified Phase 3 Gate:** DILARANG masuk Tahap Orkestrasi 3 sebelum **seluruh kelas (A, B, C)** lulus Gate Cakupan **= 100%** per domain (**0** berkas `BELUM`, atestasi bersitasi `File:Baris` lolos §2b) dan Putaran 2 ditutup.
 

@@ -1,7 +1,7 @@
 ---
 name: sc-phase1-recon
 description: Phase 0 & 1 — Domain-Agnostic Recon, 100% Physical Repo Population Inventory, Production Environment Fact Mapping, Counter-Auditor Surface Discovery, and State-Mutation Matrix.
-version: 6.2.5
+version: 6.3.0
 ---
 
 # Phase 0 & 1: Domain-Agnostic Recon & Production Fact Mapping
@@ -57,6 +57,20 @@ Setiap berkas di `00b-file-inventory.md` **WAJIB** diberi tepat satu label. **DI
 - `[STATELESS/INTERFACE]` — **HANYA** untuk berkas yang murni deklarasi interface/trait/IDL tanpa isi implementasi, definisi tipe data/struct/enum murni, error kustom, atau konstanta alamat statis tanpa logika perhitungan. **DILARANG KERAS melabeli library matematika, dekoder payload, atau validator signature sebagai `[STATELESS/INTERFACE]` hanya karena tidak memiliki fungsi state-changing!**
 
 **LOC hanya penanda prioritas relatif, bukan gerbang.** Tidak ada berkas yang lolos dari audit karena kecil.
+
+### 3b. Kolom Identitas Deployment di `00b` (WAJIB — Gerbang Siklus Awal)
+
+`00b-file-inventory.md` **WAJIB** memuat tabel identitas deployment di bagian atas, agar auditor tidak masuk Fase 3 tanpa tahu siklus hidup kontrak target:
+
+| Kontrak | Alamat Live | `Siklus` | `Pola` | Sumber |
+|---|---|---|---|---|
+| `Nexus.sol` | `0x0000B1c0…8a5B` | `P3_LIVE_PARTIAL` | `fallback-router` | `cast code` |
+
+- **`Siklus`** — salah satu dari `P1_PRE_DEPLOY` / `P2_TESTNET_ONLY` / `P3_LIVE_PARTIAL` / `P4_LIVE_FULL` / `P0_UNKNOWN`. Diisi dari `verify/tools/deploy_parity.py` atau minimal satu perintah `cast code` / `getAccountInfo`.
+- **`Pola`** — `plain` / `proxy-eip1967` / `beacon` / `fallback-router` / `delegatecall` / `multi-kontrak` / `unknown`. Diisi bila terdeteksi; `unknown` sah bila belum diperiksa.
+- **Alamat Live** boleh kosong untuk `P1_PRE_DEPLOY` — **jangan dikarang**.
+
+**DILARANG** menyimpulkan siklus dari nama file/versi di `package.json`; siklus ditentukan oleh **keberadaan objek di rantai**, bukan oleh isi repo (repo bisa v1.2.1 sementara live v1.3.3).
 
 ### 4. Aturan Anti-Bias Pintu Masuk
 **DILARANG** menyusun antrean hanya dari satu folder/domain. Setiap domain `D1..Dn` yang memiliki berkas `[MUST-AUDIT]` **WAJIB** terwakili.

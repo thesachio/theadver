@@ -23,20 +23,84 @@ Artefak legacy tetap sah dibaca dengan penomoran lamanya. Jangan mencampur penom
 
 ---
 
-## LANGKAH 0 — Rekonsiliasi Identitas Deployment (Gerbang Eksklusif Fase 4)
+## LANGKAH 0 — Rekonsiliasi Siklus Deployment & Kesetaraan Entrypoint (Gerbang Eksklusif Fase 4)
 
-Tujuan: memisahkan temuan yang sudah terbukti secara mekanis di Fase 3 menjadi dua jalur akhir: **Produksi Aktif** (`09-confirmed-findings.md`) vs **Kode Repo Pre-Live / `HEAD-only`** (`08-valid-not-eligible.md`).
+Tujuan: memisahkan temuan yang sudah terbukti secara mekanis di Fase 3 menjadi tiga jalur akhir: **Produksi Aktif** (`09`), **Pre-Live / Testnet / Entrypoint Relocated** (`08`), atau **Sudah Dipatch** (`06`) — berdasarkan **pengukuran**, bukan asumsi.
 
-> **Penting:** Pengecekan ini adalah **wewenang eksklusif Hakim Fase 4**. Fase 3 **dilarang** menghentikan penulisan PoC hanya karena kontrak belum *live* atau `sha256` berbeda.
+> **Penting:** Pengecekan ini adalah **wewenang eksklusif Hakim Fase 4**. Fase 3 **dilarang** menghentikan penulisan PoC hanya karena kontrak belum *live* atau versi repo berbeda.
 
-1. Kumpulkan seluruh alamat kontrak produksi yang relevan dari `audit/INTEL.md`, `00-project-map.md`, atau skrip deployment repo.
-2. Untuk setiap alamat kontrak yang diklaim: ambil source/bytecode terverifikasi dari explorer atau RPC (`cast code` / `cast implementation` pada slot EIP-1967 `0x360894a1…2bbc`).
-   - **Peringatan RPC:** Jangan gunakan `eth_call` yang menghasilkan `revert 0x` sebagai bukti fungsi tidak ada di produksi; gunakan **pencocokan selector pada bytecode** (`cast code` + scan `PUSH4 <selector>`) atau verifikasi source explorer.
-3. Bandingkan dengan kode repositori yang diuji pada PoC:
-   - Kode fungsi/kontrak cocok dengan bytecode produksi aktif (`LIVE_MATCH`) dan PoC lulus (`Mode Uji: FORK_LIVE` atau `FORK_DEPLOYED_HEAD` yang identik dengan bytecode live) → klaim sah menyandang `DEPLOYMENT_MATCH: LIVE_MATCH` dan berhak masuk **`09-confirmed-findings.md`**.
-   - Kontrak **belum di-deploy** di mainnet, berada **di luar daftar alamat bounty** saat ini, atau kode di `HEAD` berbeda dari bytecode produksi (`HEAD-only` / `REPO_STAGED`), **TETAPI** PoC eksploitasi pada kode repo tersebut terbukti `PASS` (`FORK_DEPLOYED_HEAD` atau `LOKAL`) dengan dampak finansial nyata → klaim ditandai `DEPLOYMENT_MATCH: HEAD-only (PROVEN_ON_REPO_HEAD)` dan ditempatkan di **`08-valid-not-eligible.md`** dengan kelas `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`!
-   - **DILARANG** membuang temuan HEAD-only yang PoC-nya sudah PASS ke `07-needs-next-step.md` (agar `07` tetap murni untuk kendala pengujian yang belum tuntas, dengan target `07` = 0 entri).
-4. Jika explorer tidak dapat diakses atau kontrak tidak terverifikasi, catat **nama sumber yang gagal** (`Sourcify`, `Blockscout`, `Etherscan`, RPC) dan periksa eksistensi bytecode/selector secara langsung via `cast code`.
+> **Alat wajib:** seluruh Langkah 0 dijalankan lewat `verify/tools/deploy_parity.py` (bukan penilaian manual). Jalankan dengan `--out` agar artefak JSON tersimpan di `audit/notes/`. Aturan "bytecode harus identik" **DILARANG** dipakai: setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint yang diserang PoC**, bukan hash file.
+
+### 0.0 — Gerbang Siklus (satu perintah per kontrak)
+
+```bash
+python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|generic|<plugin>> \
+  --chain <mainnet|testnet|local> --addr <ALAMAT> --rpc <RPC> \
+  --entrypoints "<signature yang diserang PoC>" --repo <path repo> \
+  --out audit/notes/deploy-parity-<ID>.json
+```
+
+| Siklus | Kondisi | Konsekuensi |
+|---|---|---|
+| `P1_PRE_DEPLOY` | `cast code` = `0x` / akun tidak ada | **DILARANG** menjalankan pemeriksaan entrypoint; PoC tetap wajib (`LOKAL`/`FORK_DEPLOYED_HEAD`) → **`08`** |
+| `P2_TESTNET_ONLY` | kode ada, chainId = testnet | bukti `TANGGA_BUKTI: B` → **`08`** |
+| `P3_LIVE_PARTIAL` | kode ada di mainnet, sebagian entrypoint tidak terbukti | lanjut 0.1 & 0.2 |
+| `P4_LIVE_FULL` | semua entrypoint PoC terbukti ada | kandidat **`09`** |
+
+### 0.1 — Empat Pra-Syarat Wajib (sebelum menyimpulkan apa pun)
+
+1. **Proxy** — baca slot EIP-1967 impl (`0x360894a1…2bbc`), beacon (`0xa3f0ad74…3d50`), admin (`0xb5312768…6103`). Bila proxy: analisis **implementation**, bukan proxy. `deploy_parity` melakukannya otomatis.
+2. **Fallback-router** — bila probe mengembalikan custom error `MissingFallbackHandler` (selector `0x08c63e27`), entrypoint hidup di **handler**, bukan di kontrak titik serang → verdict `RELAYED_VIA_HANDLER`.
+3. **Library / delegatecall** — bila entrypoint hidup di callee, T2/T3 wajib dijalankan pada **callee**, dan fakta itu dicatat di artefak.
+4. **Multi-kontrak (router → hub → allocator)** — untuk attack-chain, **setiap** kontrak yang menjadi entrypoint lingkup temuan wajib diperiksa T2/T3 **terpisah**; satu artefak JSON per kontrak.
+
+### 0.2 — Lima Verdict Entrypoint (jangan disatukan)
+
+| Verdict | Arti | Wadah |
+|---|---|---|
+| `LIVE_MATCH` | entrypoint PoC terbukti ada & berperilaku sama di objek live | **`09`** |
+| `HEAD_ONLY_PROVEN` | siklus P1, atau live tak tersedia | **`08`** `PRE_LIVE_SCOPE` |
+| `TESTNET_ONLY` | siklus P2 | **`08`** `TESTNET_ONLY` |
+| `ENTRYPOINT_RELOCATED` | entrypoint ada di handler/callee, bukan kontrak titik serang | **`08`** + catatan rute |
+| `REGRESSION_FIXED` | live lulus & PoC di HEAD gagal (**dua-arah**, dua log) | **`06`** `REJECTED_BY_DESIGN` |
+| `ENV_ERROR` / `UNVERIFIABLE` | RPC gagal 2×, rate-limit, revert tak terklasifikasi | **`07`** `TOOL_BLOCKED` |
+
+**Aturan keras anti-false-negative:**
+
+- `ENTRYPOINT_ABSENT` **HANYA** sah bila seluruh metode gagal **dan** ada bukti tambahan (`git log -S` tidak menemukan fungsi tersebut). Untuk paradigma `generic`, `ABSENT` **DILARANG MUTLAK** — gunakan `IDENTITY_ONLY`.
+- `ENV_ERROR` **tidak pernah** menjadi bukti ketiadaan. Rate-limit TON, 403 RPC, atau timeout **bukan** "fungsi tidak ada".
+- `HEAD_FIXED` / `REGRESSION_FIXED` wajib disertai **dua log eksekusi** (live PASS + HEAD FAIL). Tanpa itu → `ENV_ERROR`.
+- Setiap artefak wajib memuat `live_identity` terukur (mis. `accountId()` = `biconomy.nexus.1.3.3`, atau `sha256(ProgramData)` untuk Solana). **Tanpa identitas terukur, `LIVE_MATCH` ditolak.**
+
+### 0.3 — Severity DITENTUKAN oleh Impact, BUKAN oleh Siklus (DUA SUMBU ORTOGONAL)
+
+`SEVERITY` dan `ELIGIBILITY` adalah dua sumbu terpisah dan **tidak boleh** dikalikan atau saling menurunkan.
+
+| `SEVERITY` (dari impact saja) | Kriteria |
+|---|---|
+| Critical | Pencurian dana tanpa syarat / cetak dana tak terbatas |
+| High | Pencurian bersyarat / pembekuan permanen / insolvensi |
+| Medium | Kerugian terbatas / DoS yang mengunci dana / penalti paksa |
+| Low | DoS sementara tanpa kerugian |
+| Info | Tanpa dampak finansial |
+
+**LARANGAN KERAS:** menurunkan `SEVERITY` karena alasan deployment (HEAD-only / testnet / belum deploy). Temuan Critical yang terbukti hanya di HEAD **tetap ditulis "Critical"** meski ditempatkan di `08`.
+
+| Severity | Eligibility | Wadah | Label di entri |
+|---|---|---|---|
+| Critical / High | `LIVE_MATCH` | `09` | Critical / High |
+| Critical / High | `HEAD_ONLY_PROVEN` | **`08`** | **Critical / High (tetap!)** |
+| Medium | `LIVE_MATCH` | `09` | Medium |
+| Medium | `TESTNET_ONLY` | `08` | Medium |
+| Low | `LIVE_MATCH` | `09` / `06` | Low |
+
+### 0.4 — Bila `DEPLOYMENT_MATCH` ≠ `LIVE_MATCH` padahal alamat live tersedia
+
+**DILARANG** langsung menggeser ke `08`. Wajib:
+
+1. Catat `RECHECK_REQUIRED` di artefak beserta `commit_ref` (HEAD) dan `nearest_tag`.
+2. Kembalikan entri ke Fase 3 untuk **satu putaran PoC kedua** yang menembak **objek live** (lewat Factory resmi, atau `vm.etch` bytecode live yang dicatat sebagai deviasi).
+3. Baru setelah putaran kedua itu, bila tetap tidak cocok, entri masuk `08` dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`.
 
 ---
 
@@ -132,6 +196,10 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
 > *"Untuk masuk ke `09-confirmed-findings.md`, kode yang diserang wajib terbukti eksis dan aktif pada deployment produksi (`LIVE_MATCH`). Apabila PoC eksploitasi berhasil (`[PASS]`) membuktikan kerentanan nyata pada kode repositori (`FORK_DEPLOYED_HEAD` / `LOKAL`), namun kontrak/fitur tersebut masih berstatus `HEAD-only` (belum di-deploy ke mainnet atau berbeda dari bytecode produksi aktif), temuan tersebut **WAJIB disimpan secara utuh** di `08-valid-not-eligible.md` dengan kelas `PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` — bukan dipaksakan ke `09` dan bukan diparkir di `07`."*
 → Pelanggaran (memaksakan kode HEAD-only sebagai `09` produksi aktif tanpa cek deployment): `REJECTED_UNPROVEN_DEPLOYMENT` — atau turunkan dari `09` ke `08` [`PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)`] bila PoC-nya valid.
 
+> *(Catatan Anti-False-Negative #2b — Deployment Fidelity Berbasis Entrypoint, BUKAN Bytecode Identik: `LIVE_MATCH` **TIDAK BOLEH** dituntut sebagai "bytecode identik". Setiap repo punya siklus rilis berbeda (live bisa v1.3.3 sementara repo HEAD v1.2.1) dan build Foundry jarang reproducible (metadata hash, optimizer, versi solc). Yang wajib diuji adalah **keberadaan dan perilaku entrypoint yang diserang PoC** pada objek live — lewat `verify/tools/deploy_parity.py` (Gerbang Siklus 0.0 → pra-syarat 0.1 → lima verdict 0.2). Menolak temuan karena "ukuran bytecode berbeda" atau "sha256 tidak sama" adalah `REJECTED_MISMATCH` yang SALAH dan dilarang.)*
+
+> *(Catatan Anti-False-Negative #2c — `ENV_ERROR` Bukan Bukti Ketiadaan: rate-limit RPC, HTTP 403, timeout, atau `revert 0x` yang tidak terklasifikasi **DILARANG** dijadikan dasar menyimpulkan "fungsi tidak ada di produksi". Verdict yang sah adalah `ENV_ERROR` → `07 TOOL_BLOCKED` dengan `PERCOBAAN:` berisi minimal dua percobaan endpoint. Khusus paradigma `generic` (rantai belum dikenal), verdict `ABSENT` **DILARANG MUTLAK**; gunakan `IDENTITY_ONLY`.)*
+
 **3. Keadaan Likuiditas Nyata (No Empty-Pool Mirage)**
 > *"Eksploitasi terbukti berhasil pada keadaan TVL dan likuiditas nyata di produksi, bukan mengandalkan `totalSupply == 0` / First Depositor Attack pada pool yang sudah live atau sudah mencetak dead shares saat deploy — kecuali PoC membuktikan penyerang mampu membuat pool resmi baru secara permissionless atau menguras TVL ke nol lebih dulu."*
 → `REJECTED_GENESIS_MIRAGE`
@@ -182,6 +250,8 @@ Sebuah temuan HANYA boleh mendapat vonis `VALID_ELIGIBLE` dan bertahan di `audit
   3. **Nuisance Griefing** — memaksa gas ulang / mereset timer non-finansial, tanpa keuntungan penyerang dan tanpa pembekuan dana.
   → **`VALID_NOT_ELIGIBLE [LOW_NUISANCE]`** → `08-valid-not-eligible.md`
 - Klaim HIGH/MEDIUM tetapi bukti hanya kelas Low atau admin-only → **turunkan ke LOW (S4)** dan pindahkan `09` → `08`.
+
+> *(Catatan Anti-False-Negative #10b — Severity DITENTUKAN Impact, BUKAN Siklus Deployment: `SEVERITY` dan `ELIGIBILITY` adalah **dua sumbu ortogonal** dan DILARANG dikalikan. Menurunkan severity karena alasan "masih HEAD-only", "hanya testnet", atau "belum di-deploy" adalah pelanggaran berat. Temuan yang terbukti mencuri dana tanpa syarat **tetap `Critical`** meski harus ditempatkan di `08` dengan `PRE_LIVE_SCOPE`. Yang berubah karena siklus hanyalah **wadah** (`09` vs `08`), **bukan label keparahan**. Penurunan severity hanya sah bila bukti impact-nya sendiri lebih kecil (dana terbukti kecil, atau butuh korban bertindak bodoh).)*
 
 ### C. SATU PERNYATAAN INTEGRITAS LAPORAN (Report Integrity — melanggar = seluruh laporan DITOLAK)
 

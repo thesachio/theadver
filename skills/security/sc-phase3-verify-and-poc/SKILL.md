@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
 description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
-version: 6.2.5
+version: 6.3.0
 ---
 
 # Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
@@ -243,7 +243,25 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
    - Selama PoC berhasil membuktikan eksploitasi (`[PASS]`) di atas `FORK_DEPLOYED_HEAD`, temuan tersebut **wajib didorong ke staging sebagai kandidat `09`** (nanti Hakim Fase 4 yang akan menilai status deployment-nya).
 3. **`Mode Uji: LOKAL (alasan fork tidak tersedia)`** — Gunakan untuk rantai non-EVM (`cargo test` Solana, `sui move test` / `aptos move test`, TON `@ton/sandbox`) atau bila rantai target benar-benar tidak memiliki RPC publik setelah Usaha 3 Langkah 0c ditempuh. Deploy seluruh kontrak asli repositori, lakukan *Victim Seeding* realistis, dan buktikan patahnya invarian secara deterministik.
 
-> **Hapus beban cek `sha256` explorer dari Fase 3:** Subagent Fase 3 **TIDAK PERLU** berhenti untuk membandingkan `sha256` source explorer atau menurunkan temuan HEAD-only ke `07`/`08`. Tugas tunggal Fase 3 adalah **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
+> **Wajib Jalankan Gerbang Siklus sebelum menulis PoC — tetapi DILARANG menghentikan PoC karenanya.** Subagent Fase 3 **wajib** menjalankan satu perintah sebelum menulis harness:
+>
+> ```bash
+> python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|generic|<plugin>> \
+>   --chain <mainnet|testnet|local> --addr <ALAMAT_LIVE> --rpc $RPC_URL \
+>   --entrypoints "<signature yang diserang PoC>" --repo <path repo sumber> \
+>   --out audit/notes/deploy-parity-<ID>.json
+> ```
+>
+> Hasilnya **wajib dicatat** di staging sebagai `DEPLOYMENT_CLASS:` dan `Mode Uji:` — tetapi **TIDAK BOLEH** membuat Subagent berhenti menulis PoC. Aturan kerjanya:
+>
+> | Keluaran `deploy_parity` | Kewajiban Fase 3 |
+> |---|---|
+> | `LIVE_MATCH` | Tulis PoC; `Mode Uji: FORK_LIVE`; boleh berlabel `...Fork` |
+> | `ENTRYPOINT_RELOCATED` / `HEAD_ONLY_PROVEN` | Tulis PoC; `Mode Uji: FORK_DEPLOYED_HEAD (live diverge)`; **DILARANG** menamai test `...Fork` — gunakan akhiran `...Head`; staging tetap kandidat `09` (Hakim Fase 4 yang memindahkan ke `08`) |
+> | `ENV_ERROR` / `UNVERIFIABLE` | Tulis PoC apa adanya, catat `DEPLOYMENT_CLASS: ENV_ERROR`; **DILARANG** menyimpulkan "fungsi tidak ada" |
+> | `P1_PRE_DEPLOY` | Tulis PoC `LOKAL`/`FORK_DEPLOYED_HEAD`; staging kandidat `08` |
+>
+> **DILARANG KERAS** memakai aturan "bytecode harus identik" atau "`sha256` explorer harus sama" sebagai alasan menggugurkan/menghentikan PoC: setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint**, bukan hash file. Tugas utama Fase 3 tetap: **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
 
 ---
 

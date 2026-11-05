@@ -1,7 +1,7 @@
 ---
 name: sc-phase4-report
 description: Phase 4 — Final Verdict Judging (via verify/VERDICT.md), Deployment Eligibility Gate (09 Live vs 08 Pre-Live/HEAD-Only), Anti-Paper-Refutation Check (#11e), and Pure 6-File Audit Reporting (04 to 09).
-version: 6.2.5
+version: 6.3.0
 ---
 
 # Phase 4: Final Verdict Judging & Pure 6-File Audit Reporting (04–09)
@@ -98,10 +98,13 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
 
 1. **Wajib Baca Standar Hakim:** Panggil `read_file` pada `/home/ubuntu/.hermes/profiles/adv/verify/VERDICT.md`.
 
-2. **Jalankan Langkah 0 VERDICT.md — Rekonsiliasi Identitas Deployment (Gerbang Pemisahan `09` vs `08`):**
-   - Periksa setiap kandidat di `audit/09-confirmed-findings.md` (atau staging Fase 3).
-   - Gunakan `cast code` / `cast implementation` (untuk proxy EIP-1967) dan source explorer untuk mengecek apakah fungsi/kontrak yang berhasil dijebol PoC sudah aktif di deployment produksi (**`LIVE_MATCH`**) atau masih berada di kode repositori HEAD / belum ter-deploy (**`HEAD-only` / `REPO_STAGED`**).
-   - **Ingat:** Jangan gunakan `revert 0x` pada `eth_call` sebagai bukti fungsi tidak ada; periksa keberadaan selector `PUSH4 <selector>` di bytecode on-chain!
+2. **Jalankan Langkah 0 VERDICT.md — Rekonsiliasi Siklus Deployment & Kesetaraan Entrypoint (Gerbang Pemisahan `09` vs `08`):**
+   - **Alat wajib:** `python3 verify/tools/deploy_parity.py --paradigm … --addr … --entrypoints "…" --rpc … --repo … --out audit/notes/deploy-parity-<ID>.json`. Jangan menilai manual.
+   - Urutan: **0.0 Gerbang Siklus** (`P1`/`P2`/`P3`/`P4`) → **0.1 empat pra-syarat** (proxy EIP-1967 → fallback-router `MissingFallbackHandler` → delegatecall/library → multi-kontrak) → **0.2 lima verdict entrypoint** (`LIVE_MATCH` / `HEAD_ONLY_PROVEN` / `TESTNET_ONLY` / `ENTRYPOINT_RELOCATED` / `REGRESSION_FIXED` / `ENV_ERROR`).
+   - **DILARANG** memakai "bytecode identik" atau "`sha256` explorer sama" sebagai syarat `LIVE_MATCH` — setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint yang diserang PoC**.
+   - **DILARANG** menyimpulkan "fungsi tidak ada" dari `ENV_ERROR` (RPC 403, timeout, rate-limit). `ENV_ERROR` → `07 TOOL_BLOCKED`, bukan `06`/`08`.
+   - **Severity tetap ditentukan impact** (Langkah 0.3): menurunkan severity karena HEAD-only/testnet adalah pelanggaran.
+   - **Ingat:** Jangan gunakan `revert 0x` pada `eth_call` sebagai bukti fungsi tidak ada. `revert 0x` bersifat **ambigu** (bisa "tidak ada" atau "ada tapi revert tanpa pesan") → wajib klasifikasi lewat `deploy_parity` (kontrol negatif `0xdeadbeef` + `PUSH4` dispatcher). Untuk paradigma `generic` (rantai belum dikenal), `ABSENT` **DILARANG MUTLAK** — gunakan `IDENTITY_ONLY`.
 
 3. **Adili Setiap Kandidat dengan 11 Pernyataan Wajib `VERDICT.md`:**
 

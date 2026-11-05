@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
 description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
-version: 6.4.0
+version: 6.4.1
 ---
 
 # Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
@@ -345,6 +345,52 @@ test -f audit/06-refuted-invalid.md \
 ```
 
 **Bila gagal:** Fase 3 **belum selesai**, meski seluruh lead sudah punya keputusan. Kembali ke Langkah 3 dan wujudkan wadahnya.
+
+---
+
+### Langkah 2e: Penempatan Riwayat Uji — Kode, Log, dan Catatan (WAJIB)
+
+**Hukum: `notes/` menyimpan CATATAN, bukan KODE. Kode tetap di folder kode.** Mencampur keduanya membuat `grep` tidak lagi bisa membedakan mana yang **dijalankan** dan mana yang **ditulis**, serta membuat tool build memindai folder yang salah.
+
+**Lima jenis riwayat — lima tempat, jangan dicampur:**
+
+| # | Jenis | Tempat | Boleh diringkas? |
+|---|---|---|---|
+| 1 | **Kode test/PoC hidup** (masih dipakai) | folder lab (`poc3/test/` dst.) | ❌ kode utuh |
+| 2 | **Kode test/PoC gugur** (tidak dipakai lagi) | `audit/notes/testref/` | ❌ **dipindah**, jangan dihapus |
+| 3 | **Log eksekusi mentah** (`forge test -vv`, `cast`, `cargo test`) | `audit/notes/lead-<id>.md` | ❌ log penuh |
+| 4 | **Hipotesis + analisis + verdict** | `audit/notes/lead-<id>.md` | ⚠️ ringkas di `05`, utuh di sini |
+| 5 | **Bukti final laporan** (`BUKTI_SIMULASI:` / `PERCOBAAN:`) | `06` / `07` / `08` / `09` | ❌ syarat sah — jangan disentuh |
+
+**Bentuk wajib `audit/notes/lead-<id>.md`:**
+
+```
+# <ID> — <hipotesis satu baris>
+
+## Test
+<path kode test> — <nama fungsi test>
+
+## Log
+```$ <perintah persis>```
+<keluaran nyata — ditempel, bukan ditulis ulang>
+
+## Verdict
+<status> → <wadah tujuan>
+```
+
+**Wajib `audit/notes/README.md` sebagai INDEKS** (dibuat saat lead pertama masuk `notes/`, diperbarui setiap lead baru):
+
+| Lead | File | Verdict |
+|---|---|---|
+| `<ID>` | `lead-<ID>.md` | TERBUKTI / GUGUR / NEXT |
+
+Indeks dibaca **sekali** saat resume, lalu langsung melompat ke file yang dituju — ini yang membuat pembacaan terarah, bukan menyeluruh.
+
+**DILARANG:** menaruh berkas `.sol` / `.rs` / `.move` di dalam `notes/` selain di `notes/testref/`; menyalin kode test ke dalam `notes/lead-<id>.md` (cukup **path**-nya).
+
+**Kenapa ini hemat, bukan boros:** satu file gabungan berisi log semua lead memaksa pembacaan **seluruh** file meski hanya butuh satu lead. Dengan `notes/lead-<id>.md` + indeks, pembacaan untuk 1 lead turun drastis — tanpa menambah total ukuran penyimpanan.
+
+**DILARANG dihapus:** kode test yang menghasilkan bukti `[PASS]` atau yang mendasari penolakan ber-`BUKTI_SIMULASI`. Ia adalah jejak yang memungkinkan laporan diperiksa ulang. Bila test tidak lagi dipakai, **pindahkan** ke `audit/notes/testref/`, jangan hapus.
 
 ---
 

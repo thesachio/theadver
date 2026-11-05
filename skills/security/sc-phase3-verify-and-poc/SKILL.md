@@ -196,6 +196,13 @@ Setelah Langkah 1a lolos, **DILARANG** mengerjakan PoC berdasarkan urutan nomor 
 2. **Keterwakilan domain** — pastikan lead dari domain berbeda ikut dieksekusi; jangan habiskan kuota pada satu domain.
 3. **Biaya bukti paling murah** pada EV setara — lead yang butuh satu `cast call` didahulukan daripada yang butuh harness baru.
 
+> **Mengapa urutan ini MENGIKAT, bukan preferensi estetika — Kelelahan Ketajaman Kognitif.** Kemampuan analisis penalaran (manusia maupun model bahasa) **menurun** seiring panjang sesi: perhatian pada detail melemah, premis sendiri mulai diterima tanpa uji, dan kesalahan mekanis meningkat. Konsekuensinya konkret: **lead yang dikerjakan di ekor sesi dinilai dengan ketajaman paling rendah.** Karena itu aturan ini melarang:
+> - (a) Menaruh lead **EV tertinggi** di akhir antrean — lead terbaik WAJIB dinilai saat ketajaman masih penuh. "Nanti saja karena EV-nya besar" adalah pelanggaran.
+> - (b) Mengerjakan lead **berat** (butuh harness baru) setelah sesi panjang menghabiskan kapasitas pada pekerjaan non-penemuan.
+> - (c) Melanjutkan lead baru setelah **≥2 kegagalan mekanis berturut-turut** (patch/`old_string` gagal, salah baca statis yang langsung terbantah, kontradiksi diri sendiri). Itu **sinyal ketajaman turun**, bukan kebetulan: hentikan sesi, tulis checkpoint `audit/STATE.md`, dan lanjutkan lead berikutnya di sesi baru.
+>
+> **Aktivitas non-penemuan DILARANG memakan kuota lead.** Setup build, perbaikan remapping, debug tooling, dan penyiapan RPC dihitung sebagai **biaya infrastruktur** terpisah — bukan alasan menunda lead ber-EV tinggi ke ekor antrean.
+
 **Batalkan PoC kapan saja** begitu `3-Stage Breaker` (Langkah 0b) terpicu — yaitu setelah Strike 1 (Manual) + Strike 2 (Manual/Amplifikasi) + Strike 3 (Fuzz) seluruhnya gagal.
 
 **Pengunci Anti-Low-Rate #1 — Kuota Beban Identik & Position-Blind Dispatch (*No Tail-End Compression*).**

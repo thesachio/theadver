@@ -63,6 +63,10 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 
 **Aturan isi:** `CURRENT_ACTIVE_ITEM` hanya satu; `Active Files in Scope` wajib path nyata; angka `Domain Coverage Meter` harus reproduksibel dari `00b-file-inventory.md` + tabel cakupan `03-attack-surface-queue.md`; berkas ini maksimal **50 baris** dan bukan tempat menyimpan hasil - hanya posisi.
 
+**Aturan Ketajaman (Cognitive Fatigue) — WAJIB diisi Parent, bukan Subagent:**
+- `Lead Sequence Basis: EV_DESC` — lead ber-EV tertinggi **wajib** dikerjakan paling awal. Menaruhnya di ekor antrean adalah pelanggaran (`sc-phase3` Langkah 2 — Urutan Eksekusi PoC).
+- `Cognitive Load: NORMAL | FATIGUE` — set `FATIGUE` setelah **≥2 kegagalan mekanis berturut-turut** (patch/`old_string` gagal berulang, salah baca statis yang langsung terbantah, kontradiksi dengan kesimpulan sendiri). Saat `FATIGUE`: **DILARANG** memulai lead baru — tulis checkpoint lalu lanjut di sesi baru. Pekerjaan setup build/remapping/RPC **tidak** menghitung sebagai kemajuan lead dan tidak boleh menggeser lead ber-EV tinggi ke ekor.
+
 ### 5. Aturan Delegasi
 Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` lebih dulu. Jangan sentuh `Completed Units` atau `Do-Not-Reopen List`. Sebelum keluar, laporkan apa yang harus ditulis ke STATE.md (CURRENT_ACTIVE_ITEM, coverage, do-not-reopen)."* Subagent DILARANG menulis STATE.md sendiri — Parent yang menulis setelah menerima ringkasan.
 

@@ -10,6 +10,8 @@
 - CURRENT_ACTIVE_ITEM: S-08 (Domain: chain-adapters)
 - Active Files in Scope: WormholeAdapter.sol, BridgeRelay.sol
 - Active Strike Count (Fase 3): 0/3 (2 Manual + 1 Mandatory Fuzz; kosongkan jika masih di Fase 2)
+- Cognitive Load (Fase 3): NORMAL | FATIGUE (≥2 kegagalan mekanis berturut) -> WAJIB checkpoint & sesi baru
+- Lead Sequence Basis: EV_DESC (lead EV tertinggi WAJIB dikerjakan paling awal, bukan di ekor)
 
 ## 2. Domain Coverage Meter (Syarat Gate = 100% `[MUST-AUDIT]`)
 | Domain | Total [MUST-AUDIT] | Selesai (Lead/Attested) | Persentase | Status |
@@ -38,3 +40,5 @@
 - **Do-Not-Reopen List** — tulis ID saja beserta kelas vonisnya. Alasannya ada di `06` / `08`; jangan diduplikasi di sini.
 - **Write-Ahead Rule** — perbarui file ini SEBELUM memulai item berikutnya, bukan sesudah selesai.
 - **Bila Fase 3** — `Active Strike Count` **wajib diisi** (`0/3`, `1/3`, `2/3`, `3/3`); sebuah lead **DILARANG** dipindah ke `06` sebagai `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` sebelum mencapai **3/3** (**Strike 1** Manual + *Victim Seeding*, **Strike 2** Perbaikan Urutan + *3-Way Amplification*, dan **Strike 3** Mandatory Fuzzing `testFuzz_`/`proptest`/`halmos`) beserta lampiran log di `BUKTI_SIMULASI:` (#11e).
+- **Cognitive Load** — isi `FATIGUE` begitu terjadi **≥2 kegagalan mekanis berturut-turut** dalam satu sesi (patch/`old_string` gagal berulang, salah baca statis yang langsung terbantah, atau kontradiksi dengan kesimpulan sendiri sebelumnya). Saat `FATIGUE`, **DILARANG** memulai lead baru: tulis checkpoint ini lalu lanjutkan di sesi baru. Alasan: ketajaman penalaran menurun seiring panjang sesi, dan lead yang dikerjakan di ekor sesi dinilai paling rendah (`sc-phase3` Langkah 2 — Urutan Eksekusi PoC).
+- **Lead Sequence Basis** — `EV_DESC` wajib. Meletakkan lead EV tertinggi di akhir antrean ("nanti saja karena besar") adalah pelanggaran, karena lead terbaik akan diuji saat ketajaman paling rendah. Aktivitas non-penemuan (setup build, remapping, debug tooling, RPC) **tidak** boleh menggeser lead ber-EV tinggi ke ekor.

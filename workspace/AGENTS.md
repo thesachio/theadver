@@ -184,6 +184,15 @@ Setiap panggilan delegate_task WAJIB menyertakan di parameter context: (1) Path 
 - Subagent **WAJIB** mengembalikan maksimal **2 kandidat `R-xx`** (boleh 0) dengan format satu baris: `R-CAND: <Lokasi File:Baris> | <Asimetri> | <Pemicu> | Tujuan: <unit/domain>`. Kandidat ini **bukan** lead dan **tidak** dihitung sebagai temuan. **Parent** yang menilai dengan Gerbang 3-Uji (`verify/templates/RADAR.md`) lalu menulis `audit/RADAR.md` — subagent **DILARANG** menulisnya.
 - Subagent **WAJIB** mengembalikan maksimal **2 `M-FACT`** (boleh 0) — fakta mekanisme yang **mengubah model proyek**, format satu baris: `M-FACT: <ALUR|BATAS|STATE|INVARIAN|ANEH|ASUMSI> <fakta> | <File:Baris> | dampak: <apa yang berubah>`. Fakta yang **mengubah cara Fase 3 merancang harness**, **membatalkan asumsi**, atau **menjelaskan keanehan** wajib dilaporkan; selebihnya tidak. **Parent** yang menilai dan `patch` `audit/00-project-map.md §5` (+≤3 baris/unit) — subagent **DILARANG** menulisnya.
 - Parent menggabungkan memakai `append`/`patch` sesuai tabel karakteristik file di `sc-phase2-hunt/references/ref-atomic-write.md` (**DILARANG** `open("w")` / `>`), lalu menghapus staging dan memverifikasi dengan `grep -c '^## \[' <file>` terhadap manifes.
+- **WAJIB sebelum menghapus staging: catat ke `audit/notes/MERGE-LOG.tsv`** (append-only, TSV, tab) — inilah **manifes-dari-manifes** yang membuat puluhan staging bisa dicocokkan:
+  `timestamp  phase  item  staging  sha256  n04  n05  n06  n07  n09  status`
+  - `sha256` = hash staging **saat di-merge** (membuktikan isi yang di-merge = file yang tercatat; bila staging diubah sesudahnya, hash berbeda → terdeteksi).
+  - `n04..n09` = jumlah entri yang **diklaim** masuk ke tiap wadah.
+  - Menghapus staging **DILARANG** sebelum baris log ditulis. Tanpa log, penghapusan = kehilangan bukti permanen.
+- **Pencocokan wajib dijalankan** sebelum Fase 2 ditutup dan sebelum Fase 4 dimulai:
+  `python3 verify/tools/merge_audit.py --audit-dir audit`
+  Mendeteksi lima kegagalan: `STAGING YATIM` (belum di-merge), `HASH BERUBAH` (diubah setelah merge), `ENTRI HILANG` (wadah < klaim), `ENTRI EKSTRA` (masuk tanpa log), `MERGE GANDA` (ID duplikat). Exit 1 = wajib diperbaiki sebelum lanjut.
+- **Penamaan wajib agar bisa dicocokkan mesin:** staging `notes/staging-<FASE>-<ITEM>.md` (mis. `staging-P2-S-08.md`, `staging-P3-L-067.md`); backup `notes/backups/<YYYYMMDD-HHMMSS>-<nama-asli>` (**DILARANG** menaruh backup di `notes/` langsung — pola `05-backup-premarge2.md` yang tidak terparse membuat `notes/` menjadi tumpukan 50+ file tanpa urutan).
 
 ## 5. Tangga Bukti & Aturan Anti-False-Negative (rujuk `verify/VERDICT.md`)
 1. **Tangga Bukti** wajib dicantumkan pada setiap verdict:

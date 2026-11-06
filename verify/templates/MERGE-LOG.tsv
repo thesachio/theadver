@@ -1,0 +1,5 @@
+# MERGE-LOG — manifes-dari-manifes. APPEND-ONLY, tab-separated.
+# Satu baris per merge staging -> wadah audit. DILARANG menghapus staging sebelum baris ini ditulis.
+# sha256 = hash staging SAAT di-merge; bila staging berubah sesudahnya, merge_audit.py menandai HASH BERUBAH.
+# n04..n09 = jumlah entri yang DIKLAIM masuk ke tiap wadah; dicocokkan dengan grep -c '^## \[' oleh verify/tools/merge_audit.py
+timestamp	phase	item	staging	sha256	n04	n05	n06	n07	n09	status

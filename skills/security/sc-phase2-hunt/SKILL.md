@@ -117,13 +117,14 @@ R-CAND: <File:Baris> | <Asimetri: yang seharusnya vs yang terjadi> | <Pemicu: ko
 
 **Sweep wajib di akhir Putaran 2:** saat seluruh `03` sudah diketahui, tinjau `RADAR.md` dan lengkapi `Tujuan` yang terlewat lewat baris kejadian `TARGET-ADDED`. Entri yang `Lokasi`-nya tersentuh unit lain tetapi tidak pernah mendapat baris kejadian = **bukti sweep gagal**, bukan bukti tidak relevan.
 
-**Model Mekanisme Hidup (`00-project-map.md §5`) — baca, prediksi, perbarui:**
-1. **Sebelum** membedah unit — baca blok domain unit itu dari `§5` (≈12 baris, `ALUR`/`BATAS`/`STATE`/`INVARIAN`/`ANEH`/`ASUMSI`). Ini yang membuat Anda **sensitif**: tahu apa yang *seharusnya* ada, sehingga tahu apa yang *hilang*.
+**Blueprint Mekanisme (`audit/MODEL.md`) — baca, prediksi, perbarui:**
+1. **Sebelum** membedah unit — temukan & baca blok domain unit itu: `grep -n "<NamaBerkas>.sol" audit/MODEL.md` lalu `sed -n '<awal>,<awal+12>p'`. Komponen: `BERKAS`·`MEKANISME`·`CHAINING`·`DATA`·`INVARIAN`+penegak·`LINGKUNGAN`·`ASUMSI` (≈12 baris). Ini yang membuat Anda **sensitif**: tahu apa yang *seharusnya* ada, sehingga tahu apa yang *hilang*.
 2. **Tulis prediksi** sebelum membaca kode: *"invarian apa yang saya harap ditegakkan di sini, dan di mana kemungkinan patah?"*
-3. **Sesudah** unit ditutup — bandingkan prediksi dengan temuan, lalu `patch` `§5` **maksimal +3 baris** per unit. Prediksi **meleset** = model kurang; itulah baris yang wajib ditambahkan (biasanya `INVARIAN` atau `ANEH`). Prediksi **tepat** = jangan tambah baris.
-4. **DILARANG** membiarkan `§5` tanpa pembaruan sepanjang Fase 2 — itu tanda model tidak dipakai dan agent kembali menebak dari nol di setiap unit.
+3. **Saat** membedah — kumpulkan fakta mengikuti **protokol penemuan** di `verify/templates/MODEL.md` (pertanyaan pemandu + cara cari + bukti wajib per komponen). Maksimal **2 `M-FACT`** per unit, ditulis di staging blok `USULAN` — bukan langsung ke MODEL.
+4. **Sesudah** unit ditutup — bandingkan prediksi dengan temuan, lalu `patch` `MODEL.md` **maksimal +3 baris**. Prediksi **meleset** = model kurang; itulah baris yang wajib ditambahkan. Prediksi **tepat** = jangan tambah baris.
+5. **DILARANG** membiarkan `MODEL.md` tanpa pembaruan sepanjang Fase 2 — itu tanda model tidak dipakai dan agent kembali menebak dari nol di setiap unit.
 
-`INVARIAN` tanpa penegak (`TIDAK ditegakkan`) adalah **kandidat celah**, bukan sekadar catatan — wajib dipertimbangkan saat membedah unit tersebut. Skema lengkap di `verify/templates/00-section-model.md`.
+**Fakta saja, bukan hipotesis** — uji setiap kalimat: *"tetap benar walau kontrak tidak punya bug?"* Tidak → tempatnya `05`. **DILARANG** memuat status deployment (`CYCLE`/`ENTRYPOINT`/`Mode Uji`) — itu milik `deploy-parity-*.json`. `INVARIAN` tanpa penegak (`TIDAK ditegakkan`) adalah **kandidat celah**, wajib dipertimbangkan saat membedah unit tersebut.
 
 
 **Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**

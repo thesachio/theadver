@@ -90,12 +90,19 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 
 ### 0.2c — GERBANG SCOPE MODEL (WAJIB SEBELUM MENETAPKAN SEVERITY & ELIGIBILITY)
 
-Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/00-project-map.md §5` —
-khususnya `BATAS`, `INVARIAN`, dan `LINGKUNGAN`.
+Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/MODEL.md` —
+khususnya `MEKANISME`, `INVARIAN`, dan `LINGKUNGAN`.
 
 **Alasannya:** `SEVERITY` dan `ELIGIBILITY` bergantung pada siapa pemegang otoritas, apakah
-asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di §5 —
-bukan di PoC. Hakim yang mengadili tanpa §5 akan menebak, dan tebakan itu masuk ke laporan.
+asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di MODEL —
+bukan di PoC. Hakim yang mengadili tanpa MODEL akan menebak, dan tebakan itu masuk ke laporan.
+
+> **Batas `LINGKUNGAN` (jangan tumpang tindih dengan aturan lain):** `LINGKUNGAN` **HANYA**
+> memuat klasifikasi otoritas (EOA vs multisig vs timelock + threshold), `paused`, dan durasi
+> timelock — semuanya ber-tag `[chain:alamat]`. **DILARANG** memuat `CYCLE`, `ENTRYPOINT`,
+> `Mode Uji`, `LIVE_MATCH`, atau hash identitas live: itu milik `notes/deploy-parity-<ID>.json`
+> (Langkah 0–0.4 di atas). Bila `MODEL.md` memuat status deployment, itu duplikasi dan
+> **sumber kebenaran kedua** — tolak.
 
 **Hukum pengikatan scope (fakta DILARANG dipindahkan):**
 

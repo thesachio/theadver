@@ -313,7 +313,23 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 >
 > **DILARANG KERAS** memakai aturan "bytecode harus identik" atau "`sha256` explorer harus sama" sebagai alasan menggugurkan/menghentikan PoC: setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint**, bukan hash file. Tugas utama Fase 3 tetap: **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
 
-> **WAJIB: catat fakta lingkungan ber-scope ke `00-project-map.md §5`.** Setiap fakta otoritas/lifecycle yang ditemukan saat rekonsiliasi deployment (upgrade authority, apakah multisig, paused, sejak blok berapa, siapa pemilik proxy admin) **wajib** di-`patch` ke `§5 LINGKUNGAN` dengan tag `[chain:alamat]` + bukti perintah + blok. Fakta ini **DILARANG** disimpan tanpa tag scope (mis. "upgrade authority single EOA" tanpa `[ETH:0x...]`), karena akan terbawa ke chain/kontrak lain dan menghasilkan vonis palsu di Fase 4. Bila belum diverifikasi, tulis eksplisit `UNKNOWN` — bukan menghilangkannya.
+> **WAJIB: catat fakta lingkungan ber-scope ke `audit/MODEL.md`.** Setiap fakta otoritas/lifecycle yang ditemukan saat rekonsiliasi deployment (klasifikasi upgrade authority: EOA vs multisig vs timelock + threshold, `paused`, durasi timelock) **wajib** di-`patch` ke `MODEL.md LINGKUNGAN` dengan tag `[chain:alamat]` + bukti perintah + blok. Fakta ini **DILARANG** disimpan tanpa tag scope, karena akan terbawa ke chain/kontrak lain dan menghasilkan vonis palsu di Fase 4. **DILARANG pula** menyalin `CYCLE`/`ENTRYPOINT`/`Mode Uji` ke MODEL — itu milik `deploy-parity-<ID>.json` yang baru saja dijalankan. Bila belum terverifikasi, tulis eksplisit `UNKNOWN`.
+
+> **AKSES MODEL + RADAR sebelum menulis harness (WAJIB, ±400–600 token).**
+> Fase 3 bekerja dari `File:Baris` lead, bukan dari nama domain:
+> ```bash
+> # 1. blok domain yang relevan (cari lewat path berkas di baris BERKAS)
+> grep -n "<NamaBerkas>.sol" audit/MODEL.md      # → nomor baris blok
+> sed -n '<awal>,<awal+12>p' audit/MODEL.md      # → blok 12 baris
+> # 2. RADAR yang menyentuh berkas sama (seam yang mungkin memperkuat)
+> grep -n -B1 -A8 "<NamaBerkas>.sol" audit/RADAR.md
+> # 3. RADAR yang menyebut lead/unit ini
+> grep -n "<LEAD-xx>\|S-<nn>" audit/RADAR.md
+> # 4. entri lead lengkap (delta state + urutan)
+> grep -n -A10 "^## \[<LEAD-xx>\]" audit/05-raw-leads.md
+> ```
+> **Pemakaian per komponen:** `MEKANISME` → pilih entrypoint + siapa penyerang (`vm.prank`); `CHAINING` → rancang uji multi-langkah (state apa di-seed di hop 1); `DATA` → susun korpus fuzz (limit tipe, desimal, satuan waktu, sentinel); `INVARIAN` → jadi assertion test, yang `TIDAK ditegakkan` = target utama; `LINGKUNGAN` → tentukan `ADMIN_ONLY`/privilese (**bukan** `Mode Uji`); `ASUMSI` → urutan verifikasi, `GUGUR` = lead baru. **RADAR** memberi kandidat **kombinasi**: `Lokasi` beririsan → uji seam itu; `Pemicu` terpenuhi → promosikan jadi lead dan uji bersamaan.
+> **Bila blok MODEL untuk domain lead itu tidak ada:** wajib **backfill dulu** — baca fungsi utuh, tulis blok 12 baris, baru menulis harness. Dilarang menulis harness tanpa blok.
 
 ---
 

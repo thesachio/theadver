@@ -43,20 +43,29 @@ adalah sinyal.
 
 ```markdown
 ## [R-012] Seam tanpa penjaga antar-modul
-Lokasi   : WormholeAdapter.sol:340 -> HubPool:918
+Lokasi   : WormholeAdapter.sol:340 -> HubPool.sol:918
 Domain   : D3 chain-adapters
 Tujuan   : S-14, S-22, S-31
-Asimetri : payload divalidasi di HubPool, di adapter hanya didekode
-Pemicu   : jika ada jalur memanggil HubPool:918 sebelum transfer masuk
+Asimetri : payload divalidasi di HubPool.sol, di adapter hanya didekode
+Pemicu   : jika ada jalur memanggil HubPool.sol:918 sebelum transfer masuk
 Unit Asal: S-08
 ```
 
-- `Lokasi` — **wajib** `File:Baris`. Ini kunci indeks; tanpa ini sinyal tidak bisa ditemukan kembali.
+- `Lokasi` — **wajib** `File:Baris` dengan **nama berkas lengkap ber-ekstensi pada SETIAP hop**.
+  `HubPool:918` **DILARANG** — hanya `HubPool.sol:918` yang bisa ditemukan oleh grep berbasis path.
+  Ini bukan soal gaya: grep path adalah satu-satunya jalur penarikan yang dijamin (lihat "Cara Membaca").
+  Bila rantai lebih dari dua hop, tulis semuanya: `A.sol:12 -> B.sol:88 -> C.sol:340`.
 - `Domain` — domain tempat sinyal ditemukan (bukan domain tujuan).
 - `Tujuan` — unit yang **diduga** perlu memeriksa. Boleh tidak lengkap; lihat `TARGET-ADDED`.
 - `Asimetri` — wajib menyebut harapan vs kenyataan, bukan opini.
 - `Pemicu` — **wajib**. Kondisi konkret, bukan "mungkin nanti berguna".
 - `Unit Asal` — unit yang sedang dibedah saat sinyal ditemukan.
+
+**Verifikasi pasca-tulis (wajib, 1 perintah):** setiap berkas yang disebut di `Lokasi` harus
+benar-benar bisa ditemukan oleh grep. Tanpa ini, sinyal tersimpan tetapi tidak akan pernah tertarik.
+```bash
+grep -c "NamaBerkas.sol" audit/RADAR.md     # harus >= 1 untuk SETIAP berkas di Lokasi
+```
 
 ---
 

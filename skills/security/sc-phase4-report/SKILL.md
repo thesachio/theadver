@@ -31,6 +31,60 @@ cast call <periphery> "0x609ea081<ABI-lengkap>"  -> InvalidQuoteTimestamp  data 
 
 ---
 
+## Langkah 0.3b: Penerjemahan Fakta ke Severity & Wadah (WAJIB)
+
+**Fase 3 DILARANG melabeli severity.** Ia hanya mencatat `Impact-facts` dan `Pemicu` (dua baris fakta terukur). Hakim Fase 4 yang menerjemahkannya menjadi severity dan wadah — **sekali untuk semua lead**, dengan rubrik yang sama.
+
+### 1. Muat Rujukan (berurutan, jangan dikarang)
+
+```bash
+read_file verify/SEVERITY-RUBRIC.md          # wajib dimuat Hakim
+ grep -n "Severity Basis" <proyek>/audit/INTEL.md
+```
+
+```
+1. audit/INTEL.md -> baris "Severity Basis : <platform> — <URL>"
+2. Jika ada     -> pakai kriteria platform itu; WAJIB tulis baris `Rujukan:` di entri
+3. Jika TBD/tidak ada -> pakai rubrik Bagian 4 (definisi Low universal L1-L6),
+                        tulis `Rujukan: Matriks Universal (verify/SEVERITY-RUBRIC.md Bagian 4)`
+4. Jika platform tidak jelas setelah Bagian 3 rubrik -> default LOW + baris `Asumsi:`
+```
+
+**DILARANG** memberi label severity tanpa baris `Rujukan:`. Label tanpa rujukan = tidak sah.
+
+### 2. Terjemahkan Dua Baris Fakta
+
+| Fakta Fase 3 | Menjadi | Cara menilai |
+|---|---|---|
+| `Impact-facts` | **Impact** | Angka terukur: ada dana berpindah? berapa? permanen? -> High / Medium / Low |
+| `Pemicu` | **Likelihood** | Permissionless tanpa modal = High · publik tapi butuh kondisi/front-run = Medium · butuh role/kunci = Low |
+
+`Impact x Likelihood` -> Severity -> wadah. Matriks & definisi operasional: `verify/SEVERITY-RUBRIC.md` Bagian 4.4.
+
+### 3. Aturan Penempatan (severity dan wadah adalah DUA SUMBU)
+
+| Kondisi | Wadah |
+|---|---|
+| `LIVE_MATCH` + Critical/High/Medium | `09` |
+| **`LIVE_MATCH` + Low + pemicu permissionless** (`VERDICT.md:112`) | **`09`** |
+| `LIVE_MATCH` + Low tetapi **butuh admin/role** tanpa jalur eksternal | `08` `ADMIN_ONLY` |
+| `HEAD_ONLY_PROVEN` (severity apa pun) | `08` `PRE_LIVE_SCOPE` |
+
+**DILARANG** memarkir temuan `LIVE_MATCH` ber-severity Low ke `08` hanya dengan alasan "Low = LOW_NUISANCE". `LOW_NUISANCE` hanya sah bila temuan **juga** butuh peran istimewa, atau platform menilainya di bawah ambang bayaran.
+
+### 4. Bila Severity Berbeda Antar Platform
+
+Tulis keduanya, jangan pilih yang menguntungkan:
+```yaml
+Severity : Low (OWASP, sesuai docs project)
+Asumsi  : di Immunefi/Cantina-BB kategori ini setara Medium; di Sherlock kemungkinan
+          tidak diterima. Diturunkan ke Low karena project mengeksplisitkan OWASP.
+```
+
+**Alasan aturan ini (insiden nyata):** pada satu audit, 4 temuan yang terbukti valid diparkir ke `08` karena Fase 3 sudah menulis "griefing, bukan temuan" dan Fase 4 mewarisinya tanpa meninjau — padahal platform memakai OWASP yang membayar Low.
+
+---
+
 ## Langkah 0a: Rekonsiliasi Cakupan Inventaris & Integritas Bukti (WAJIB SEBELUM LANGKAH 1)
 
 Hakim **DILARANG** memeriksa 11 Pernyataan kualitas bukti sebelum gerbang cakupan dan kejujuran usaha ini dijalankan.
@@ -135,7 +189,9 @@ Setiap Ringkasan Eksekutif Fase 4 wajib mencantumkan tabel cakupan per domain (`
    **Wajib pertahankan kode PoC utuh dan angka kuantitatif dampaknya di dalam `08`** (jangan dipangkas, dan **JANGAN** dimasukkan ke `07`!).
 
    **c. Berada Dalam Batasan Toleransi / Low Lainnya (`VALID_NOT_ELIGIBLE` — Pernyataan #8b, #10b -> `08-valid-not-eligible.md`)**
-   Simulasi PoC jalan secara mekanis tanpa curang, tetapi dampaknya tergolong *"Annoying but not financially dangerous"* (`LOW_NUISANCE`), atau merupakan *admin-only bug* tanpa jalur eksploitasi eksternal (`ADMIN_ONLY`) -> **Pindahkan dari `09` ke `audit/08-valid-not-eligible.md`**.
+   Simulasi PoC jalan secara mekanis tanpa curang, tetapi salah satu: (i) dampaknya Low **DAN** butuh peran istimewa tanpa jalur eksternal (`ADMIN_ONLY`); (ii) platform yang dipakai menilainya di bawah ambang bayaran; (iii) `HEAD_ONLY_PROVEN` -> **Pindahkan ke `audit/08-valid-not-eligible.md`**.
+
+   **KOREKSI WAJIB:** temuan `LIVE_MATCH` yang severity-nya **Low tetapi pemicunya permissionless** masuk **`09`**, bukan `08`. Lihat `VERDICT.md:112` dan Langkah 0.3b. `LOW_NUISANCE` **DILARANG** dipakai sebagai alasan generik untuk memarkir semua temuan Low.
 
    **d. Kendala Komputasi/RPC Ekstrem yang Sudah Dibuktikan dengan Log Usaha (`NEEDS_NEXT_STEP` — Pernyataan #9b -> `07-needs-next-step.md`)**
    **Hanya** untuk kandidat yang benar-benar belum bisa diselesaikan setelah melewati **3-Step Self-Healing** atau **mentok timeout fuzzer/SMT**, dan **lulus validasi `verify07.py`**.

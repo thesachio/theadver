@@ -78,7 +78,7 @@ Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` 
 
 ## Pitfalls & Hukum Mutlak Orchestrator
 - **JAGA KONTEKS PARENT TETAP RINGAN:** Gunakan `delegate_task` (`max_concurrent_children: 1` secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
-- **PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`:** Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File `audit/00` s/d `09`, instruksi `skill_view`, serta perintah agar Subagent menulis entri lengkap ke `audit/notes/staging-<unit>.md` dan mengembalikan **manifes** maksimal 12 baris (bukan muatan entri) — lihat **3b. Protokol Staging**.
+- **PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`:** **Single source = `AGENTS.md` Pasal 4 butir (1)–(7)** (Path, Paradigma, Path File audit, `skill_view`, Staging, **Sinyal RADAR**, **Model Mekanisme §5**). **DILARANG menyalin ulang daftar itu di sini** — dulu daftar ini tertinggal saat butir (6)/(7) ditambahkan. Lihat **3b. Protokol Staging** untuk bentuk manifes.
 - **JAGA PEMISAHAN 6 FILE HASIL (`04` s/d `09` — 1 File = 1 Domain Murni):**
   * `04-code-guarded.md` -> Murni hipotesis Fase 2 yang dihentikan oleh **Guard Statis / Struktural** (`onlyOwner`, `onlyRole`, `msg.sender == router`, `nonReentrant`, `whenNotPaused`, cek alamat `!= 0`). **DILARANG** menaruh guard matematis/dinamis di sini!
   * `05-raw-leads.md` -> Murni antrean aktif Fase 1 & 2 menuju Fase 3, mencakup seluruh anomali mutasi state, *Patch-Scar*, View-vs-Write, serta **Guard Dinamis / Matematis / State-Dependent** (rasio, pembulatan, saldo, waktu, panjang array) yang wajib diuji dengan fuzzer di Fase 3.
@@ -121,11 +121,11 @@ Setiap kali satu panggilan `delegate_task` selesai (baik **1 Unit `S-n`** di Tah
 
 #### 3b. Protokol Staging: Satu Penulis per File (WAJIB)
 
-Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bukan** tempat membawa muatan entri — satu entri butuh 15–20 baris, sedangkan unit normal menghasilkan 120–160 baris. Memaksa muatan masuk ringkasan = entri dipangkas atau ditulis tanpa pernah dibaca utuh.
+Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤16 baris` **bukan** tempat membawa muatan entri — satu entri butuh 15–20 baris, sedangkan unit normal menghasilkan 120–160 baris. Memaksa muatan masuk ringkasan = entri dipangkas atau ditulis tanpa pernah dibaca utuh.
 
 **Alur wajib setiap `delegate_task`:**
 1. **Subagent** menulis entri **lengkap siap-tempel** ke `audit/notes/staging-<unit>.md` (format final sudah jadi: kolom, File:Baris, guard, Delta State, blok `PERCOBAAN:`).
-2. **Subagent** mengembalikan `≤12 baris` berisi **manifes saja**: `STAGING: <path> | 04: <n> | 05: <n>` (atau `06/07/08/09`) + 1 baris verdict per entri.
+2. **Subagent** mengembalikan `≤16 baris` berisi **manifes saja**: `STAGING: <path> | 04: <n> | 05: <n>` (atau `06/07/08/09`) + 1 baris verdict per entri + maks 2 `R-CAND` + maks 2 `M-FACT` (lihat `AGENTS.md` Pasal 4).
 3. **Parent** memindahkan isi staging ke `04`–`09` memakai metode sesuai tabel `references/ref-atomic-write.md`, lalu **menghapus** file staging.
 
 **Metode merge Parent (DILARANG `open("w")` / `>`):**
@@ -229,7 +229,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤12 baris` **bu
        > **MANDATORY VICTIM SEEDING:** Sebelum kode penyerang berjalan di `setUp()`, wajib simulasikan transaksi pengguna/korban normal (`vm.prank(victim)`) agar pool, antrean, atau allowance terisi secara realistis.
        > **3-STAGE ESCALATION (2 MANUAL + 1 FUZZ) & 3-WAY EV AMPLIFICATION:** Jika Strike 1 & Strike 2 (Flashloan + Looping + Chaining) masih revert atau merugi, Anda WAJIB menulis dan menjalankan Strike 3 berupa fungsi `testFuzz_` untuk mengacak parameter input sebelum boleh memvonis `REJECTED_POC_FAILS` / `REJECTED_NEGATIVE_EV` / `REJECTED_DUST` ke `06` (dan wajib lampirkan log terminal test + fuzz di blok `BUKTI_SIMULASI:`).
        > **LARANGAN MENYENTUH `08` DI FASE 3:** Subagent Fase 3 **DILARANG** membuang lead ke `08-valid-not-eligible.md` dan DILARANG menurunkan temuan karena alasan HEAD-only/pre-live. Semua PoC yang `[PASS]` membuktikan eksploitasi wajib ditulis ke staging sebagai **kandidat `09`** (lengkap dengan tag `Mode Uji: FORK_LIVE` atau `FORK_DEPLOYED_HEAD`) untuk diadili oleh Hakim Fase 4!
-       > **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<lead>.md` (staging WAJIB; jangan menulis ke `06`/`07`/`09` langsung). Kembalikan maksimal 12 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 09: <n>` + 1 baris verdict per entri."
+       > **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<lead>.md` (staging WAJIB; jangan menulis ke `06`/`07`/`09` langsung). Kembalikan maksimal 14 baris berupa MANIFES: `STAGING: <path> | 06: <n> | 07: <n> | 09: <n>` + 1 baris verdict per entri + maks 2 `M-FACT` (fakta lingkungan ber-scope untuk `00 §5`)."
 
 2. **Fuzzing Invarian Stateful & Simetri Lintas-Alur:**
    - Untuk kandidat yang membutuhkan eksplorasi urutan mendalam, tugaskan Subagent Fase 3 menjalankan Handler Stateful Invariant Fuzzing (Tier 2), Differential/Split-vs-Bulk Fuzzing (Tier 3), atau Symbolic Proving Halmos (Tier 5) **pada sesi berjalan**.

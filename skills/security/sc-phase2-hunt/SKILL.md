@@ -22,14 +22,14 @@ Tujuan Fase 2 adalah menemukan kerentanan yang luput dari mata auditor standar. 
 
 **Batas yang mengikat (jangan dibaca sebagai izin umum):** izin `append`/`patch` langsung bagi Subagent hanya berlaku untuk entri yang **bukan** hasil pendadahan unit `S-n` — mis. temuan susulan, koreksi bukti, atau entri hasil verifikasi Fase 3 yang sudah final. Untuk unit `S-n`, staging tetap wajib karena Parent perlu memverifikasi jumlah entri terhadap manifes sebelum entri masuk file audit.
 
-**Mengapa staging, bukan ringkasan 12 baris.** Satu entri `04`/`05` berukuran 15–20 baris. Unit normal menghasilkan 3 lead + 5 guard ≈ 120–160 baris. Ringkasan `≤12 baris` **secara matematis tidak dapat** membawa muatan itu — memaksanya berarti Parent menulis entri yang tidak pernah dibaca utuh oleh siapa pun, atau Subagent memangkas temuan agar muat. Keduanya kegagalan audit.
+**Mengapa staging, bukan ringkasan 16 baris.** Satu entri `04`/`05` berukuran 15–20 baris. Unit normal menghasilkan 3 lead + 5 guard ≈ 120–160 baris. Ringkasan `≤16 baris` **secara matematis tidak dapat** membawa muatan itu — memaksanya berarti Parent menulis entri yang tidak pernah dibaca utuh oleh siapa pun, atau Subagent memangkas temuan agar muat. Keduanya kegagalan audit.
 
 **Pembagian peran yang benar:**
 
 | Peran | Menulis | Bentuk |
 |---|---|---|
 | Subagent | `audit/notes/staging-<unit>.md` **saja** | Entri lengkap siap-tempel (format final `04`/`05`), memakai `write_file` atau `atomic_write` |
-| Subagent → Parent | Ringkasan `≤12 baris` | **Hanya** manifes: `STAGING: <path> \| 04: <n> \| 05: <n>` + 1 baris verdict per entri |
+| Subagent → Parent | Ringkasan `≤16 baris` | **Hanya** manifes: `STAGING: <path> \| 04: <n> \| 05: <n>` + 1 baris verdict per entri |
 | Parent | `audit/04`–`09` | Salin dari staging memakai metode di `references/ref-atomic-write.md` (append/patch), verifikasi `grep -c '^## \['`, lalu hapus staging |
 
 **Larangan tetap berlaku pada Parent:** dilarang `open(path,"w")` / `>` untuk `04`–`09`. Gunakan `append`/`patch` sesuai tabel karakteristik file.
@@ -58,9 +58,15 @@ Pola kode lengkap, protokol backup write-ahead, dan prosedur pemulihan (termasuk
 
 ## Aturan Orkestrasi Subagent (delegate_task)
 
-Jika dijalankan melalui delegasi, berikan paket tugas berisi:
+> **Paket delegasi = SINGLE SOURCE: `workspace/AGENTS.md` Pasal 4 butir (1)–(7).**
+> **DILARANG mendefinisikan ulang daftar paket di berkas ini.** Dulu ada dua daftar
+> (di sini dan di AGENTS.md) dan yang di sini tertinggal — tidak memuat Sinyal RADAR
+> maupun Model Mekanisme §5, sehingga subagent bisa menerima paket tidak lengkap.
+> Kekhususan Fase 2 di bawah ini **melengkapi**, bukan menggantikan.
+
+Kekhususan Fase 2 (di luar paket umum AGENTS.md §4):
 1. **Tepat 1 Unit `S-n`** dari `audit/03-attack-surface-queue.md` (lihat *Fixed Quota* di bawah), beserta tag `[LOAD: ...]`.
-2. Instruksi wajib membaca `audit/00-project-map.md`, `audit/01-threat-and-env.md` (3 Kasta Aset & Jejak *Patch-Scar*), `audit/02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
+2. **Wajib membaca** `audit/00-project-map.md` (**termasuk §5 Model Mekanisme**, blok domain unit itu), `audit/01-threat-and-env.md` (3 Kasta Aset & Jejak *Patch-Scar*), `audit/02-state-and-var-matrix.md`, dan `audit/INTEL.md` bila ada.
 3. Pembagian Putaran Eksplorasi:
    - Putaran 1 (Mikro Unit Antrean): Jalankan Fondasi Batas & 5 Primitif + metode sesuai kelas topologi unit (lihat `references/ref-method-registry.md`) -> Tahap B (Symptom Router & Lazy-Load POV) -> Tahap C (klasifikasi `04` vs `05`).
    - **Tahap C — Keluaran:** tulis entri lengkap ke `audit/notes/staging-<unit>.md` (**bukan** ke `04`/`05` langsung). Format entri wajib sudah final agar Parent hanya menyalin: untuk `04` sertakan File:Baris, Ekspresi Guard, Variabel Pembentuk; untuk `05` sertakan Metode Pencarian (`M-001..M-NNN` dan/atau `[POV-XX]`) dan Delta State. Ringkasan ke Parent cukup manifes: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris per entri.

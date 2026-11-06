@@ -83,7 +83,7 @@ Backup **SEBELUM** mutasi, bukan sesudah. Backup yang dibuat setelah kegagalan m
 
 ### 1.3.4 Satu Penulis per File
 
-Subagent **DILARANG** menulis ke `audit/04`–`09`. Mereka menulis entri lengkap ke `audit/notes/staging-<unit>.md`, lalu **Parent** yang menggabungkan (lihat Pasal 4 — Protokol Staging). Alasan: ringkasan `≤12 baris` tidak dapat membawa muatan 120–160 baris, dan `max_concurrent_children` adalah konfigurasi yang bisa berubah, bukan jaminan.
+Subagent **DILARANG** menulis ke `audit/04`–`09`. Mereka menulis entri lengkap ke `audit/notes/staging-<unit>.md`, lalu **Parent** yang menggabungkan (lihat Pasal 4 — Protokol Staging). Alasan: ringkasan `≤16 baris` tidak dapat membawa muatan 120–160 baris, dan `max_concurrent_children` adalah konfigurasi yang bisa berubah, bukan jaminan.
 
 ---
 
@@ -180,7 +180,7 @@ Setiap panggilan delegate_task WAJIB menyertakan di parameter context: (1) Path 
 
 - Subagent menulis entri **lengkap siap-tempel** ke `audit/notes/staging-<unit>.md` (format final: kolom wajib, File:Baris, guard, Delta State, blok `PERCOBAAN:` bila relevan).
 - Subagent **DILARANG** menulis ke `audit/04`–`09`. Wadah itu **hanya** ditulis Parent.
-- Subagent mengembalikan **manifes** maksimal 12 baris: `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris verdict per entri. Ringkasan **bukan** tempat muatan entri — satu entri 15–20 baris, unit normal 120–160 baris, jadi memuat isi di 12 baris mustahil tanpa memangkas temuan.
+- Subagent mengembalikan **manifes** maksimal **16 baris**: 1 baris `STAGING: <path> | 04: <n> | 05: <n>` + 1 baris verdict per entri + maks 2 `R-CAND` + maks 2 `M-FACT`. Ringkasan **bukan** tempat muatan entri — satu entri 15–20 baris, unit normal 120–160 baris, jadi memuat isi di 12 baris mustahil tanpa memangkas temuan. (Batas dinaikkan dari 12 → 16 saat kanal `R-CAND`/`M-FACT` ditambahkan; tanpa itu unit dengan 8 entri + 4 kanal akan melampaui batas.)
 - Subagent **WAJIB** mengembalikan maksimal **2 kandidat `R-xx`** (boleh 0) dengan format satu baris: `R-CAND: <Lokasi File:Baris> | <Asimetri> | <Pemicu> | Tujuan: <unit/domain>`. Kandidat ini **bukan** lead dan **tidak** dihitung sebagai temuan. **Parent** yang menilai dengan Gerbang 3-Uji (`verify/templates/RADAR.md`) lalu menulis `audit/RADAR.md` — subagent **DILARANG** menulisnya.
 - Subagent **WAJIB** mengembalikan maksimal **2 `M-FACT`** (boleh 0) — fakta mekanisme yang **mengubah model proyek**, format satu baris: `M-FACT: <ALUR|BATAS|STATE|INVARIAN|ANEH|ASUMSI> <fakta> | <File:Baris> | dampak: <apa yang berubah>`. Fakta yang **mengubah cara Fase 3 merancang harness**, **membatalkan asumsi**, atau **menjelaskan keanehan** wajib dilaporkan; selebihnya tidak. **Parent** yang menilai dan `patch` `audit/00-project-map.md §5` (+≤3 baris/unit) — subagent **DILARANG** menulisnya.
 - Parent menggabungkan memakai `append`/`patch` sesuai tabel karakteristik file di `sc-phase2-hunt/references/ref-atomic-write.md` (**DILARANG** `open("w")` / `>`), lalu menghapus staging dan memverifikasi dengan `grep -c '^## \[' <file>` terhadap manifes.

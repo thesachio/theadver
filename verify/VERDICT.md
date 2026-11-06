@@ -88,20 +88,20 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 - `HEAD_FIXED` / `REGRESSION_FIXED` wajib disertai **dua log eksekusi** (live PASS + HEAD FAIL). Tanpa itu → `ENV_ERROR`.
 - Setiap artefak wajib memuat `live_identity` terukur (mis. `accountId()` = `biconomy.nexus.1.3.3`, atau `sha256(ProgramData)` untuk Solana). **Tanpa identitas terukur, `LIVE_MATCH` ditolak.**
 
-### 0.2c — GERBANG SCOPE MODEL (WAJIB SEBELUM MENETAPKAN SEVERITY & ELIGIBILITY)
+### 0.2c — GERBANG SCOPE FACTS (WAJIB SEBELUM MENETAPKAN SEVERITY & ELIGIBILITY)
 
-Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/MODEL.md` —
+Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/FACTS.md` —
 khususnya `MEKANISME`, `INVARIAN`, dan `LINGKUNGAN`.
 
 **Alasannya:** `SEVERITY` dan `ELIGIBILITY` bergantung pada siapa pemegang otoritas, apakah
-asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di MODEL —
-bukan di PoC. Hakim yang mengadili tanpa MODEL akan menebak, dan tebakan itu masuk ke laporan.
+asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di FACTS —
+bukan di PoC. Hakim yang mengadili tanpa FACTS akan menebak, dan tebakan itu masuk ke laporan.
 
 > **Batas `LINGKUNGAN` (jangan tumpang tindih dengan aturan lain):** `LINGKUNGAN` **HANYA**
 > memuat klasifikasi otoritas (EOA vs multisig vs timelock + threshold), `paused`, dan durasi
 > timelock — semuanya ber-tag `[chain:alamat]`. **DILARANG** memuat `CYCLE`, `ENTRYPOINT`,
 > `Mode Uji`, `LIVE_MATCH`, atau hash identitas live: itu milik `notes/deploy-parity-<ID>.json`
-> (Langkah 0–0.4 di atas). Bila `MODEL.md` memuat status deployment, itu duplikasi dan
+> (Langkah 0–0.4 di atas). Bila `FACTS.md` memuat status deployment, itu duplikasi dan
 > **sumber kebenaran kedua** — tolak.
 
 **Hukum pengikatan scope (fakta DILARANG dipindahkan):**

@@ -117,12 +117,12 @@ R-CAND: <File:Baris> | <Asimetri: yang seharusnya vs yang terjadi> | <Pemicu: ko
 
 **Sweep wajib di akhir Putaran 2:** saat seluruh `03` sudah diketahui, tinjau `RADAR.md` dan lengkapi `Tujuan` yang terlewat lewat baris kejadian `TARGET-ADDED`. Entri yang `Lokasi`-nya tersentuh unit lain tetapi tidak pernah mendapat baris kejadian = **bukti sweep gagal**, bukan bukti tidak relevan.
 
-**Blueprint Mekanisme (`audit/MODEL.md`) — baca, prediksi, perbarui:**
-1. **Sebelum** membedah unit — temukan & baca blok domain unit itu: `grep -n "<NamaBerkas>.sol" audit/MODEL.md` lalu `sed -n '<awal>,<awal+12>p'`. Komponen: `BERKAS`·`MEKANISME`·`CHAINING`·`DATA`·`INVARIAN`+penegak·`LINGKUNGAN`·`ASUMSI` (≈12 baris). Ini yang membuat Anda **sensitif**: tahu apa yang *seharusnya* ada, sehingga tahu apa yang *hilang*.
+**Blueprint Mekanisme (`audit/FACTS.md`) — baca, prediksi, perbarui:**
+1. **Sebelum** membedah unit — temukan & baca blok domain unit itu: `grep -n "<NamaBerkas>.sol" audit/FACTS.md` lalu `sed -n '<awal>,<awal+12>p'`. Komponen: `BERKAS`·`MEKANISME`·`CHAINING`·`DATA`·`INVARIAN`+penegak·`LINGKUNGAN`·`ASUMSI` (≈12 baris). Ini yang membuat Anda **sensitif**: tahu apa yang *seharusnya* ada, sehingga tahu apa yang *hilang*.
 2. **Tulis prediksi** sebelum membaca kode: *"invarian apa yang saya harap ditegakkan di sini, dan di mana kemungkinan patah?"*
-3. **Saat** membedah — kumpulkan fakta mengikuti **protokol penemuan** di `verify/templates/MODEL.md` (pertanyaan pemandu + cara cari + bukti wajib per komponen). Maksimal **2 `M-FACT`** per unit, ditulis di staging blok `USULAN` — bukan langsung ke MODEL.
-4. **Sesudah** unit ditutup — bandingkan prediksi dengan temuan, lalu `patch` `MODEL.md` **maksimal +3 baris**. Prediksi **meleset** = model kurang; itulah baris yang wajib ditambahkan. Prediksi **tepat** = jangan tambah baris.
-5. **DILARANG** membiarkan `MODEL.md` tanpa pembaruan sepanjang Fase 2 — itu tanda model tidak dipakai dan agent kembali menebak dari nol di setiap unit.
+3. **Saat** membedah — kumpulkan fakta mengikuti **protokol penemuan** di `verify/templates/FACTS.md` (pertanyaan pemandu + cara cari + bukti wajib per komponen). Maksimal **2 `M-FACT`** per unit, ditulis di staging blok `USULAN` — bukan langsung ke FACTS.
+4. **Sesudah** unit ditutup — bandingkan prediksi dengan temuan, lalu `patch` `FACTS.md` **maksimal +3 baris**. Prediksi **meleset** = model kurang; itulah baris yang wajib ditambahkan. Prediksi **tepat** = jangan tambah baris.
+5. **DILARANG** membiarkan `FACTS.md` tanpa pembaruan sepanjang Fase 2 — itu tanda model tidak dipakai dan agent kembali menebak dari nol di setiap unit.
 
 **Fakta saja, bukan hipotesis** — uji setiap kalimat: *"tetap benar walau kontrak tidak punya bug?"* Tidak → tempatnya `05`. **DILARANG** memuat status deployment (`CYCLE`/`ENTRYPOINT`/`Mode Uji`) — itu milik `deploy-parity-*.json`. `INVARIAN` tanpa penegak (`TIDAK ditegakkan`) adalah **kandidat celah**, wajib dipertimbangkan saat membedah unit tersebut.
 

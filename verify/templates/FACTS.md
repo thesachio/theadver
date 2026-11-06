@@ -1,4 +1,4 @@
-# MODEL — Blueprint Mekanisme Proyek (hidup, fakta saja)
+# FACTS — Fakta Mekanisme Proyek (hidup, terverifikasi)
 
 Berisi **fakta tentang bagaimana proyek bekerja**, yang membuat Fase 3 bisa merancang uji tajam.
 Bukan hipotesis, bukan status deployment, bukan catatan aktivitas.
@@ -14,7 +14,7 @@ Bukan hipotesis, bukan status deployment, bukan catatan aktivitas.
 ## HUKUM
 
 1. **FAKTA SAJA.** Uji setiap kalimat: *"apakah ini tetap benar walau kontrak tidak punya bug?"*
-   - **Ya** → boleh masuk MODEL.
+   - **Ya** → boleh masuk FACTS.
    - **Tidak** (hanya masuk akal bila ada celah) → itu hipotesis, tempatnya `05-raw-leads.md`.
 2. **DILARANG memuat status deployment.** `CYCLE`, `ENTRYPOINT`, `Mode Uji`, `FORK_LIVE`,
    `LIVE_MATCH`, hash/identitas live → **milik `notes/deploy-parity-<ID>.json`** dan field
@@ -72,13 +72,13 @@ ASUMSI    : [A] desimal semua token 6 atau 18 — BELUM diverifikasi
 **LINGKUNGAN** | *Siapa pemegang otoritas, sekuat apa?* | `cast code` admin (kontrak?), `threshold()`, `paused()`, `delay()` | perintah + hasil + **blok** + status | `deploy_parity.py` (alamat) |
 **ASUMSI** | *Apa yang saya andalkan tapi belum saya periksa?* | catat setiap "karena X, maka Y" tanpa bukti | `BELUM` / `VERIFIED` / `GUGUR` | — |
 
-**Metode bukan pekerjaan tambahan** — MODEL memanen hasil `M-001..M-NNN` yang sudah dijalankan
+**Metode bukan pekerjaan tambahan** — FACTS memanen hasil `M-001..M-NNN` yang sudah dijalankan
 di Fase 2. Tidak ada langkah baru, hanya pencatatan hasil.
 
 ### Tiga titik waktu
 1. **Sebelum unit** — baca blok domain yang ada, tulis **prediksi**: *"invarian apa yang saya
    harap ditegakkan di sini, di mana kemungkinan patah?"*
-2. **Saat unit** — kumpulkan fakta; tulis sebagai `M-FACT` di staging (blok `USULAN`), bukan langsung ke MODEL.
+2. **Saat unit** — kumpulkan fakta; tulis sebagai `M-FACT` di staging (blok `USULAN`), bukan langsung ke FACTS.
 3. **Sesudah unit** — bandingkan prediksi vs temuan. Prediksi **meleset** → fakta penyebabnya
    wajib masuk. Prediksi **tepat** → jangan tambah baris.
 
@@ -94,7 +94,7 @@ Fase 3 bekerja dari **`File:Baris`**, bukan dari nama domain:
 
 ```bash
 # 1. Cetak blok domain yang memuat path berkas lead (berhenti di heading berikutnya)
-awk -v pat="<NamaBerkas>.sol" '/^## D/{if(hit){print head;printf "%s",buf;done=1;exit} head=$0;buf="";hit=0;next}{buf=buf $0 ORS; if(index($0,pat))hit=1} END{if(hit&&!done){print head;printf "%s",buf}}' audit/MODEL.md
+awk -v pat="<NamaBerkas>.sol" '/^## D/{if(hit){print head;printf "%s",buf;done=1;exit} head=$0;buf="";hit=0;next}{buf=buf $0 ORS; if(index($0,pat))hit=1} END{if(hit&&!done){print head;printf "%s",buf}}' audit/FACTS.md
 
 # 2. RADAR yang menyentuh berkas yang sama (seam yang mungkin memperkuat)
 grep -n -B1 -A8 "<NamaBerkas>.sol" audit/RADAR.md
@@ -127,7 +127,7 @@ Total ±400–600 token — cukup untuk menyusun harness tanpa memuat seluruh au
 `Pemicu` terpenuhi | promosikan saat itu juga, uji bersamaan |
 `RESOLVED-REFUTED` + alasan | hindari mengulang jalan buntu yang sama |
 
-### Bila blok MODEL tidak ada untuk domain lead
+### Bila blok FACTS tidak ada untuk domain lead
 Fase 3 **wajib backfill dulu**: baca fungsi utuh → tulis blok 12 baris → baru menulis harness.
 Dilarang menulis harness tanpa blok — itu menguji tanpa tahu mekanismenya.
 
@@ -137,12 +137,12 @@ Dilarang menulis harness tanpa blok — itu menguji tanpa tahu mekanismenya.
 
 | Anti-pola | Mengapa |
 |---|---|
-Menulis *"mungkin bisa di-reentrancy"* | hipotesis → tempatnya `05`, bukan MODEL |
+Menulis *"mungkin bisa di-reentrancy"* | hipotesis → tempatnya `05`, bukan FACTS |
 Menyalin `CYCLE`/`ENTRYPOINT`/`Mode Uji` | duplikasi dengan `deploy-parity-*.json` |
 `LINGKUNGAN` tanpa tag `[chain:alamat]` | akan terbawa ke chain lain → vonis palsu |
 Menghilangkan fakta yang tidak diketahui | Fase 3 akan menganggapnya tidak ada; tulis `UNKNOWN` |
 Menambah 10 baris per unit | batas 3. Model bengkak = tidak terbaca = nol |
-Menyalin fakta dari `00 §4` | `00` baseline Fase 1; bila berbeda, **MODEL menang** (lebih baru) |
+Menyalin fakta dari `00 §4` | `00` baseline Fase 1; bila berbeda, **FACTS menang** (lebih baru) |
 
 ---
 
@@ -150,7 +150,7 @@ Menyalin fakta dari `00 §4` | `00` baseline Fase 1; bila berbeda, **MODEL menan
 
 | Wadah | Pertanyaan | Sifat |
 |---|---|---|
-| `audit/MODEL.md` | *bagaimana cara kerjanya, apa yang seharusnya?* | hidup, `patch` |
+| `audit/FACTS.md` | *bagaimana cara kerjanya, apa yang seharusnya?* | hidup, `patch` |
 `audit/RADAR.md` | *apa yang janggal tapi belum terbukti?* | hidup, `append` |
 `audit/05-raw-leads.md` | *hipotesis mana yang harus diuji?* | antrean |
 `notes/deploy-parity-*.json` | *kode ini live atau HEAD?* | per-lead |

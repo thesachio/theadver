@@ -15,7 +15,7 @@ nanti ada yang mengubah satu tempat, ia tahu tempat lain mana yang harus ikut di
 Paket delegasi (1)–(7) | `workspace/AGENTS.md` Pasal 4 | `sc-phase2-hunt`, `sc-autopilot` |
 Batas manifes (16 Fase 2 / 14 Fase 3) | `workspace/AGENTS.md` Pasal 4 | `sc-autopilot` |
 Skema RADAR + Gerbang 3-Uji | `verify/templates/RADAR.md` | `AGENTS.md`, `sc-phase2-hunt`, `sc-autopilot` |
-Blueprint MODEL + Hukum Pengikatan Scope | `verify/templates/MODEL.md` | `AGENTS.md`, `sc-phase2`, `sc-phase3` |
+Blueprint FACTS + Hukum Pengikatan Scope | `verify/templates/FACTS.md` | `AGENTS.md`, `sc-phase2`, `sc-phase3` |
 Gerbang scope sebelum severity | `verify/VERDICT.md` §0.2c | `sc-phase3` |
 Metode `M-xxx` | `sc-phase2-hunt/references/ref-method-registry.md` | `sc-phase2-hunt` |
 Atomic write / anti-truncate | `sc-phase2-hunt/references/ref-atomic-write.md` | `AGENTS.md` §1.3, `sc-phase2` |

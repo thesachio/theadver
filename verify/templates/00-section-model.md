@@ -19,19 +19,52 @@ Model ini bukan daftar fakta. Ia harus membuat agent **sensitif** (tahu apa yang
 
 ### D1: <nama-domain>
 ```
-ALUR     : <aset bergerak: siapa -> siapa -> siapa>
-BATAS    : <siapa boleh memanggil apa; mana yang diasumsikan jujur>
-STATE    : <variabel kunci> penulis=<...> pembaca=<...>
-INVARIAN : <"X harus selalu Y"> — ditegakkan di <File:Baris> (atau: TIDAK ditegakkan)
-INVARIAN : <...>
-ANEH     : <hal yang menyimpang dari pola umum / tidak lazim>
-ASUMSI   : [A] <asumsi yang belum diverifikasi> — status: BELUM/TERVERIFIKASI/GUGUR
+ALUR       : <aset bergerak: siapa -> siapa -> siapa>
+BATAS      : <siapa boleh memanggil apa; mana yang diasumsikan jujur>
+STATE      : <variabel kunci> penulis=<...> pembaca=<...>
+INVARIAN   : <"X harus selalu Y"> — ditegakkan di <File:Baris> (atau: TIDAK ditegakkan)
+ANEH       : <hal yang menyimpang dari pola umum / tidak lazim>
+LINGKUNGAN:
+  [<chain>:<alamat>] <fakta> | bukti: <perintah+hasil> @<blok> | VERIFIED
+  [<chain>:<alamat>] <fakta> | bukti: <perintah+hasil> @<blok> | VERIFIED
+  [<chain>:<alamat>] <fakta belum dicek> | — | UNKNOWN
+ASUMSI     : [A] <asumsi yang belum diverifikasi> — status: BELUM/TERVERIFIKASI/GUGUR
 ```
 
 ### D2: <nama-domain>
 ```
 ... (maks 12 baris)
 ```
+
+---
+
+## HUKUM PENGIKATAN SCOPE (wajib — pelanggaran = vonis tidak sah)
+
+Fakta lingkungan **tidak pernah berlaku global**. Ia melekat pada satu `(chain, alamat, blok)`
+dan **DILARANG** dipindahkan ke tempat lain. Empat jenis pergeseran yang harus dicegah:
+
+| Pergeseran | Contoh salah | Akibat |
+|---|---|---|
+**Chain drift** | fakta `[ETH]` dipakai menilai target `[ARB]` | severity/eligibility salah |
+**Address drift** | fakta proxy dipakai untuk implementation, atau deployment lama untuk yang baru | vonis tentang kode yang salah |
+**Lingkungan drift** | fakta hasil fork/testnet dipakai untuk produksi | klaim live palsu |
+**Waktu drift** | fakta @blok 19.2M dipakai setelah upgrade di 19.8M | fakta sudah basi |
+
+**Aturan penegakan:**
+
+1. **Tag scope wajib mengawali setiap baris `LINGKUNGAN`.** Baris tanpa `[chain:alamat]`
+   **ditolak** — tidak boleh masuk model. Fakta tanpa scope lebih berbahaya daripada tidak ada fakta.
+2. **Saat menilai target X, hanya baris ber-tag X yang berlaku.** Baris ber-tag lain
+   **DILARANG** dipinjam, walau kelihatan identik. Kode identik ≠ otoritas identik.
+3. **Bila target X belum punya baris `LINGKUNGAN`** → status eksplisit
+   **`UNVERIFIED_ASSUMPTION`**, bukan asumsi diam-diam. Wajib diverifikasi sebelum
+   menetapkan severity atau eligibility.
+4. **`UNKNOWN` dan `UNVERIFIED_ASSUMPTION` DILARANG dipakai** untuk menaikkan severity
+   atau menurunkan eligibility (dan sebaliknya). Hanya fakta `VERIFIED` yang boleh.
+5. **Fakta terikat blok bersifat kedaluwarsa.** Bila terjadi upgrade/perubahan otoritas
+   setelah blok verifikasi, baris otomatis `STALE` dan wajib diverifikasi ulang.
+6. **Satu domain lintas-chain wajib punya baris per chain.** Menyebut satu chain lalu
+   menyimpulkan "sama untuk semua" = pelanggaran chain drift.
 
 ---
 

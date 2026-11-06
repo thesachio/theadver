@@ -88,9 +88,46 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 - `HEAD_FIXED` / `REGRESSION_FIXED` wajib disertai **dua log eksekusi** (live PASS + HEAD FAIL). Tanpa itu → `ENV_ERROR`.
 - Setiap artefak wajib memuat `live_identity` terukur (mis. `accountId()` = `biconomy.nexus.1.3.3`, atau `sha256(ProgramData)` untuk Solana). **Tanpa identitas terukur, `LIVE_MATCH` ditolak.**
 
+### 0.2c — GERBANG SCOPE MODEL (WAJIB SEBELUM MENETAPKAN SEVERITY & ELIGIBILITY)
+
+Sebelum menyentuh `0.3`, Hakim **WAJIB** membaca `audit/00-project-map.md §5` —
+khususnya `BATAS`, `INVARIAN`, dan `LINGKUNGAN`.
+
+**Alasannya:** `SEVERITY` dan `ELIGIBILITY` bergantung pada siapa pemegang otoritas, apakah
+asumsi kepercayaan wajar, dan apakah invarian benar-benar ditegakkan. Semua itu ada di §5 —
+bukan di PoC. Hakim yang mengadili tanpa §5 akan menebak, dan tebakan itu masuk ke laporan.
+
+**Hukum pengikatan scope (fakta DILARANG dipindahkan):**
+
+| Pergeseran | Contoh pelanggaran |
+|---|---|
+**Chain drift** | fakta `[ETH]` dipakai menilai target `[ARB]` |
+**Address drift** | fakta proxy dipakai untuk implementation, atau deployment lama untuk yang baru |
+**Lingkungan drift** | fakta hasil fork/testnet dipakai untuk klaim produksi |
+**Waktu drift** | fakta `@blok N` dipakai setelah upgrade di blok `M > N` |
+
+1. Fakta `LINGKUNGAN` **hanya berlaku untuk `(chain, alamat)` yang tertulis di tag-nya.**
+   Kode identik **bukan** bukti otoritas identik. Baris ber-tag lain **DILARANG** dipinjam.
+2. Bila target vonis **belum punya** baris `LINGKUNGAN` yang `VERIFIED` → status
+   **`UNVERIFIED_ASSUMPTION`**. Wajib diverifikasi lebih dulu (satu `cast call` biasanya cukup).
+3. **`UNKNOWN` / `UNVERIFIED_ASSUMPTION` DILARANG dipakai** untuk menaikkan maupun
+   menurunkan severity, dan DILARANG dipakai sebagai dasar `ADMIN_ONLY` / `LIVE_MATCH`.
+4. Vonis yang menyatakan *"admin-only"*, *"butuh privilese"*, *"tidak dapat dijangkau
+   pengguna biasa"*, atau *"aman karena diaudit"* **WAJIB** merujuk satu baris §5
+   (format: `RUJUKAN_SCOPE: [chain:alamat] <baris §5>`). Tanpa rujukan → **`UNVERIFIED_ASSUMPTION`**.
+5. Fakta terikat blok yang sudah melewati upgrade/perubahan otoritas otomatis **`STALE`** →
+   perlakukan sebagai `UNVERIFIED_ASSUMPTION` sampai diverifikasi ulang.
+
+> **Mengapa gerbang ini ada:** model yang diuji di lingkungan sempit (satu chain, satu
+> fork, satu deployment) sangat mudah diperlakukan seolah berlaku global. Itu menghasilkan
+> dua kegagalan sekaligus: temuan nyata diturunkan, dan asumsi lokal dipromosikan menjadi
+> klaim produksi. Keduanya adalah `REJECTED_MISMATCH` yang tidak terdeteksi.
+
 ### 0.3 — Severity DITENTUKAN oleh Impact, BUKAN oleh Siklus (DUA SUMBU ORTOGONAL)
 
 `SEVERITY` dan `ELIGIBILITY` adalah dua sumbu terpisah dan **tidak boleh** dikalikan atau saling menurunkan.
+
+**Sumber kriteria severity: `verify/SEVERITY-RUBRIC.md`** (satu folder dengan berkas ini) — lihat Langkah 0.3b.
 
 | `SEVERITY` (dari impact saja) | Kriteria |
 |---|---|
@@ -112,6 +149,33 @@ python3 verify/tools/deploy_parity.py --paradigm <evm|solana|sui|aptos|ton|gener
 | Low | `LIVE_MATCH` | `09` / `06` | Low |
 
 **Dua wadah yang mengubah penempatan tanpa mengubah severity:** `08` (valid tapi belum live) dan `07` (belum tuntas diuji). Keduanya **mempertahankan label keparahan apa adanya**.
+
+### 0.3b — Sumber Kriteria Severity (rujukan platform)
+
+Kriteria severity **DILARANG dikarang atau dipilih berdasarkan selera**. Setiap temuan wajib merujuk
+salah satu sumber berikut:
+
+1. **Platform yang dideklarasikan project** — dicatat di `audit/INTEL.md` pada baris
+   `Severity Basis : <platform> — <URL>`.
+2. **`verify/SEVERITY-RUBRIC.md`** (satu folder dengan berkas ini) — tabel per platform dan
+   definisi Low universal:
+   - Bagian 2.1 OWASP (dipakai Across) · 2.2 Immunefi · 2.3 Sherlock · 2.4 Cantina BB ·
+     2.5 Cantina Comp · 2.6 Code4rena · 2.7 Relay · 2.8 Self-hosted
+   - **Bagian 4** = definisi Low universal (L1–L6) untuk project tanpa rujukan
+   - Bagian 3 = tabel perbandingan (di mana griefing/DoS/admin-only diletakkan per platform)
+
+**Perintah muat (wajib dijalankan Hakim sebelum memberi label pertama):**
+```bash
+read_file verify/SEVERITY-RUBRIC.md        # atau minimal Bagian 4 (definisi Low universal)
+grep -n "Severity Basis" <proyek>/audit/INTEL.md
+```
+
+**Aturan wajib:**
+- Temuan **tanpa** baris `Rujukan:` = label severity tidak sah.
+- Bila platform tidak mendeklarasikan kriteria → **default Low** (rubrik Bagian 4) + tulis
+  baris `Asumsi:` yang menyebut kemungkinan severity berbeda di platform lain.
+- **DILARANG** menaikkan severity karena "platform lain menilainya lebih tinggi".
+- **DILARANG** menurunkan severity karena alasan deployment (#10b tetap berlaku).
 
 ### 0.4 — Bila `DEPLOYMENT_MATCH` ≠ `LIVE_MATCH` padahal alamat live tersedia
 

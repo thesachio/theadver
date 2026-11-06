@@ -1,7 +1,7 @@
 ---
 name: sc-phase3-verify-and-poc
 description: Phase 3 — Dynamic Registry-Routed Harness Design (M-001..M-NNN & [POV-XX]), Dual-Mode Fork Simulation (FORK_LIVE & FORK_DEPLOYED_HEAD) with Victim Seeding, 2-Manual + 1-Fuzz Escalation, and Pure Mechanism Staging (06, 07, 09).
-version: 6.4.2
+version: 6.4.1
 ---
 
 # Phase 3: Simulation-First Sanity Check & Local Fork Exploit Lab
@@ -18,6 +18,27 @@ Tujuan Fase 3 adalah menguji setiap hipotesis di audit/05-raw-leads.md di dalam 
 ---
 
 ## Langkah 0b: Anti-Rabbit-Hole & Anti-Premature-Death — Protokol 2-Manual + 1-Fuzz Escalation (WAJIB)
+
+### 0b.0 — LARANGAN MELABELI SEVERITY DI FASE 3 (WAJIB)
+
+Fase 3 adalah **hunter**, bukan **classifier**. Menilai severity di tengah pencarian memecah fokus dari membangun harness dan menjalankan PoC, dan menghasilkan label tidak konsisten antar-lead (lead ke-3 dinilai dengan konteks berbeda dari lead ke-12).
+
+**DILARANG menulis label severity di Fase 3:** `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`, `dust`, `griefing`, `informational`, `admin-only` — baik di `notes/lead-<id>.md`, staging, maupun `05-raw-leads.md`.
+
+**Sebagai gantinya, catat DUA BARIS FAKTA** (objektif, tidak butuh rubrik, sudah jadi bagian kerja Fase 3):
+
+```
+Impact-facts : <apa yang TERUKUR di log, angka bukan label>
+               contoh: "tidak ada dana berpindah; gas 24.536 terbuang; loop tidak maju"
+               contoh: "attacker +1.000.000e18; korban 0; saldo pool turun 100%"
+Pemicu       : <siapa yang bisa memicu, fakta bukan Likelihood>
+               contoh: "EOA mana pun, tanpa role, calldata publik"
+               contoh: "hanya pemegang STATE_UPDATER_ROLE (EOA tunggal)"
+```
+
+**Penerjemahan fakta ke severity dan wadah adalah wewenang EKSKLUSIF Fase 4** (`sc-phase4-report` Langkah 0.3b), memakai rubrik `verify/SEVERITY-RUBRIC.md` (satu folder dengan `VERDICT.md`). Diputuskan sekali untuk semua lead dengan rubrik yang sama, sehingga konsisten. Bila platform berubah, cukup ubah di Fase 4 — catatan Fase 3 tidak perlu ditulis ulang.
+
+**Alasan aturan ini:** pada audit nyata, agen menulis "griefing maksimal, bukan temuan" dan "LOW/informational" langsung di catatan Fase 3, lalu label itu diwarisi Fase 4 tanpa ditinjau — sehingga 4 temuan Low yang sah tidak pernah masuk laporan, padahal platform menilai dengan OWASP yang membayar Low.
 
 Aturan ini mengikat **setiap lead** di `audit/05-raw-leads.md`: mencegah agen terjebak di satu lead tanpa batas, sekaligus melarang agen mematikan lead terlalu cepat hanya karena salah menebak angka manual.
 
@@ -154,7 +175,7 @@ Fase 2 sudah membaca kode untuk **membentuk** lead. Fase 3 membaca kode yang sam
 3. Bandingkan dengan klaim lead: **cocok**, **sebagian**, atau **bertentangan**.
 4. Bila bertentangan → lead **DILARANG** di-PoC apa adanya; tulis ke `06` sebagai `REJECTED_MISMATCH` dan lanjut ke lead berikutnya.
 
-**Insiden yang melahirkan aturan ini:** sebuah fungsi *fallback* diklaim "tidak pernah memanggil pemeriksaan akhir" dan masuk antrean sebagai lead kuat. Re-Read Pass membuktikan pemeriksaan itu **ada** sebelum `return` dan justru menjadi penyebab revert — lead tersebut mati seketika, setelah satu siklus PoC terbuang.
+**Insiden yang melahirkan aturan ini:** `_fallback` di `ModuleManager.sol` diklaim "tidak pernah memanggil `postCheck`" dan masuk `05` sebagai lead kuat. Re-Read Pass membuktikan `postCheck` dipanggil sebelum `return` dan men-revert `PolicyBlocked()` — dua lead (`L-31`, `L-30`) mati seketika, setelah satu siklus PoC terbuang.
 
 ---
 
@@ -292,6 +313,8 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 >
 > **DILARANG KERAS** memakai aturan "bytecode harus identik" atau "`sha256` explorer harus sama" sebagai alasan menggugurkan/menghentikan PoC: setiap repo punya siklus rilis berbeda dan build Foundry jarang reproducible. Yang diuji adalah **keberadaan & perilaku entrypoint**, bukan hash file. Tugas utama Fase 3 tetap: **membuktikan apakah kode tersebut dapat dijebol secara mekanis dan finansial di simulator!**
 
+> **WAJIB: catat fakta lingkungan ber-scope ke `00-project-map.md §5`.** Setiap fakta otoritas/lifecycle yang ditemukan saat rekonsiliasi deployment (upgrade authority, apakah multisig, paused, sejak blok berapa, siapa pemilik proxy admin) **wajib** di-`patch` ke `§5 LINGKUNGAN` dengan tag `[chain:alamat]` + bukti perintah + blok. Fakta ini **DILARANG** disimpan tanpa tag scope (mis. "upgrade authority single EOA" tanpa `[ETH:0x...]`), karena akan terbawa ke chain/kontrak lain dan menghasilkan vonis palsu di Fase 4. Bila belum diverifikasi, tulis eksplisit `UNKNOWN` — bukan menghilangkannya.
+
 ---
 
 ### Langkah 2c: Kewajiban Kontrol Positif untuk Setiap Assertion Negatif (WAJIB)
@@ -309,7 +332,7 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 
 **DILARANG menggugurkan lead bila kontrol positif tidak berhasil dibuat.** Harness yang tidak bisa membuktikan jalur normalnya berjalan **bukan bukti** bahwa protokol aman — itu bukti harness belum benar. Kembali ke Langkah 0c (Tangga Self-Healing), jangan tulis ke `06`.
 
-**Insiden yang melahirkan aturan ini:** dua lead dinyatakan gugur karena fuzzer menemukan "counterexample". Pemeriksaan ulang menunjukkan **seluruh input** me-revert dengan kode error yang sama — termasuk payload yang seharusnya valid — sehingga assertion negatif lulus tanpa pernah mengeksekusi jalur target. Satu lead lain gugur karena parameter encoding salah sehingga "kontrol" ikut gagal. Ketiganya adalah **false positive yang menutupi kegagalan harness**, bukan temuan.
+**Insiden yang melahirkan aturan ini:** pada audit nyata, dua lead (`L-41`, `L-42`) dinyatakan gugur karena fuzzer menemukan "counterexample" (`typesLen=0`). Pemeriksaan ulang menunjukkan **seluruh input** me-revert `InvalidInput() 0xb4fa3fb3` — termasuk payload valid — sehingga assertion negatif lulus tanpa pernah mengeksekusi jalur target. Satu lead lain (`L-20`) juga gugur karena encoding mode salah sehingga "kontrol" ikut gagal, membuat uji returnbomb tidak bermakna. Ketiganya adalah **false positive yang menutupi kegagalan harness**, bukan temuan.
 
 **Cek cepat sebelum menulis hasil harness:**
 - [ ] Ada kasus kontrol positif? Apakah ia benar-benar `[PASS]`?
@@ -356,7 +379,7 @@ test -f audit/06-refuted-invalid.md \
 
 | # | Jenis | Tempat | Boleh diringkas? |
 |---|---|---|---|
-| 1 | **Kode test/PoC hidup** (masih dipakai) | folder lab proyek (`<lab>/test/` dst.) | ❌ kode utuh |
+| 1 | **Kode test/PoC hidup** (masih dipakai) | folder lab (`poc3/test/` dst.) | ❌ kode utuh |
 | 2 | **Kode test/PoC gugur** (tidak dipakai lagi) | `audit/notes/testref/` | ❌ **dipindah**, jangan dihapus |
 | 3 | **Log eksekusi mentah** (`forge test -vv`, `cast`, `cargo test`) | `audit/notes/lead-<id>.md` | ❌ log penuh |
 | 4 | **Hipotesis + analisis + verdict** | `audit/notes/lead-<id>.md` | ⚠️ ringkas di `05`, utuh di sini |

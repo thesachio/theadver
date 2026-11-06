@@ -111,6 +111,14 @@ R-CAND: <File:Baris> | <Asimetri: yang seharusnya vs yang terjadi> | <Pemicu: ko
 
 **Sweep wajib di akhir Putaran 2:** saat seluruh `03` sudah diketahui, tinjau `RADAR.md` dan lengkapi `Tujuan` yang terlewat lewat baris kejadian `TARGET-ADDED`. Entri yang `Lokasi`-nya tersentuh unit lain tetapi tidak pernah mendapat baris kejadian = **bukti sweep gagal**, bukan bukti tidak relevan.
 
+**Model Mekanisme Hidup (`00-project-map.md §5`) — baca, prediksi, perbarui:**
+1. **Sebelum** membedah unit — baca blok domain unit itu dari `§5` (≈12 baris, `ALUR`/`BATAS`/`STATE`/`INVARIAN`/`ANEH`/`ASUMSI`). Ini yang membuat Anda **sensitif**: tahu apa yang *seharusnya* ada, sehingga tahu apa yang *hilang*.
+2. **Tulis prediksi** sebelum membaca kode: *"invarian apa yang saya harap ditegakkan di sini, dan di mana kemungkinan patah?"*
+3. **Sesudah** unit ditutup — bandingkan prediksi dengan temuan, lalu `patch` `§5` **maksimal +3 baris** per unit. Prediksi **meleset** = model kurang; itulah baris yang wajib ditambahkan (biasanya `INVARIAN` atau `ANEH`). Prediksi **tepat** = jangan tambah baris.
+4. **DILARANG** membiarkan `§5` tanpa pembaruan sepanjang Fase 2 — itu tanda model tidak dipakai dan agent kembali menebak dari nol di setiap unit.
+
+`INVARIAN` tanpa penegak (`TIDAK ditegakkan`) adalah **kandidat celah**, bukan sekadar catatan — wajib dipertimbangkan saat membedah unit tersebut. Skema lengkap di `verify/templates/00-section-model.md`.
+
 
 **Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**
 ```

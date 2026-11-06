@@ -1,7 +1,7 @@
 ---
 name: sc-phase2-hunt
 description: Phase 2 — Counter-Auditor Adversarial Hunting (First-Principles Foundation + Generalized Attacker POV) with Strict Static-vs-Dynamic Guard Separation (04 Static Only vs 05 Dynamic/Raw Leads).
-version: 6.4.2
+version: 6.4.0
 ---
 
 # Phase 2: Counter-Auditor Two-Stage Adversarial Hunting
@@ -87,9 +87,30 @@ Kuota "minimal N lead per domain" **DILARANG** dipakai: memaksa jumlah lead mend
 Pada Putaran 1 dan Putaran 2, eksekusi Unit Alur Eksekusi secara **bergilir lintas domain** (`D1 -> D2 -> D3 -> … -> D1`), **BUKAN** menghabiskan satu folder lalu berhenti. Satu putaran penuh = setiap domain ber-`[MUST-AUDIT]` mendapat giliran sebelum domain mana pun mendapat giliran kedua. Pelanggaran rotasi = putaran dibatalkan dan diulang.
 
 ### 2. Kewajiban Jejak Audit (Lead ATAU Negative Attestation)
-Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati tanpa jejak**. Pilih tepat satu hasil:
+
+Setiap berkas `[MUST-AUDIT]` dan setiap Unit Alur `S-n` **tidak boleh dilewati tanpa jejak**. Pilih tepat satu hasil **utama**:
+
 - **`LEAD_GENERATED`** — ditemukan celah potensial: tulis entri lengkap ke `audit/notes/staging-<unit>.md` (template penuh).
 - **`ATTESTED_CLEAN`** — setelah diuji dengan metode dari `ref-method-registry.md` (`M-001..M-NNN`) dan/atau `[POV-XX]` tidak ditemukan celah: tulis **1 baris Negative Attestation** di tabel cakupan `audit/03-attack-surface-queue.md`.
+
+**Keluaran ketiga — `RADAR_SIGNAL` (boleh menyertai salah satu hasil utama di atas, maksimal 2 per unit).**
+Dipakai untuk kejanggalan berpresisi yang **belum layak jadi lead** dan **bukan milik unit ini** — seam, urutan, atau state yang mungkin relevan bagi unit/domain lain di proyek yang sama. Format satu baris di manifes:
+
+```
+R-CAND: <File:Baris> | <Asimetri: yang seharusnya vs yang terjadi> | <Pemicu: kondisi konkret> | Tujuan: <unit/domain>
+```
+
+**Wajib lolos Gerbang 3-Uji** (`Presisi` = ada `File:Baris`; `Asimetri` = bisa menyebut harapan vs kenyataan; `Pemicu` = kondisi terukur) — lihat `verify/templates/RADAR.md`. **Subagent DILARANG menulis `audit/RADAR.md`**; Parent yang menilai dan menulis. Sinyal **DILARANG** diparkir sebagai `RADAR_SIGNAL` bila sudah ada PoC `[PASS]` — itu wajib jadi `LEAD_GENERATED`.
+
+**Dua kewajiban grep RADAR (murah, ±150 token):**
+1. **Sebelum** membedah unit — tarik sinyal yang menyentuh berkas unit ini:
+   `grep -n -B1 -A6 "<nama-berkas>.sol" audit/RADAR.md`
+   Ini jalur yang **dijamin**, karena daftar `Tujuan` di RADAR bersifat hipotesis (ditulis sebelum seluruh permukaan proyek diketahui).
+2. **Sesudah** menutup unit — cek apakah ada `Pemicu` yang terpenuhi:
+   `grep -n "Pemicu" audit/RADAR.md`
+
+**Sweep wajib di akhir Putaran 2:** saat seluruh `03` sudah diketahui, tinjau `RADAR.md` dan lengkapi `Tujuan` yang terlewat lewat baris kejadian `TARGET-ADDED`. Entri yang `Lokasi`-nya tersentuh unit lain tetapi tidak pernah mendapat baris kejadian = **bukti sweep gagal**, bukan bukti tidak relevan.
+
 
 **Format Negative Attestation (wajib 4 unsur — tanpa keempatnya, atestasi ditolak):**
 ```
@@ -145,7 +166,7 @@ Gagal satu sel tabel = Fase 2 **DITOLAK**, kembali ke rotasi domain.
 
 **Hukum: klaim negatif DILARANG dibangun dari cara membaca yang cacat.**
 
-Insiden nyata: sebuah fungsi dibaca dengan `sed ... | tail -N`. Pemanggilan penting yang berada di **tengah fungsi terpotong dari jendela baca**, sehingga klaim negatif ("X tidak dipanggil") ditulis ke antrean dengan label *"terverifikasi, bukan dugaan"*. Tahap verifikasi membuktikan sebaliknya. Satu lead palsu lolos sebagai "lead kuat", menghabiskan satu siklus PoC penuh, dan nyaris masuk laporan.
+Insiden nyata: `_fallback` dibaca dengan `sed -n '/function _fallback/,/^    }$/p' | tail -25`. `postCheck` berada di tengah fungsi dan **terpotong dari jendela baca**. Kesimpulan "tidak pernah memanggil postCheck" ditulis ke `05` dengan label *"asimetri terverifikasi, bukan dugaan"*. Fase 3 membuktikan sebaliknya — `postCheck` dipanggil dan me-revert `PolicyBlocked()`. Satu lead palsu lolos sebagai "lead kuat", menghabiskan satu siklus PoC penuh, dan nyaris masuk laporan.
 
 **Kewajiban sebelum menulis entri apa pun ke `staging-<unit>.md`:**
 
@@ -157,7 +178,7 @@ Insiden nyata: sebuah fungsi dibaca dengan `sed ... | tail -N`. Pemanggilan pent
 
 **Klaim negatif meliputi:** "tidak ada guard", "X tidak dipanggil", "tidak ada cek", "tidak ada validasi", "selalu revert", dan segala bentuk "aman karena tidak ada ...".
 
-**Kapan ini menggigit:** fungsi dengan pola `try/catch`, *fallback dispatcher*, router multi-cabang, loop kustom, atau pemanggilan eksternal di tengah — di situlah `sed|tail` paling sering memotong bagian penting.
+**Kapan ini menggigit:** fungsi dengan pola `try/catch`, `_fallback`, router multi-cabang, loop kustom, atau pemanggilan eksternal di tengah — di situlah `sed|tail` paling sering memotong bagian penting.
 
 ---
 

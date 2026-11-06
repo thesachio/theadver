@@ -72,6 +72,8 @@ Blok di bawah **harus identik** dengan `verify/templates/STATE.md` (sumber keben
 ### 5. Aturan Delegasi
 Setiap `delegate_task` **WAJIB** menyertakan instruksi: *"Baca `audit/STATE.md` lebih dulu. Jangan sentuh `Completed Units` atau `Do-Not-Reopen List`. Sebelum keluar, laporkan apa yang harus ditulis ke STATE.md (CURRENT_ACTIVE_ITEM, coverage, do-not-reopen)."* Subagent DILARANG menulis STATE.md sendiri — Parent yang menulis setelah menerima ringkasan.
 
+**RADAR dua arah (wajib):** sebelum memanggil subagent, Parent menyertakan hasil `grep -n -B1 -A6 "<berkas-lingkup>" audit/RADAR.md` ke dalam context (butir 6 `AGENTS.md` §4), dan meminta subagent mengembalikan maks **2** `R-CAND`. Setelah subagent selesai, Parent menilai dengan Gerbang 3-Uji lalu `append` ke `audit/RADAR.md`. **Setelah Fase 3 mengadili sebuah lead, Parent WAJIB menulis balik `RESOLVED-CONFIRMED`/`RESOLVED-REFUTED` (beserta alasan 1 baris) ke RADAR** — tanpa penulisan-balik, entri RADAR menjadi pointer mati ke `06`/`08` yang dilarang dibaca. Entri `PROMOTED` yang lebih tua dari satu siklus Fase 3 dianggap `STALE` dan wajib diselesaikan sebelum unit baru dimulai.
+
 ## Pitfalls & Hukum Mutlak Orchestrator
 - **JAGA KONTEKS PARENT TETAP RINGAN:** Gunakan `delegate_task` (`max_concurrent_children: 1` secara sekuensial) agar setiap Subagent bekerja dengan konteks 0 token yang bersih.
 - **PATUHI KONSTITUSI `workspace/AGENTS.md` PADA SETIAP `delegate_task`:** Sertakan Path Absolut Proyek, Paradigma Rantai, Core Invariants, Path File `audit/00` s/d `09`, instruksi `skill_view`, serta perintah agar Subagent menulis entri lengkap ke `audit/notes/staging-<unit>.md` dan mengembalikan **manifes** maksimal 12 baris (bukan muatan entri) — lihat **3b. Protokol Staging**.

@@ -112,7 +112,7 @@ Sebelum menjalankan Tahap 1, 2, 3, atau 4, Parent Orchestrator **WAJIB** memerik
 - Skema disalin dari `verify/templates/STATE.md`.
 
 #### 3. Kewajiban Update Kursor Setiap Selesai 1 `delegate_task`
-Setiap kali satu panggilan `delegate_task` selesai (baik **1 Unit `S-n`** di Tahap 2 maupun **1 Batch/Lead** di Tahap 3) dan mengembalikan **manifes** 12 baris, Parent Orchestrator **WAJIB langsung memperbarui `audit/STATE.md` SEBELUM memanggil `delegate_task` berikutnya**:
+Setiap kali satu panggilan `delegate_task` selesai (baik **1 Unit `S-n`** di Tahap 2 maupun **1 Batch/Lead** di Tahap 3) dan mengembalikan **manifes** (16 baris Fase 2 / 14 baris Fase 3, lihat `AGENTS.md` Pasal 4), Parent Orchestrator **WAJIB langsung memperbarui `audit/STATE.md` SEBELUM memanggil `delegate_task` berikutnya**:
 1. geser `CURRENT_ACTIVE_ITEM` ke item berikutnya,
 2. tambahkan unit/lead yang baru selesai ke `Completed Units` (atau `Do-Not-Reopen List` bila gugur),
 3. perbarui tabel `Domain Coverage Meter`.
@@ -175,7 +175,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤16 baris` **bu
    - **Petakan rencana Dual-Mode Fork di `00-project-map.md`:** kontrak mana yang siap ditembak dengan `FORK_LIVE` dan kontrak `[REPO_STAGED]`/HEAD-only mana yang harus diuji dengan `FORK_DEPLOYED_HEAD` di Fase 3.
    - Menerapkan **3-Level Chain Detection** (`sc-phase2-hunt/references/ref-attacker-pov.md` Bagian 3) dan menuliskannya ke `00-project-map.md`; tulis `CHAIN: AMBIGUOUS (<runtime>)` bila `.rs` bukan program Solana.
    - Menetapkan **Kelas Topologi Entitas** pada **setiap** unit `S-n` di `03-attack-surface-queue.md`: `[CLASS-A]` (Single-Entity), `[CLASS-B]` (Dual-Entity), `[CLASS-C]` (Multi-Entity Long Flow).
-   - Wajib `skill_view('sc-phase1-recon')`, DILARANG mengubah kode sumber, laporkan data untuk `STATE.md`, kembalikan ringkasan maksimal 12 baris.
+   - Wajib `skill_view('sc-phase1-recon')`, DILARANG mengubah kode sumber, laporkan data untuk `STATE.md`, kembalikan manifes maksimal 14 baris (+maks 2 `M-FACT`).
 3. Setelah selesai, **perbarui `audit/STATE.md`** (PHASE, Domain Coverage Meter, antrean), lalu baca `00-project-map.md` dan `03-attack-surface-queue.md`.
 
 ---
@@ -201,7 +201,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤16 baris` **bu
          `[CLASS-C]` → *Multi-Entity Long Flow* (paket penuh, penekanan rantai komposisi panjang).
        - **Lazy-load `references/ref-pov-*.md`** HANYA bila gejala pemicu di tabel router `ref-attacker-pov.md` terpenuhi.
        - **GERBANG PEMISAHAN GUARD STATIS VS DINAMIS (WAJIB):** Hanya guard otorisasi/struktural statis yang benar-benar **`TERSANGKAL`** (tidak tembus oleh **5 Jalur Permissionless** di `verify/templates/04-code-guarded.md`: mutasi variabel, pemicuan kontrak hulu, *state poisoning* pada eksekutor rutin, `nonReentrant` lintas-kontrak / `whenNotPaused` asimetris, serta *Cross-Whitelist Confusion* / *Callback Initiator*) yang boleh bertahan di `04-code-guarded.md`. Semua guard dinamis/matematis **dan semua guard statis yang memenuhi salah satu dari 5 jalur tersebut** **WAJIB ditulis sebagai entri `05-raw-leads.md`!**
-       - **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB); `03` boleh di-`patch` pada baris status; **`STATE.md` DILARANG disentuh**. Kembalikan manifes ≤ 12 baris: `STAGING: <path> | 04: <n> | 05: <m>` + 1 baris verdict per entri.
+       - **KELUARAN:** tulis entri LENGKAP siap-tempel ke `audit/notes/staging-<unit>.md` (staging WAJIB); `03` boleh di-`patch` pada baris status; **`STATE.md` DILARANG disentuh**. Kembalikan manifes ≤ 16 baris (+maks 2 `R-CAND` + maks 2 `M-FACT`): `STAGING: <path> | 04: <n> | 05: <m>` + 1 baris verdict per entri.
        - Entri `05` wajib memuat `Kelas Topologi`, kolom Metode Pencarian (`M-00X`/`[POV-XX]`), dan Delta State; entri `04` wajib memuat File:Baris, Ekspresi Guard, Variabel Pembentuk, dan Penulis Variabel.
 
 2. **Putaran 2 / Sintesis Lintas-Jalur:**
@@ -252,7 +252,7 @@ Subagent **DILARANG** menulis ke `audit/04`–`09`. Ringkasan `≤16 baris` **bu
    >   - Kandidat yang PoC-nya terbukti `[PASS]` dan berbahaya secara finansial pada kode repositori (`FORK_DEPLOYED_HEAD` / `LOKAL`), **TETAPI** kontrak/fiturnya masih HEAD-only, belum di-deploy di mainnet, atau berlabel `[REPO_STAGED]` -> **CABUT dari `09` dan pindahkan secara utuh** (lengkap dengan kode PoC & dampak kuantitatifnya) ke `08-valid-not-eligible.md` dengan `LOW_CLASS: PRE_LIVE_SCOPE (HEAD_ONLY_PROVEN)` dan `TANGGA_BUKTI: A-HEAD / B`! (**DILARANG memasukkannya ke `07`!**).
    > **(3)** Cabut kandidat yang berdampak kelas Low (`LOW_NUISANCE` #10b) atau `ADMIN_ONLY` (#8b) dari `09` ke `08-valid-not-eligible.md`.
    > **(4)** Cabut kandidat yang melanggar Pernyataan Ketat Mutlak (#1–#6, #7a, #8a, #9a, #10a) ke `06-refuted-invalid.md`.
-   > **(5)** Pastikan setiap entri di `06`, `07`, `08`, dan `09` memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan keenam file (`04` s/d `09`), pastikan status akhir semua lead di `05-raw-leads.md` sinkron, dan kembalikan ringkasan maksimal 12 baris."
+   > **(5)** Pastikan setiap entri di `06`, `07`, `08`, dan `09` memuat `TANGGA_BUKTI` dan `DEPLOYMENT_MATCH`. Rapikan keenam file (`04` s/d `09`), pastikan status akhir semua lead di `05-raw-leads.md` sinkron, dan kembalikan manifes maksimal 14 baris (+maks 2 `M-FACT`)."
 
 2. Baca hasil akhir di `09`, `08`, `07`, `06`, `05`, dan `04`, lalu sajikan **Ringkasan Eksekutif** kepada pengguna — wajib menyertakan tabel cakupan per domain, baris `COVERAGE: PASS|AUDIT_INCOMPLETE_COVERAGE_BIAS`, baris `07: <n> entri | LAZY_BAILOUT: PASS|DETECTED`, baris `PAPER_REFUTATION_06: PASS|DETECTED`, serta **pemisahan tegas** antara temuan Live Production (`09`) dan Proven on Repo HEAD / Pre-Live (`08 - HEAD_ONLY_PROVEN`).
 

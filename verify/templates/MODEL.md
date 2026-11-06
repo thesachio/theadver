@@ -93,9 +93,8 @@ Lebih dari itu → tulis `CHAINING: >2 hop, belum ditelusuri` dan daftarkan siny
 Fase 3 bekerja dari **`File:Baris`**, bukan dari nama domain:
 
 ```bash
-# 1. Temukan blok domain dari path berkas lead
-grep -n "<NamaBerkas>.sol" audit/MODEL.md      # → baris BERKAS blok terkait
-sed -n '<awal>,<awal+12>p' audit/MODEL.md      # → blok lengkap
+# 1. Cetak blok domain yang memuat path berkas lead (berhenti di heading berikutnya)
+awk -v pat="<NamaBerkas>.sol" '/^## D/{if(hit){print head;printf "%s",buf;done=1;exit} head=$0;buf="";hit=0;next}{buf=buf $0 ORS; if(index($0,pat))hit=1} END{if(hit&&!done){print head;printf "%s",buf}}' audit/MODEL.md
 
 # 2. RADAR yang menyentuh berkas yang sama (seam yang mungkin memperkuat)
 grep -n -B1 -A8 "<NamaBerkas>.sol" audit/RADAR.md

@@ -318,9 +318,8 @@ Pilih **tepat satu** dari 3 mode eksekusi berikut (urut dari prioritas tertinggi
 > **AKSES MODEL + RADAR sebelum menulis harness (WAJIB, ±400–600 token).**
 > Fase 3 bekerja dari `File:Baris` lead, bukan dari nama domain:
 > ```bash
-> # 1. blok domain yang relevan (cari lewat path berkas di baris BERKAS)
-> grep -n "<NamaBerkas>.sol" audit/MODEL.md      # → nomor baris blok
-> sed -n '<awal>,<awal+12>p' audit/MODEL.md      # → blok 12 baris
+> # 1. blok domain yang relevan — cetak sampai heading berikutnya
+> awk -v pat="<NamaBerkas>.sol" '/^## D/{if(hit){print head;printf "%s",buf;done=1;exit} head=$0;buf="";hit=0;next}{buf=buf $0 ORS; if(index($0,pat))hit=1} END{if(hit&&!done){print head;printf "%s",buf}}' audit/MODEL.md
 > # 2. RADAR yang menyentuh berkas sama (seam yang mungkin memperkuat)
 > grep -n -B1 -A8 "<NamaBerkas>.sol" audit/RADAR.md
 > # 3. RADAR yang menyebut lead/unit ini
